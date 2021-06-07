@@ -465,7 +465,7 @@ int transcript::write_fasta_AS_only(ostream &fout, int line_len, faidx_t *fai) c
 			}
 			else 
 			{
-				if(exons[k].first.ale == "*") seq = "N"; //TODO: some "N" not correct, check all of them
+				if(exons[k].first.ale == "*") seq = "N";
 				else seq = exons[k].first.ale;
 			}
 			sequence += seq;

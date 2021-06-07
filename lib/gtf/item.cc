@@ -31,7 +31,7 @@ int item::parse(const string &s)
 	sstr>>buf;
 	feature.assign(buf);
 	sstr>>start.p32>>end.p32;
-	// start--;			// TODO gtf: (from 1, both inclusive) //TODO: start-- ?
+	start.p32--;			// TODO gtf: (from 1, both inclusive) 
 	sstr>>buf;
 	if(buf[0] == '.') score = -1;
 	else score = atof(buf);
