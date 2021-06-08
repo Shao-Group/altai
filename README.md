@@ -41,7 +41,7 @@ export LD_LIBRARY_PATH=/path/to/your/htslib/lib:$LD_LIBRARY_PATH
 
 ## Install Gurobi Solver
 
-Gurobi is a optimization solver. If Gurobi has not been installed, download Gurobi Optimizer and corresponding README.txt from (www.gurobi.com/downloads/) with version 9.1.1 or higher. Request a license as you need. [Academic license](https://www.gurobi.com/academia/academic-program-and-licenses/) is free. Follow the instructions to install Gurobi Optimizer and store the license file.
+Gurobi is an optimization solver. If Gurobi has not been installed, download Gurobi Optimizer and corresponding README.txt from (www.gurobi.com/downloads/) with version 9.1.1 or higher. Request a license as you need. [Academic license](https://www.gurobi.com/academia/academic-program-and-licenses/) is free. Follow the instructions to install Gurobi Optimizer and store the license file.
 
 After installation, respectively export Gurobi home directory and license file to environment variable `GUROBI_HOME` and `GRB_LICENSE_FILE`:
 
