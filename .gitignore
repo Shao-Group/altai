@@ -12,11 +12,15 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 configure
+configure.ac
 compile
 config.log
 config.status
 config.h.in
+config.h
+depcomp
 missing
+install-sh
 stamp-h1
 src/altai
 release/
