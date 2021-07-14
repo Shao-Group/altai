@@ -80,6 +80,7 @@ string vcf_file;
 string output_file;
 
 // AS info
+int min_num_reads_support_variant = 3;
 vcf_data asp;
 string vmap_chrm = "";
 map < std::string, map <int, vector <std::string> > > vcf_map;
@@ -389,6 +390,11 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--filter_AS_transcript_by_coverage")
 		{
 			FILTER_BY_COV = true;			
+		}
+		else if(string(argv[i]) == "--min_num_reads_support_variant")
+		{
+			min_num_reads_support_variant  = atoi(argv[i + 1]);
+			i++;
 		}
 	}
 

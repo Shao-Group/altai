@@ -106,6 +106,7 @@ extern string vcf_file;
 extern string output_file;
 
 // AS info
+extern int min_num_reads_support_variant;
 extern string vmap_chrm;
 extern vcf_data asp;
 extern map < std::string, map <int, vector <std::string> > > vcf_map;

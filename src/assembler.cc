@@ -72,11 +72,13 @@ int assembler::assemble()
 		// truncate
 		if(ht.tid != bb1.tid || ht.pos > bb1.rpos + min_bundle_gap)
 		{
+			bb1.buildbase();
 			pool.push_back(bb1);
 			bb1.clear();
 		}
 		if(ht.tid != bb2.tid || ht.pos > bb2.rpos + min_bundle_gap)
 		{
+			bb2.buildbase();
 			pool.push_back(bb2);
 			bb2.clear();
 		}
@@ -98,6 +100,9 @@ int assembler::assemble()
 		if(library_type == UNSTRANDED && ht.xs == '+') bb1.add_hit(ht);
 		if(library_type == UNSTRANDED && ht.xs == '-') bb2.add_hit(ht);
 	}
+
+	bb1.buildbase();
+	bb2.buildbase();
 
 	pool.push_back(bb1);
 	pool.push_back(bb2);

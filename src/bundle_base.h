@@ -38,6 +38,7 @@ public:
 	split_interval_map nammap;		// non-allelic matched interval map
 
 public:
+	int buildbase();
 	int add_hit(const hit &ht);
 	bool overlap(const hit &ht) const;
 	int clear();
