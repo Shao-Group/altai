@@ -66,7 +66,7 @@ public:
 	int32_t hi;								// HI aux in sam
 	int32_t nm;								// NM aux in sam
 	bool concordant;						// whether it is concordant
-	vector<as_pos> spos;					// splice positions (regardless of alvlele sites)
+	vector<as_pos> spos;					// splice positions (regardless of allele sites)
 	vector<as_pos> apos;					// alleilic positions
 	vector<as_pos> itvm;					// matched interval
 	vector<as_pos> itvna;					// non-allelic interval (matched interval - allelic interval)
