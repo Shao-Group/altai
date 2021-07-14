@@ -22,6 +22,7 @@ public:
 public:
 	int simple_phase_set_by_coverage();
 	int simple_phase_set_by_variant_number();
+	int keep_as_transcripts_only();
 
 	int join_single_exon_transcripts();
 	int filter_length_coverage();

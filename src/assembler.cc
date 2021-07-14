@@ -107,6 +107,7 @@ int assembler::assemble()
 
 	filter ft(trsts);
 	// ft.merge_single_exon_transcripts(); // FIXME: 
+	ft.keep_as_transcripts_only();
 	trsts = ft.trs;
 
 	write();
@@ -136,7 +137,7 @@ int assembler::process(int n)
 
 		bd.chrm = string(buf);
 		bd.build();
-		bd.print(index);
+		if(verbose >= 1) bd.print(index);
 		
 		assemble(bd.gr, bd.hs, bd.is_allelic);
 		index++;
@@ -225,7 +226,7 @@ int assembler::write()
 	ofstream fout((output_file+".gtf").c_str());
 	ofstream gvfout((output_file+".gvf").c_str());
 	ofstream faout((output_file+".fa").c_str());
-	ofstream asout((output_file+".ASOnly.fa").c_str());
+	// ofstream asout((output_file+".ASOnly.fa").c_str());
 	if(fout.fail()) return 0;
 	if(faout.fail()) return 0;
 	for(int i = 0; i < trsts.size(); i++)
@@ -234,9 +235,11 @@ int assembler::write()
 		t.write(fout);
 		t.write_gvf(gvfout);
 		if(fasta_input != "") t.write_fasta(faout, 60, fai);
-		if(fasta_input != "") t.write_fasta_AS_only(asout, 60, fai);
+		// if(fasta_input != "") t.write_fasta_AS_only(asout, 60, fai);
 	}
 	fout.close();
 	faout.close();
+	gvfout.close();
+	// asout.close();
 	return 0;
 }

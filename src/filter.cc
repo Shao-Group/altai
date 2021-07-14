@@ -390,6 +390,37 @@ int filter::simple_phase_set_by_variant_number()
 	return 0;
 }
 
+int filter::keep_as_transcripts_only()
+{
+	vector<transcript> v;
+	for(int i = 0; i < trs.size(); i++ )
+	{
+		bool is_as_transcript = false;
+		transcript t = trs[i];
+		int e = t.exons.size();
+		for (int k = 0; k < e; k++) 
+		{	
+			string a = t.exons[k].first.ale;
+			if (a != "$") 
+			{
+				is_as_transcript = true;
+				break;
+			}
+			string b = t.exons[k].second.ale;
+			if (b != "$") 
+			{
+				is_as_transcript = true;
+				break;
+			}
+		}
+
+		if (is_as_transcript)
+		{
+			v.push_back(t);
+		}
+	}
+}
+
 int filter::filter_length_coverage()
 {
 	vector<transcript> v;
