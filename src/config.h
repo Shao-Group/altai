@@ -136,5 +136,6 @@ int print_parameters();
 int print_copyright();
 int print_logo();
 int print_help();
+int print_caution_message();
 
 #endif

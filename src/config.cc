@@ -500,9 +500,15 @@ int print_command_line(int argc, const char ** argv)
 
 int print_logo()
 {
+    printf("\n");
+    printf("         ___     _        _______     ___        _______      \n");
+    printf("        /   |   | |      |_______|   |   \\      |__   __|     \n");
+    printf("       / /| |   | |         | |      | |\\ \\        | |        \n");
+    printf("      / /_| |   | |         | |      | |_\\ \\       | |        \n");
+    printf("     / ___  |   | |_____    | |      |  __\\ \\    __| |__      \n");
+    printf("    /_/   |_|   |_______|   |_|      |_|   \\_\\  |_______|     \n");
 	printf("\n");
-	printf("Altai %s (c) 2021 Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.\n", version.c_str());
-	return 0;
+    return 0;
 }
 
 int print_help()
@@ -526,6 +532,7 @@ int print_help()
 	printf(" %-42s  %s\n", "--min_num_hits_in_bundle <integer>",  "minimum number of reads required in a bundle, default: 20");
 	printf(" %-42s  %s\n", "--min_flank_length <integer>",  "minimum match length in each side for a spliced read, default: 3");
 	printf(" %-42s  %s\n", "--min_splice_boundary_hits <integer>",  "minimum number of spliced reads required for a junction, default: 1");
+	printf(" %-42s  %s\n", "--min_num_reads_support_variant <integer>",  "minimum number of reads required to keep a SNP, default: 3");
 	return 0;
 }
 
@@ -533,5 +540,17 @@ int print_copyright()
 {
 	printf("Altai - Allele-specific Transcript Assembly Instrument. \n");
 	printf("%s (c) 2021 Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.\n", version.c_str());	
+	return 0;
+}
+
+int print_caution_message()
+{
+	printf("\033[1;31m\n");
+	printf("Altai-%s ONLY outputs allele-specific transcripts.\n", version.c_str());	
+	printf("If you want to have a complete allele-specific transcriptome ");
+	printf("with both allele-specific transcripts (two alleles different) and ");
+	printf("non-allele-specific transcripts (both alleles same), ");
+	printf("read README for detailed instruction.\n");
+	printf("\033[0m\n");
 	return 0;
 }
