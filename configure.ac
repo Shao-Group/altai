@@ -19,6 +19,7 @@ AC_ARG_WITH(zlib, AS_HELP_STRING([--with-zlib], [home directory for zlib]), ZLIB
 AC_ARG_WITH(lapack, AS_HELP_STRING([--with-lapack], [home directory for lapack]), LAPACK_HOME=$withval, LAPACK_HOME=)
 
 # Assign CXXFLAGS
+CXXFLAGS='-Wall -std=c++11'
 AS_IF([test "x$BOOST_HOME" != "x"], [AC_SUBST([CXXFLAGS], ["-I$BOOST_HOME $CXXFLAGS"])], [])
 AS_IF([test "x$HTSLIB_HOME" != "x"], [AC_SUBST([CXXFLAGS], ["-I$HTSLIB_HOME/include $CXXFLAGS"])], [])
 
