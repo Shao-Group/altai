@@ -222,6 +222,12 @@ hit::hit(bam1_t *b, std::string chrm_name)
 
 int hit::make_itvna()
 {
+	itvna.clear();
+	if (apos.size() == 0) 
+	{
+		itvna = itvm;
+		return 0;
+	}
 	auto it1 = itvm.begin();
 	auto it2 = apos.begin();
 	int32_t l = high32(*it1);

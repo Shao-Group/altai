@@ -9,6 +9,7 @@ See LICENSE for licensing.
 #include <cstdio>
 #include <cassert>
 #include <sstream>
+#include <iostream>
 #include <map>
 #include <cstring>
 
@@ -72,13 +73,11 @@ int assembler::assemble()
 		// truncate
 		if(ht.tid != bb1.tid || ht.pos > bb1.rpos + min_bundle_gap)
 		{
-			bb1.buildbase();
 			pool.push_back(bb1);
 			bb1.clear();
 		}
 		if(ht.tid != bb2.tid || ht.pos > bb2.rpos + min_bundle_gap)
 		{
-			bb2.buildbase();
 			pool.push_back(bb2);
 			bb2.clear();
 		}
@@ -101,9 +100,6 @@ int assembler::assemble()
 		if(library_type == UNSTRANDED && ht.xs == '-') bb2.add_hit(ht);
 	}
 
-	bb1.buildbase();
-	bb2.buildbase();
-
 	pool.push_back(bb1);
 	pool.push_back(bb2);
 	process(0);
@@ -114,7 +110,6 @@ int assembler::assemble()
 	// ft.merge_single_exon_transcripts(); // FIXME: 
 	ft.keep_as_transcripts_only();
 	trsts = ft.trs;
-
 	write();
 	
 	cout << "Altai finished running." << endl;
@@ -129,6 +124,7 @@ int assembler::process(int n)
 	for(int i = 0; i < pool.size(); i++)
 	{
 		bundle_base &bb = pool[i];
+		bb.buildbase();
 
 		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
 

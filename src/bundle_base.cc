@@ -31,6 +31,20 @@ int bundle_base::add_hit(const hit &ht)
 {
 	// store new hit
 	hits.push_back(ht);
+	// calcuate the boundaries on reference
+	if(ht.pos < lpos) lpos = ht.pos;
+	if(ht.rpos > rpos) rpos = ht.rpos;
+
+	// set tid
+	if(tid == -1) tid = ht.tid;
+	assert(tid == ht.tid);
+
+	// set strand
+	if(hits.size() <= 1) strand = ht.strand;
+	assert(strand == ht.strand);
+
+	// set bundle is_allelic
+	if (ht.apos.size() != 0) is_allelic = true;
 	return 0;
 }
 
@@ -55,6 +69,7 @@ int bundle_base::buildbase()
 		}
 	}
 	// filter apos
+	vector<hit> h;
 	for(int i = 0; i < hits.size(); i++)
 	{
 		hit &ht = hits[i];
@@ -65,35 +80,23 @@ int bundle_base::buildbase()
 		{
 			if(apos_count.find(*it)->second < min_num_reads_support_variant)
 			{
-				it = ht.apos.erase(it);
+				// it = ht.apos.erase(it);
 				b = true;
+				break;
 			}
 			else {
 				++it;
 			}
     	}
-		if(b) ht.make_itvna(); //TODO: optimize making of itvna
+		// if(b) ht.make_itvna(); //TODO: optimize making of itvna
+		if (!b) h.push_back(ht);
 	}
+	hits = h;
 
 	
 	for(int i = 0; i < hits.size(); i++)
 	{
 		hit &ht = hits[i];
-		// calcuate the boundaries on reference
-		if(ht.pos < lpos) lpos = ht.pos;
-		if(ht.rpos > rpos) rpos = ht.rpos;
-
-		// set tid
-		if(tid == -1) tid = ht.tid;
-		assert(tid == ht.tid);
-
-		// set strand
-		if(hits.size() <= 1) strand = ht.strand;
-		assert(strand == ht.strand);
-
-		// set bundle is_allelic
-		if (ht.apos.size() != 0) is_allelic = true;
-
 		// DEBUG
 		/*
 		if(strand != ht.strand)
