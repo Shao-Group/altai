@@ -29,6 +29,7 @@ int main(int argc, const char **argv)
 	if(argc == 1)
 	{
 		print_copyright();
+		print_caution_message();
 		print_help();
 		printf("\n");
 		print_logo();
@@ -46,6 +47,7 @@ int main(int argc, const char **argv)
 	if(verbose >= 1)
 	{
 		print_copyright();
+		print_caution_message();
 		printf("\n");
 		print_command_line(argc, argv);
 		printf("\n");
