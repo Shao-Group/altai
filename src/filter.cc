@@ -86,11 +86,11 @@ int filter::simple_phase_set_by_coverage()
 				z[m][k] = model.addVar(0, 1, 0, GRB_BINARY);
 			}
 		}
-		if (DEBUG_MODE_ON) cout << "Variables Created successfully\n"; //CLEAN:
+
 
 		// Set Objective 
 		model.setObjective(obj, GRB_MAXIMIZE);
-		if (DEBUG_MODE_ON) cout << "Obj set successfully\n"; //CLEAN:
+
 
 		// Genome phase set constraint
 		// Each PS has at most one AS vertex at each loci
@@ -147,19 +147,22 @@ int filter::simple_phase_set_by_coverage()
 			++m;
 		}
 		assert(m == trs_as_exon_map.size());
-		cout << "transcript PS constrint successfully\n"; //CLEAN:
+
 
 		// Optimize
 		model.optimize();
 		vector<transcript> v;
 		for (int m = 0; m < trs.size(); ++m)
 		{
-			if (y[m].get(GRB_DoubleAttr_X) >= 1) v.push_back(trs[m]);
-			cout << m << " y_m: " <<y[m].get(GRB_DoubleAttr_X) << endl;
-			assert(y[m].get(GRB_DoubleAttr_X) == 0 || y[m].get(GRB_DoubleAttr_X) == 1); //CLEAN:
-			for (int k = 0; k < NUM_PHASE_SET; ++k) 
+			if (y[m].get(GRB_DoubleAttr_X) >= 0.999) v.push_back(trs[m]); // X is internally represented as a duoble in Gurobi
+                                                                          // by default, tolerance is 1e-5
+			if (verbose >= 2) cout << m << " y_m: " <<y[m].get(GRB_DoubleAttr_X) << endl;
+			assert((y[m].get(GRB_DoubleAttr_X) <= 0.001 && y[m].get(GRB_DoubleAttr_X) >= -0.001) 
+				|| (y[m].get(GRB_DoubleAttr_X) >= 0.999 && y[m].get(GRB_DoubleAttr_X) <= 1.001)); // precision issue 
+			if (verbose >= 2)
 			{
-				cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
+				for (int k = 0; k < NUM_PHASE_SET; ++k) 
+					cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
 			}
 		}
 		/* // print x_ik values
@@ -310,7 +313,7 @@ int filter::simple_phase_set_by_variant_number()
 				}
 			}
 		}
-		if (DEBUG_MODE_ON) cout << "genome PS constrint successfully\n"; //CLEAN:
+
 		// Transcript phase set constraint
 		// A retained transcript must be satisfied by at least one phase set
 		int m = 0;
@@ -342,7 +345,7 @@ int filter::simple_phase_set_by_variant_number()
 			++m;
 		}
 		assert(m == trs_as_exon_map.size());
-		if(DEBUG_MODE_ON) cout << "transcript PS constrint successfully\n"; //CLEAN:
+
 
 
 		for (auto it = as_exon_trs_map.begin(); it != as_exon_trs_map.end(); ++it)
@@ -361,12 +364,14 @@ int filter::simple_phase_set_by_variant_number()
 		vector<transcript> v;
 		for (int m = 0; m < trs.size(); ++m)
 		{
-			if (y[m].get(GRB_DoubleAttr_X) >= 1) v.push_back(trs[m]);
-			cout << m << " y_m: " <<y[m].get(GRB_DoubleAttr_X) << endl;
-			assert(y[m].get(GRB_DoubleAttr_X) == 0 || y[m].get(GRB_DoubleAttr_X) == 1); //CLEAN:
-			for (int k = 0; k < NUM_PHASE_SET; ++k) 
+			if (y[m].get(GRB_DoubleAttr_X) >= 0.999) v.push_back(trs[m]); // precision issue
+			if (verbose >= 2) cout << m << " y_m: " <<y[m].get(GRB_DoubleAttr_X) << endl;
+			assert((y[m].get(GRB_DoubleAttr_X) <= 0.001 && y[m].get(GRB_DoubleAttr_X) >= -0.001) 
+				|| (y[m].get(GRB_DoubleAttr_X) >= 0.999 && y[m].get(GRB_DoubleAttr_X) <= 1.001)); 
+			if (verbose >= 2)
 			{
-				cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
+				for (int k = 0; k < NUM_PHASE_SET; ++k) 
+					cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
 			}
 		}
 		/* // print x_ik values
