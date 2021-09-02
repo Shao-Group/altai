@@ -257,7 +257,7 @@ int filter::simple_phase_set_by_variant_number()
 		GRBVar y[trs.size()];
 		GRBVar z[trs.size()][NUM_PHASE_SET];
 		GRBLinExpr obj = GRBLinExpr();
-		double total_cov;
+		double total_cov = 0;
 		for (int m = 0; m < trs.size(); ++m) 
 		{
 			total_cov += trs[m].coverage;
@@ -424,6 +424,7 @@ int filter::keep_as_transcripts_only()
 			v.push_back(t);
 		}
 	}
+	return 0;
 }
 
 int filter::filter_length_coverage()
