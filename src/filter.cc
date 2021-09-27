@@ -54,7 +54,7 @@ int filter::simple_phase_set_by_coverage()
 	}
 
 	
-	try 
+	// try 
 	{
 		GRBEnv env = GRBEnv();
 		GRBModel model = GRBModel(env);
@@ -176,12 +176,12 @@ int filter::simple_phase_set_by_coverage()
 		*/
 		trs = v;
 	}
-	catch (GRBException e)
-	{
-		cout << "Error code = " << e.getErrorCode() << endl;
-    	cout << e.getMessage() << endl;
-		throw BundleError();
-	}
+	// catch (GRBException e)
+	// {
+	// 	cout << "Error code = " << e.getErrorCode() << endl;
+    // 	cout << e.getMessage() << endl;
+	// 	throw BundleError();
+	// }
 
 	return 0;
 }
@@ -242,7 +242,7 @@ int filter::simple_phase_set_by_variant_number()
 	}
 
 	
-	try 
+	// try 
 	{
 		GRBEnv env = GRBEnv();
 		GRBModel model = GRBModel(env);
@@ -385,12 +385,12 @@ int filter::simple_phase_set_by_variant_number()
 		*/
 		trs = v;
 	}
-	catch (GRBException e)
-	{
-		cout << "Error code = " << e.getErrorCode() << endl;
-    	cout << e.getMessage() << endl;
-		throw BundleError();
-	}
+	// catch (GRBException e)
+	// {
+	// 	cout << "Error code = " << e.getErrorCode() << endl;
+    // 	cout << e.getMessage() << endl;
+	// 	throw BundleError();
+	// }
 
 	return 0;
 }

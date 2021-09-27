@@ -13,12 +13,14 @@ See LICENSE for licensing.
 
 #include "previewer.h"
 #include "config.h"
+#include "gurobi_c++.h"
 
 previewer::previewer()
 {
     sfn = sam_open(input_file.c_str(), "r");
     hdr = sam_hdr_read(sfn);
     b1t = bam_init1();
+	GRBEnv env = GRBEnv(); // test Gurobi
 }
 
 previewer::~previewer()
