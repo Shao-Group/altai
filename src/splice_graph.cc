@@ -342,7 +342,7 @@ int splice_graph::write(const string &file) const
 	fin<<n<<endl;
 	for(int i = 0; i < n; i++)
 	{
-		string name = "scallop";
+		string name = "altai";
 		double weight = get_vertex_weight(i);
 		vertex_info vi = get_vertex_info(i);
 		fin<<name.c_str()<<" "<<weight<<" "<<vi.length<<endl;
@@ -1090,7 +1090,7 @@ int splice_graph::output_transcript(ofstream &fout, const path &p, const string 
 	int32_t rr = get_vertex_info(tt).rpos.p32;									// TODO: make AS
 
 	fout<<chrm.c_str()<<"\t";		// chromosome name
-	fout<<"scallop"<<"\t";			// source
+	fout<<"altai"<<"\t";			// source
 	fout<<"transcript\t";			// feature
 	fout<<ll + 1<<"\t";				// left position
 	fout<<rr<<"\t";					// right position
@@ -1114,7 +1114,7 @@ int splice_graph::output_transcript(ofstream &fout, const path &p, const string 
 	for(JIMI_int it = jmap.begin(); it != jmap.end(); it++)
 	{
 		fout<<chrm.c_str()<<"\t";			// chromosome name
-		fout<<"scallop"<<"\t";				// source
+		fout<<"altai"<<"\t";				// source
 		fout<<"exon\t";						// feature
 		fout<<lower(it->first) + 1<<"\t";	// left position
 		fout<<upper(it->first)<<"\t";		// right position
@@ -1144,7 +1144,7 @@ int splice_graph::output_transcripts(vector<transcript> &v, const vector<path> &
 int splice_graph::output_transcript(transcript &trst, const path &p, const string &tid) const
 {
 	trst.seqname = chrm;
-	trst.source = "scallop";
+	trst.source = "altai";
 	trst.gene_id = gid;
 	trst.transcript_id = tid;
 	trst.coverage = p.abd;
