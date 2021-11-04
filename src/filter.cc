@@ -364,7 +364,7 @@ int filter::simple_phase_set_by_variant_number()
 		vector<transcript> v;
 		for (int m = 0; m < trs.size(); ++m)
 		{
-			if (NUM_PHASE_SET == 2) trs[m].allele = to_string(round(z[m][0].get(GRB_DoubleAttr_X)));
+			if (NUM_PHASE_SET == 2) trs[m].allele = to_string(int(round(z[m][0].get(GRB_DoubleAttr_X))));
 
 			if (y[m].get(GRB_DoubleAttr_X) >= 0.999) v.push_back(trs[m]); // precision issue
 			if (verbose >= 2) cout << m << " y_m: " <<y[m].get(GRB_DoubleAttr_X) << endl;
