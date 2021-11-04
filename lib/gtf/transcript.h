@@ -39,6 +39,7 @@ public:
 	string transcript_id;
 	string gene_type;
 	string transcript_type;
+	string allele;
 	as_pos32 start;
 	as_pos32 end;
 	double score;

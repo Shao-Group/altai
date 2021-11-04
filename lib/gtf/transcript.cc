@@ -294,7 +294,11 @@ int transcript::write_gvf(ostream &fout) const
 		fout<<"gene_id \""<<gene_id.c_str()<<"\"; ";
 		fout<<"transcript_id \""<<transcript_id.c_str()<<"\"; ";
 		fout<<"exon \""<<k + 1<<"\"; ";
-		if (a != "$") fout<<"seq\""<<a.c_str()<<"\"; ";
+		if (a != "$") 
+		{
+			fout<<"seq \""<<a.c_str()<<"\"; ";
+			fout<<"allele \""<<allele.c_str()<<"\"; ";
+		}
 		fout<<endl;
 	}
 	return 0;
