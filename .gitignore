@@ -12,7 +12,6 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 configure
-configure.ac
 compile
 config.log
 config.status
@@ -28,4 +27,16 @@ experiments/
 bin/
 .vscode/
 .history/
+.idea
 INSTALL
+
+
+# tmp
+scripts/altai_fasta_extract.py
+scripts/altai_gvf_merge.py
+scripts/altai_vcf_clean.py
+scripts/altai_IO_helper.py
+scripts/util/
+scripts/altai_vcf_parse.py
+test*
+scripts/tmp.py

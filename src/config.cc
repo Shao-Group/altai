@@ -93,7 +93,7 @@ map <int, int >::iterator vcf_map_len_end;
 // for controling
 bool output_tex_files = false;
 string fixed_gene_name = "";
-int batch_bundle_size = 100;
+int batch_bundle_size = 10;
 int verbose = 1;
 string version = "v0.0.1";
 bool DEBUG_MODE_ON = false;

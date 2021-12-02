@@ -24,13 +24,16 @@ See LICENSE for licensing.
 
 assembler::assembler()
 {
-    sfn = sam_open(input_file.c_str(), "r");
+    env = new GRBEnv();
+	sfn = sam_open(input_file.c_str(), "r");
     hdr = sam_hdr_read(sfn);
     b1t = bam_init1();
 	index = 0;
 	terminate = false;
 	qlen = 0;
 	qcnt = 0;
+	choose_map.clear();
+    read_prediction();
 }
 
 assembler::~assembler()
@@ -39,6 +42,7 @@ assembler::~assembler()
     bam_hdr_destroy(hdr);
     sam_close(sfn);
 	fai_destroy(fai);
+	if(env != NULL) delete env;
 }
 
 int assembler::assemble()
@@ -168,7 +172,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 
 		gr.gid = gid;
 		scallop sc(gr, hs);
-		sc.assemble(is_allelic);
+		sc.assemble(is_allelic, env, choose_map);
 		if(verbose >=3) for(auto i: sc.paths) i.print(index);
 
 		if(verbose >= 2)
@@ -225,6 +229,7 @@ int assembler::assign_RPKM()
 int assembler::write()
 {
 	ofstream fout((output_file+".gtf").c_str());
+	ofstream fout2("ilp.gtf");
 	ofstream gvfout((output_file+".gvf").c_str());
 	ofstream faout((output_file+".fa").c_str());
 	// ofstream asout((output_file+".ASOnly.fa").c_str());
@@ -236,6 +241,10 @@ int assembler::write()
 		t.write(fout);
 		t.write_gvf(gvfout);
 		if(fasta_input != "") t.write_fasta(faout, 60, fai);
+		if(t.source.compare("ilp") == 0)
+            t.write(fout2);
+        else
+            t.write(fout);
 		// if(fasta_input != "") t.write_fasta_AS_only(asout, 60, fai);
 	}
 	fout.close();
@@ -243,4 +252,24 @@ int assembler::write()
 	gvfout.close();
 	// asout.close();
 	return 0;
+}
+
+int assembler::read_prediction()
+{
+    string gene_id;
+    string str_ilp;
+    string line;
+    int bilp;
+    ifstream prediction;
+    prediction.open("../prediction_ideal.csv");
+    while(getline(prediction, line))
+    {
+        stringstream line_ss(line);
+        getline(line_ss, gene_id, ',');
+        getline(line_ss, str_ilp, ',');
+        bilp = atoi(str_ilp.c_str());
+
+        choose_map.insert(make_pair(gene_id, bilp));
+    }
+    return 0;
 }

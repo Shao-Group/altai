@@ -8,12 +8,19 @@ See LICENSE for licensing.
 
 #include "scallop.h"
 #include "config.h"
+#include "ilp.h"
 
 #include <cstdio>
 #include <iostream>
 #include <climits>
 #include <cfloat>
 #include <algorithm>
+int num_total = 0;
+int num_ilp_10 = 0;
+int num_ilp_100 = 0;
+int num_ilp_300 = 0;
+int num_ilp = 0;
+
 
 scallop::scallop()
 {}
@@ -37,15 +44,31 @@ scallop::~scallop()
 {
 }
 
-int scallop::assemble(bool is_allelic)
+int scallop::assemble(bool is_allelic, GRBEnv *env, map<string, int> choose_map)
 {
 	int c = classify();
 	if(verbose >= 1) printf("process splice graph %s type = %d, vertices = %lu, edges = %lu, phasing paths = %lu\n", gr.gid.c_str(), c, gr.num_vertices(), gr.num_edges(), hs.edges.size());
 
 	//resolve_negligible_edges(false, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-
+	
 	if (is_allelic)
 	{
+		int N = gr.num_edges()-gr.num_vertices()+2;
+		double ave_ewrt = gr.compute_average_edge_weight();
+
+		if(N>0 && hs.edges.size()>0)
+		{
+			num_total++;
+			cout << "Total: " << num_total << endl;
+		}
+		
+		int err = 1;
+		splice_graph gr_ori = gr;
+		hyper_set hs_ori = hs;
+
+		ofstream scallop_stat;
+		scallop_stat.open("scallop_stat.csv", fstream::app);
+		int n1=0,n2=0,n3=0,n4=0,n5=0,n6=0,n7=0,n8=0,n9=0,n10=0,n11=0,n12=0,n13=0,n14=0,ng=0;
 		while(true)
 		{	
 			if(gr.num_vertices() > max_num_exons) break;
@@ -53,106 +76,70 @@ int scallop::assemble(bool is_allelic)
 			bool b = false;
 
 			b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
+			if(b == true) n1++;
 			if(b == true) continue;
 
 			b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+			if(b == true) n2++;
 			if(b == true) continue;
 
 			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
+			if(b == true) n3++;
 			if(b == true) continue;
 			
 			b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
+			if(b == true) n4++;
 			if(b == true) continue;
 
 			b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
+			if(b == true) n5++;
 			if(b == true) continue;
 			/**/
 			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
+			if(b == true) n6++;
 			if(b == true) continue;
 
 			b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
+			if(b == true) n7++;
 			if(b == true) continue;
 
 			b = resolve_splittable_vertex(SPLITTABLE_SIMPLE, 1, max_decompose_error_ratio[SPLITTABLE_SIMPLE]);
+			if(b == true) n8++;
 			if(b == true) continue;
 
 			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
+			if(b == true) n9++;
 			if(b == true) continue;
 
 			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
+			if(b == true) n10++;
 			if(b == true) continue;
 
 			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
+			if(b == true) n11++;
 			if(b == true) continue;
 
 			b = resolve_hyper_edge(2);
+			if(b == true) n12++;
 			if(b == true) continue;
 
 			b = resolve_hyper_edge(1);
+			if(b == true) n13++;
 			if(b == true) continue;
 
 			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+			if(b == true) n14++;
 			if(b == true) continue;
 
 			break;
 		}
-	}
-	else
-	{
-		while(true)
-		{	
-			if(gr.num_vertices() > max_num_exons) break;
-
-			bool b = false;
-
-			b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
-			if(b == true) continue;
-
-			b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
-			if(b == true) continue;
-
-			b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
-			if(b == true) continue;
-
-			b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
-			if(b == true) continue;
-
-			b = resolve_hyper_edge(2);
-			if(b == true) continue;
-
-			b = resolve_hyper_edge(1);
-			if(b == true) continue;
-
-			b = resolve_smallest_edges(DBL_MAX);
-			if(b == true) continue;
-
-			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			break;
-		}
-	}
-
+	
 	collect_existing_st_paths();
-	greedy_decompose();
+	ng = greedy_decompose();
+	scallop_stat << gr.gid.c_str() << ',' << n1 << ',' << n2 << ',' << n3 << ',' << n4 << ',' << n5 << ',' << n6 << ',' << n7 << ',' << n8 << ',' << n9 << ',' << n10 << ',' << n11 << ',' << n12 << ',' << n13 << ',' << n14 << ',' << ng << '\n';
+    scallop_stat.close();
+
+	for(int k = 0; k < paths.size(); k++) paths[k].algo = "scallop"; // algo
 
 	trsts.clear();
 	gr.output_transcripts(trsts, paths);
@@ -163,7 +150,95 @@ int scallop::assemble(bool is_allelic)
 		printf("finish assemble bundle %s\n\n", gr.gid.c_str());
 	}
 
-	return 0;
+	//ILP--------------------------------------------------------------- 
+    if(choose_map.find(gr_ori.gid) != choose_map.end())
+            printf("Algorithm chosen: %d\n", choose_map[gr_ori.gid]);
+
+    //if( N>0 && gr_ori.num_edges()>1 && hs_ori.edges.size()>0 && hs_ori.edges.size()<1000 && (choose_map.find(gr_ori.gid) == choose_map.end() || choose_map[gr_ori.gid]))
+    if( N>0 && gr_ori.num_edges()>1 && hs_ori.edges.size()>0 && hs_ori.edges.size()<1000)
+
+    {
+        ofstream stat_file;
+        stat_file.open("stat.csv", fstream::app);
+        stat_file << gr_ori.gid.c_str() << ',' << gr_ori.num_vertices() << ',' << gr_ori.num_edges() << ',' <<  hs_ori.edges.size() << ',' << ave_ewrt << ',';
+        stat_file.close();
+
+        while(true)
+        {
+            bool b = resolve_smallest_edges(0.3);
+            if(b == false) break;
+        }
+
+		printf("\n\n\nnew instance\n\n");
+
+		gr_ori.print_weights();
+		hs_ori.print();
+
+        vector<path> scallop_paths = paths;
+
+        ilp solver(gr_ori, hs_ori, env);
+        int suggestN = trsts.size();
+        int err = solver.solve(suggestN);
+        if(!err)
+        {
+            num_ilp++;
+            printf("Total: %d\tILP:%d\n", num_total, num_ilp);
+            
+            paths = solver.paths;
+            for(int k = 0; k < paths.size(); k++) paths[k].algo = "ilp";
+        }
+        else
+        {
+            for(int k = 0; k < paths.size(); k++) paths[k].algo = "ilp";
+
+        }
+
+        map< vector<int>, double > dup_path;
+        vector<path> union_paths;
+        for(int i = 0; i < scallop_paths.size(); i++)
+        {
+            path p = scallop_paths[i];
+            dup_path[p.v] = p.abd;
+
+            p.algo = "ilp";
+            union_paths.push_back(p);
+        }
+
+        int common = 0;
+        vector<path> common_paths;
+        for(int i = 0; i < paths.size(); i++)
+        {
+            path p = paths[i];
+            if(dup_path.find(p.v) != dup_path.end())
+            {
+                common++;
+                common_paths.push_back(p);
+                continue;
+            }
+
+            p.algo = "ilp";
+            union_paths.push_back(p);
+            dup_path[p.v] = p.abd;
+        }
+        //paths = common_paths;
+        //paths = union_paths;
+
+        stat_file.open("stat.csv", fstream::app);
+        stat_file << scallop_paths.size() << ',' << paths.size() << ',' << common << '\n';
+        stat_file.close();
+    }
+    else
+    {
+        for(int k = 0; k < paths.size(); k++) paths[k].algo = "ilp";
+
+    }
+    
+    gr.output_transcripts(trsts, paths);
+    cout << "Trsts: " << trsts.size() << endl;
+
+	return n2-n1;
+	}
+	return -1;
 }
 
 bool scallop::resolve_smallest_edges(double max_ratio)

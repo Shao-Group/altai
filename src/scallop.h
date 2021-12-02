@@ -15,6 +15,7 @@ See LICENSE for licensing.
 #include "router.h"
 #include "path.h"
 #include "transcript.h"
+#include "ilp.h"
 
 typedef map< edge_descriptor, vector<int> > MEV;
 typedef pair< edge_descriptor, vector<int> > PEV;
@@ -33,7 +34,8 @@ public:
 	virtual ~scallop();
 
 public:
-	int assemble(bool is_allelic);
+	// int assemble(bool is_allelic);
+	int assemble(bool is_allelic, GRBEnv *env, map<string, int> choose_map);
 
 public:
 	splice_graph gr;					// splice graph

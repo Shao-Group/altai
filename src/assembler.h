@@ -15,6 +15,7 @@ See LICENSE for licensing.
 #include "bundle.h"
 #include "transcript.h"
 #include "splice_graph.h"
+#include "gurobi_c++.h"
 
 using namespace std;
 
@@ -25,12 +26,14 @@ public:
 	~assembler();
 
 private:
+	GRBEnv *env;
 	samFile *sfn;
 	bam_hdr_t *hdr;
 	bam1_t *b1t;
 	bundle_base bb1;		// +
 	bundle_base bb2;		// -
 	vector<bundle_base> pool;
+	map<string, int> choose_map;
 
 	int index;
 	bool terminate;
@@ -47,6 +50,7 @@ private:
 	int assign_RPKM();
 	int write();
 	bool determine_regional_graph(splice_graph &gr);
+	int read_prediction();
 };
 
 #endif
