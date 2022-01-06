@@ -8,6 +8,7 @@ See LICENSE for licensing.
 #define __PREVIEWER_H__
 
 #include "hit.h"
+#include "bundle_base.h"
 
 #include <fstream>
 #include <string>
@@ -16,10 +17,6 @@ using namespace std;
 
 class previewer
 {
-public:
-	previewer();
-	~previewer();
-
 private:
 	samFile *sfn;
 	bam_hdr_t *hdr;
@@ -27,6 +24,13 @@ private:
 
 public:
 	int preview();
+
+private:
+	int open_file();
+	int close_file();
+	int solve_strandness();
+	int solve_insertsize();
+	int process_bundle(bundle_base& bb, map<int32_t, int>& m);
 };
 
 #endif

@@ -33,7 +33,7 @@ int item::parse(const string &s)
 	sstr>>start.p32>>end.p32;
 	start.p32--;			// TODO gtf: (from 1, both inclusive) 
 	sstr>>buf;
-	if(buf[0] == '.') score = -1;
+	if(buf[0] == '.') score = 0;
 	else score = atof(buf);
 	sstr>>buf;
 	strand = buf[0];

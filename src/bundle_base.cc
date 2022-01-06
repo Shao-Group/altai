@@ -35,6 +35,11 @@ int bundle_base::add_hit(const hit &ht)
 	if(ht.pos < lpos) lpos = ht.pos;
 	if(ht.rpos > rpos) rpos = ht.rpos;
 
+	// try to include more paired-end reads
+	int32_t p = ht.rpos;
+	if(ht.mpos > ht.rpos && ht.mpos <= ht.rpos + 100000) p = ht.mpos;
+	if(p > rpos) rpos = p;
+
 	// set tid
 	if(tid == -1) tid = ht.tid;
 	assert(tid == ht.tid);

@@ -875,6 +875,22 @@ int splice_graph::locate(int v)
 	return 0;
 }
 
+int splice_graph::locate_vertex(int32_t p)
+{
+	return locate_vertex(p, 0, num_vertices());
+}
+
+int splice_graph::locate_vertex(int32_t p, int a, int b)
+{
+	if(a >= b) return -1;
+	int m = (a + b) / 2;
+	assert(m >= 0 && m < num_vertices());
+	const vertex_info &v = get_vertex_info(m);
+	if(p >= v.lpos && p < v.rpos) return m;
+	if(p < v.lpos) return locate_vertex(p, a, m);
+	return locate_vertex(p, m + 1, b);
+}
+
 int splice_graph::round_weights()
 {
 	MED m = ewrt;
@@ -1046,6 +1062,15 @@ int splice_graph::print()
 
 int splice_graph::print_weights()
 {
+	for(int i = 0; i < num_vertices(); i++)
+	{
+		//if(degree(i) <= 1) continue;
+		vertex_info vi = get_vertex_info(i);
+		edge_iterator it1, it2;
+		PEEI pei;
+		printf("vertex %d, range = [%d%s, %d%s), length = %d\n", i, vi.lpos.p32, vi.lpos.ale.c_str(), vi.rpos.p32, vi.rpos.ale.c_str(), vi.rpos - vi.lpos);
+	}
+
 	edge_iterator it1, it2;
 	PEEI pei;
 	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
@@ -1140,6 +1165,20 @@ int splice_graph::output_transcripts(vector<transcript> &v, const vector<path> &
 	}
 	return 0;
 }
+
+int splice_graph::output_transcripts1(vector<transcript> &v, vector<transcript> &v1, const vector<path> &p) const
+{
+        for(int i = 0; i < p.size(); i++)
+        {
+            string tid = gid + "." + tostring(i);
+			transcript trst;
+            output_transcript(trst, p[i], tid);
+			if(p[i].nf == 1) v1.push_back(trst);
+			else if(p[i].nf == 0) v.push_back(trst);
+        }
+        return 0;
+}
+
 
 int splice_graph::output_transcript(transcript &trst, const path &p, const string &tid) const
 {

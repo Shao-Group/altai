@@ -13,6 +13,7 @@ See LICENSE for licensing.
 #include <cmath>
 #include <map>
 #include "hit.h"
+#include "util.h"
 #include "config.h"
 #include "as_pos.hpp"
 #include "vcf_data.h"
@@ -35,6 +36,7 @@ hit::hit(int32_t p)
 hit& hit::operator=(const hit &h)
 {
 	bam1_core_t::operator=(h);
+	hid = h.hid;
 	rpos = h.rpos;
 	qlen = h.qlen;
 	qname = h.qname;
@@ -43,6 +45,7 @@ hit& hit::operator=(const hit &h)
 	xs = h.xs;
 	ts = h.ts;
 	hi = h.hi;
+	nh = h.nh;
 	nm = h.nm;
 	itvm = h.itvm;
 	itvi = h.itvi;
@@ -50,6 +53,14 @@ hit& hit::operator=(const hit &h)
 	apos = h.apos;
 	itvna = h.itvna;
 	chrm = h.chrm;
+	
+	vlist = h.vlist;
+	paired = h.paired;
+	bridged = h.bridged;
+	qhash = h.qhash;
+	next = h.next;
+
+	umi = h.umi;
 	return *this;
 }
 
@@ -64,6 +75,7 @@ hit::hit(const hit &h)
 	xs = h.xs;
 	ts = h.ts;
 	hi = h.hi;
+	nh = h.nh;
 	nm = h.nm;
 	itvm = h.itvm;
 	itvi = h.itvi;
@@ -71,23 +83,32 @@ hit::hit(const hit &h)
 	apos = h.apos;
 	itvna = h.itvna;
 	chrm = h.chrm;
+
+	vlist = h.vlist;
+	paired = h.paired;
+	bridged = h.bridged;
+	qhash = h.qhash;
+	next = h.next;
+
+	umi = h.umi;
 }
 
 hit::~hit()
 {
 }
 
-hit::hit(bam1_t *b, std::string chrm_name)
-	:bam1_core_t(b->core)
+
+// hit::hit(bam1_t *b, std::string chrm_name)
+hit::hit(bam1_t *b, std::string chrm_name, int id) 
+	:bam1_core_t(b->core), hid(id)
 {
 	chrm = chrm_name;
 	// fetch query name
-	char buf[1024];
-	char *qs = bam_get_qname(b);
-	int l = strlen(qs);
-	memcpy(buf, qs, l);
-	buf[l] = '\0';
-	qname = string(buf);
+	qname = get_qname(b);
+	qhash = string_hash(qname);
+	paired = false;
+	bridged = false;
+	next = NULL;
 
 	// compute rpos
 	rpos = pos + (int32_t)bam_cigar2rlen(n_cigar, bam_get_cigar(b));
@@ -116,8 +137,9 @@ hit::hit(bam1_t *b, std::string chrm_name)
 		{
 			if(bam_cigar_op(cigar[k-1]) != BAM_CMATCH) continue;
 			if(bam_cigar_op(cigar[k+1]) != BAM_CMATCH) continue;
-			if(bam_cigar_oplen(cigar[k-1]) < min_flank_length) continue;
-			if(bam_cigar_oplen(cigar[k+1]) < min_flank_length) continue;
+			// consider ALL splice positions
+			// if(bam_cigar_oplen(cigar[k-1]) < min_flank_length) continue;
+			// if(bam_cigar_oplen(cigar[k+1]) < min_flank_length) continue;
 			int32_t s = p - bam_cigar_oplen(cigar[k]);							// s = previous consumed ref, included
 			int64_t p64 = pack(s, p);
 			spos.push_back(as_pos(p64, "$"));
@@ -186,7 +208,7 @@ hit::hit(bam1_t *b, std::string chrm_name)
 		}
 	}
 
-	
+	// open for scallop+coral
 	itvi.clear();
 	itvd.clear();
 	p = pos;
@@ -287,15 +309,41 @@ int hit::make_itvna()
 	return 0;
 }
 
+int hit::get_aligned_intervals(vector<as_pos> &v) const
+{
+	v.clear();
+	int32_t p1 = pos;
+	for(int k = 0; k < spos.size(); k++)
+	{
+		int32_t p2 = high32(spos[k]);
+		v.push_back(as_pos(pack(p1, p2), spos[k].ale));
+		p1 = low32(as_pos(pack(p1, p2), spos[k].ale));
+	}
+	v.push_back(as_pos(pack(p1, rpos), "$"));
+	return 0;
+}
+
+string hit::get_qname(bam1_t *b)
+{
+	char buf[1024];
+	char *q = bam_get_qname(b);
+	int l = strlen(q);
+	memcpy(buf, q, l);
+	buf[l] = '\0';
+	return string(buf);
+}
+
 int hit::set_tags(bam1_t *b)
 {
 	ts = '.';
 	uint8_t *p0 = bam_aux_get(b, "ts");
 	if(p0 && (*p0) == 'A') ts = bam_aux2A(p0);
+	if(p0 && (*p0) == 'a') ts = bam_aux2A(p0);
 
 	xs = '.';
 	uint8_t *p1 = bam_aux_get(b, "XS");
 	if(p1 && (*p1) == 'A') xs = bam_aux2A(p1);
+	if(p1 && (*p1) == 'a') xs = bam_aux2A(p1);
 
 	if(xs == '.' && ts != '.')
 	{
@@ -309,17 +357,28 @@ int hit::set_tags(bam1_t *b)
 	hi = -1;
 	uint8_t *p2 = bam_aux_get(b, "HI");
 	if(p2 && (*p2) == 'C') hi = bam_aux2i(p2);
+	if(p2 && (*p2) == 'c') hi = bam_aux2i(p2);
 
 	nh = -1;
 	uint8_t *p3 = bam_aux_get(b, "NH");
 	if(p3 && (*p3) == 'C') nh = bam_aux2i(p3);
+	if(p3 && (*p3) == 'c') nh = bam_aux2i(p3);
 
 	nm = 0;
 	uint8_t *p4 = bam_aux_get(b, "nM");
 	if(p4 && (*p4) == 'C') nm = bam_aux2i(p4);
+	if(p4 && (*p4) == 'c') nm = bam_aux2i(p4);
 
 	uint8_t *p5 = bam_aux_get(b, "NM");
 	if(p5 && (*p5) == 'C') nm = bam_aux2i(p5);
+	if(p5 && (*p5) == 'c') nm = bam_aux2i(p5);
+
+
+	// set umi
+	umi = "";
+	uint8_t *p6 = bam_aux_get(b, "UB");
+	if(p6 && (*p6) == 'H') umi = bam_aux2Z(p6);
+	if(p6 && (*p6) == 'Z') umi = bam_aux2Z(p6);
 
 	return 0;
 }
@@ -381,8 +440,10 @@ bool hit::operator<(const hit &h) const
 int hit::print() const
 {
 	// print basic information
-	printf("Hit %s: chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d\n", 
-			qname.c_str(), chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi);
+	// printf("Hit %s: chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d\n", 
+			// qname.c_str(), chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi);
+	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c\n", 
+			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F');
 
 	printf(" start position [%d - )\n", pos);
 	for(int i = 0; i < spos.size(); i++)
@@ -412,4 +473,57 @@ int hit::print() const
 	}
 	printf(" end position [ - %d)\n", rpos);
 	return 0;
+}
+
+vector<int> encode_vlist(const vector<int> &v)
+{
+	vector<int> vv;
+	if(v.size() <= 0) return vv;
+
+	int p = v[0];
+	int k = 1;
+	for(int i = 1; i < v.size(); i++)
+	{
+		if(v[i] == v[i - 1] + 1)
+		{
+			k++;
+		}
+		else
+		{
+			assert(k >= 1);
+			vv.push_back(p);
+			vv.push_back(k);
+			p = v[i];
+			k = 1;
+		}
+	}
+	vv.push_back(p);
+	vv.push_back(k);
+
+	/*
+	printf("encode: (");
+	printv(v);
+	printf(") -> (");
+	printv(vv);
+	printf(")\n");
+	*/
+	return vv;
+}
+
+vector<int> decode_vlist(const vector<int> &v)
+{
+	vector<int> vv;
+	assert(v.size() % 2 == 0);
+	if(v.size() <= 0) return vv;
+
+	for(int i = 0; i < v.size() / 2; i++)
+	{
+		int p = v[i * 2 + 0];
+		int k = v[i * 2 + 1];
+		for(int j = p; j < p + k; j++)
+		{
+			vv.push_back(j);
+		}
+	}
+	return vv;
 }

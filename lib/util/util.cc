@@ -4,6 +4,8 @@ Part of Scallop Transcript Assembler
 See LICENSE for licensing.
 */
 
+#include <string>
+#include <cstring>
 #include "util.h"
 
 vector<int> get_random_permutation(int n)
@@ -20,4 +22,42 @@ vector<int> get_random_permutation(int n)
 	return v;
 }
 
+size_t string_hash(const std::string& str)
+{
+	size_t hash = 1315423911;
+	for(std::size_t i = 0; i < str.length(); i++)
+	{
+		hash ^= ((hash << 5) + str[i] + (hash >> 2));
+	}
+
+	return (hash & 0x7FFFFFFF);
+}
+
+// size_t vector_hash(const vector<int32_t> & vec)
+// {
+// 	size_t seed = vec.size();
+// 	for(int i = 0; i < vec.size(); i++)
+// 	{
+// 		seed ^= (size_t)(vec[i]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+// 	}
+// 	return (seed & 0x7FFFFFFF);
+// }
+
+size_t vector_hash(const vector<as_pos32> & vec)
+{
+	size_t seed = vec.size();
+	for(int i = 0; i < vec.size(); i++)
+	{
+		int ale_v = 0;
+		int n = vec[i].ale.length();
+		char astr[n];
+		std::strcpy(astr, vec[i].ale.c_str());
+		for (int j = 0; j < n; j++)
+		{
+			ale_v += (int)astr[j] * 100 * j;
+		}
+		seed ^= (size_t)(vec[i].p32 + ale_v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+	return (seed & 0x7FFFFFFF);
+}
 

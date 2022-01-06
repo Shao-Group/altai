@@ -113,7 +113,7 @@ int32_t compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q)
 	return s;
 }
 
-int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev)
+int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev, double &max)
 {
 	ave = 0;
 	dev = 1.0;
@@ -138,7 +138,8 @@ int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr,
 
 	dev = sqrt(var / (rr - ll));
 	//if(dev < 1.0) dev = 1.0;
-
+	
+	max = 1.0 * compute_max_overlap(imap, lit, rit);
 	return 0;
 }
 

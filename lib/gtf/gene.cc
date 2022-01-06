@@ -175,6 +175,13 @@ string gene::get_gene_id() const
 	else return transcripts[0].gene_id;
 }
 
+
+char gene::get_strand() const
+{
+	if(transcripts.size() == 0) return '.';
+	else return transcripts[0].strand;
+}
+
 int gene::write(ofstream &fout) const
 {
 	for(int i = 0; i < transcripts.size(); i++)

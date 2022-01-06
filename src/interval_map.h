@@ -56,8 +56,10 @@ int compute_max_overlap(const split_interval_map &imap, SIMI &p, SIMI &q);
 int compute_sum_overlap(const split_interval_map &imap, SIMI &p, SIMI &q);
 
 // evaluate a region
-int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+// int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev, double &max);
 int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+
 
 // testing
 int test_split_interval_map();

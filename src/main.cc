@@ -38,7 +38,7 @@ int main(int argc, const char **argv)
 
 	parse_arguments(argc, argv);
 
-	if(library_type == EMPTY || preview_only == true)			// determine strandness
+	// if(library_type == EMPTY || preview_only == true)			// determine strandness
 	{
 		previewer pv;
 		pv.preview();

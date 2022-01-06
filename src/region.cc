@@ -14,9 +14,20 @@ See LICENSE for licensing.
 
 using namespace std;
 
+region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype)
+	:lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype)
+{
+	ave = 0;
+	max = 0;
+	dev = 1;
+}
+
 region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, const split_interval_map *_mmap, const split_interval_map *_imap)
 	:lpos(_lpos), rpos(_rpos), mmap(_mmap), imap(_imap), ltype(_ltype), rtype(_rtype)
 {
+	ave = 0;
+	max = 0;
+	dev = 1;
 	build_join_interval_map();
 	smooth_join_interval_map();
 	build_partial_exons();
@@ -87,17 +98,20 @@ bool region::empty_subregion(as_pos32 p1, as_pos32 p2)
 	assert(p1 >= lpos && p2 <= rpos);
 
 	//printf(" region = [%d, %d), subregion [%d, %d), length = %d\n", lpos, rpos, p1, p2, p2 - p1);
-	if(p2 - p1 < min_subregion_length) return true;
+	if(p2 - p1 < min_subregion_len) return true;
 
 	PSIMI pei = locate_boundary_iterators(*mmap, p1, p2);
 	SIMI it1 = pei.first, it2 = pei.second;
 	if(it1 == mmap->end() || it2 == mmap->end()) return true;
 
 	int32_t sum = compute_sum_overlap(*mmap, it1, it2);
+	int32_t max = compute_sum_overlap(*mmap, it1, it2);
 	double ratio = sum * 1.0 / double(p2 - p1);
 	//printf(" region = [%d, %d), subregion [%d, %d), overlap = %.2lf\n", lpos, rpos, p1, p2, ratio);
 	//if(ratio < min_subregion_overlap + max_intron_contamination_coverage) return true;
-	if(ratio < min_subregion_overlap) return true;
+	if(ratio < min_subregion_ave) return true;
+	if(max < min_subregion_max) return true;
+
 
 	return false;
 }
@@ -113,7 +127,7 @@ int region::build_partial_exons()
 	if(lower(jmap.begin()->first) == lpos && upper(jmap.begin()->first) == rpos)
 	{
 		partial_exon pe(lpos, rpos, ltype, rtype);
-		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev);
+		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
 		pexons.push_back(pe);
 		return 0;
 	}
@@ -121,7 +135,8 @@ int region::build_partial_exons()
 	if(ltype == RIGHT_SPLICE && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
 		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY);
-		pe.ave = 1.0;
+		pe.ave = min_guaranteed_edge_weight;
+		pe.max = min_guaranteed_edge_weight;
 		pe.dev = 1.0;
 		pexons.push_back(pe);
 	}
@@ -139,20 +154,25 @@ int region::build_partial_exons()
 		if(p1 == lpos && ltype == RIGHT_SPLICE) b = false;
 		if(p2 == rpos && rtype == LEFT_SPLICE) b = false;
 
-		if(b == true) continue;
+		// if(b == true) continue;
 
 		int lt = (p1 == lpos) ? ltype : START_BOUNDARY;
 		int rt = (p2 == rpos) ? rtype : END_BOUNDARY;
 
 		partial_exon pe(p1, p2, lt, rt);
-		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev);
+		// evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev);
+		if(b == true) pe.type = EMPTY_VERTEX;
+		else pe.type = 0;
+
+		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
 		pexons.push_back(pe);
 	}
 
 	if(rtype == LEFT_SPLICE && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
 	{
 		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype);
-		pe.ave = 1.0;
+		pe.ave = min_guaranteed_edge_weight;
+		pe.max = min_guaranteed_edge_weight;
 		pe.dev = 1.0;
 		pexons.push_back(pe);
 	}
@@ -175,7 +195,11 @@ bool region::right_inclusive()
 }
 
 int region::print(int index) const
-{
+{	
+	printf("region %d: length = %d, pexons = %lu, type = (%d, %d), pos = [%d%s, %d%s), cov/dev = (%.2lf, %.2lf)\n", 
+			index, rpos - lpos, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ave, dev);
+	return 0;
+
 	int32_t lc = compute_overlap(*mmap, as_pos32(lpos));
 	int32_t rc = compute_overlap(*mmap, as_pos32(rpos - 1));
 	printf("region %d: partial-exons = %lu, type = (%d, %d), pos = [%d%s, %d%s), boundary coverage = (%d, %d)\n", 

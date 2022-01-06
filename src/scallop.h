@@ -29,7 +29,8 @@ class scallop
 {
 public:
 	scallop();
-	scallop(const splice_graph &gr, const hyper_set &hs);
+	// scallop(const splice_graph &gr, const hyper_set &hs);
+	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false);
 	virtual ~scallop();
 
 public:
@@ -39,6 +40,7 @@ public:
 	splice_graph gr;					// splice graph
 	MEI e2i;							// edge map, from edge to index
 	VE i2e;								// edge map, from index to edge
+	bool random_ordering;				// whether using random ordering
 	MEV mev;							// super edges
 	vector<int> v2v;					// vertex map
 	hyper_set hs;						// hyper edges
@@ -46,6 +48,7 @@ public:
 	set<int> nonzeroset;				// vertices with degree >= 1
 	vector<path> paths;					// predicted paths
 	vector<transcript> trsts;			// predicted transcripts
+	vector<transcript> non_full_trsts;		// predicted non full length transcripts
 
 private:
 	// init

@@ -15,6 +15,7 @@ See LICENSE for licensing.
 
 #include "config.h"
 #include "assembler.h"
+#include "bundle.h"
 #include "scallop.h"
 #include "sgraph_compare.h"
 #include "super_graph.h"
@@ -27,6 +28,7 @@ assembler::assembler()
     sfn = sam_open(input_file.c_str(), "r");
     hdr = sam_hdr_read(sfn);
     b1t = bam_init1();
+	hid = 0;
 	index = 0;
 	terminate = false;
 	qlen = 0;
@@ -60,7 +62,8 @@ int assembler::assemble()
 		char buf[1024];
 		strcpy(buf, hdr->target_name[p.tid]);
 
-		hit ht(b1t, string(buf));
+		// hit ht(b1t, string(buf));
+		hit ht(b1t, string(buf), hid++);
 		ht.set_tags(b1t);
 		ht.set_strand();
 		
@@ -110,6 +113,11 @@ int assembler::assemble()
 	// ft.merge_single_exon_transcripts(); // FIXME: 
 	ft.keep_as_transcripts_only();
 	trsts = ft.trs;
+
+	filter ft1(non_full_trsts);
+	ft1.merge_single_exon_transcripts();
+	non_full_trsts = ft1.trs;
+
 	write();
 	
 	cout << "Altai finished running." << endl;
@@ -128,37 +136,82 @@ int assembler::process(int n)
 
 		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
 
-		if(bb.hits.size() < min_num_hits_in_bundle) continue;
+		// if(bb.hits.size() < min_num_hits_in_bundle) continue;
+		int cnt1 = 0;
+		int cnt2 = 0;
+		for(int k = 0; k < bb.hits.size(); k++)
+		{
+			//counts += (1 + bb.hits[k].spos.size());
+			if(bb.hits[k].spos.size() >= 1) cnt1 ++;
+			else cnt2++;
+		}
+		if(cnt1 + cnt2 < min_num_hits_in_bundle) continue;
+
 		if(bb.tid < 0) continue;
 
 		char buf[1024];
 		strcpy(buf, hdr->target_name[bb.tid]);
+		bb.chrm = string(buf);
+
+		transcript_set ts1(bb.chrm, 0.9);		// full-length set
+		transcript_set ts2(bb.chrm, 0.9);		// non-full-length set
+
 
 		bundle bd(bb);
 
-		bd.chrm = string(buf);
-		bd.build();
-		if(verbose >= 1) bd.print(index);
+		// bd.chrm = string(buf);
+		// bd.build();
+		// if(verbose >= 1) bd.print(index);
+		bd.build(1, true);
+		bd.print(index++);
+		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
+
+		bd.build(2, true);
+		bd.print(index++);
+		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
+
+		int sdup = assemble_duplicates / 1 + 1;
+		int mdup = assemble_duplicates / 2 + 0;
+
+		vector<transcript> gv1 = ts1.get_transcripts(sdup, mdup);
+		vector<transcript> gv2 = ts2.get_transcripts(sdup, mdup);
+
+		for(int k = 0; k < gv1.size(); k++)
+		{
+			if(gv1[k].exons.size() >= 2) gv1[k].coverage /= (1.0 * assemble_duplicates);
+		}
+		for(int k = 0; k < gv2.size(); k++) 
+		{
+			if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
+		}
 		
-		assemble(bd.gr, bd.hs, bd.is_allelic);
-		index++;
+		filter ft1(gv1);
+		ft1.filter_length_coverage();
+		ft1.remove_nested_transcripts();
+		if(ft1.trs.size() >= 1) trsts.insert(trsts.end(), ft1.trs.begin(), ft1.trs.end());
+
+		filter ft2(gv2);
+		ft2.filter_length_coverage();
+		ft2.remove_nested_transcripts();
+		if(ft2.trs.size() >= 1) non_full_trsts.insert(non_full_trsts.end(), ft2.trs.begin(), ft2.trs.end());
 	}
 	pool.clear();
 	return 0;
 }
 
-int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic)
+// int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic)
+int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic, transcript_set &ts1, transcript_set &ts2)
 {
 	super_graph sg(gr0, hs0);
 	sg.build();
 
-	vector<transcript> gv;
+	// vector<transcript> gv;
 	for(int k = 0; k < sg.subs.size(); k++)
 	{
-		string gid = "gene." + tostring(index) + "." + tostring(k);
-		if(fixed_gene_name != "" && gid != fixed_gene_name) continue;
+		// string gid = "gene." + tostring(index) + "." + tostring(k);
+		// if(fixed_gene_name != "" && gid != fixed_gene_name) continue;
 
-		if(verbose >= 2 && (k == 0 || fixed_gene_name != "")) sg.print();
+		// if(verbose >= 2 && (k == 0 || fixed_gene_name != "")) sg.print();
 
 		splice_graph &gr = sg.subs[k];
 		hyper_set &hs = sg.hss[k];
@@ -166,38 +219,32 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 		if(determine_regional_graph(gr) == true) continue;
 		if(gr.num_edges() <= 0) continue;
 
-		gr.gid = gid;
-		scallop sc(gr, hs);
-		sc.assemble(is_allelic);
-		if(verbose >=3) for(auto i: sc.paths) i.print(index);
-
-		if(verbose >= 2)
+		for(int r = 0; r < assemble_duplicates; r++)
 		{
-			printf("transcripts:\n");
-			for(int i = 0; i < sc.trsts.size(); i++) sc.trsts[i].write(cout);
+			string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
+
+			gr.gid = gid;
+			// scallop sc(gr, hs);
+			scallop sc(gr, hs, r == 0 ? false : true);
+			sc.assemble(is_allelic);
+			if(verbose >=3) for(auto i: sc.paths) i.print(index);
+
+			if(verbose >= 2)
+			{
+				printf("assembly with r = %d, total %lu transcripts:\n", r, sc.trsts.size());
+				for(int i = 0; i < sc.trsts.size(); i++) sc.trsts[i].write(cout);
+			}
+
+			for(int i = 0; i < sc.trsts.size(); i++)
+			{
+				ts1.add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			}
+			for(int i = 0; i < sc.non_full_trsts.size(); i++)
+			{
+				ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			}
 		}
-
-		filter ft(sc.trsts);
-		if (FILTER_BY_COV) ft.simple_phase_set_by_coverage();
-		else ft.simple_phase_set_by_variant_number();
-		// ft.join_single_exon_transcripts(); //FIXME:
-		ft.filter_length_coverage(); //FIXME:
-		if(ft.trs.size() >= 1) gv.insert(gv.end(), ft.trs.begin(), ft.trs.end());
-
-		if(verbose >= 2)
-		{
-			printf("transcripts after filtering:\n");
-			for(int i = 0; i < ft.trs.size(); i++) ft.trs[i].write(cout);
-		}
-
-		if(fixed_gene_name != "" && gid == fixed_gene_name) terminate = true;
-		if(terminate == true) return 0;
 	}
-
-	filter ft(gv);
-	// ft.remove_nested_transcripts(); //FIXME:
-	if(ft.trs.size() >= 1) trsts.insert(trsts.end(), ft.trs.begin(), ft.trs.end());
-
 	return 0;
 }
 
@@ -241,6 +288,15 @@ int assembler::write()
 	fout.close();
 	faout.close();
 	gvfout.close();
-	// asout.close();
+
+	ofstream fout1(output_file1.c_str());
+	if(fout1.fail()) return 0;
+	for(int i = 0; i < non_full_trsts.size(); i++)
+	{
+			transcript &t = non_full_trsts[i];
+			t.write(fout1);
+	}
+    fout1.close();
+
 	return 0;
 }

@@ -14,6 +14,9 @@ See LICENSE for licensing.
 partial_exon::partial_exon(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype)
 	: lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype)
 {
+	type = 0;
+	rid = -1;
+	pid = -1;
 }
 
 string partial_exon::label() const
@@ -25,8 +28,8 @@ string partial_exon::label() const
 
 int partial_exon::print(int index) const
 {
-	printf("partial_exon %d: [%d%s-%d%s), type = (%d, %d), length = %d, ave-abd = %.1lf, std-abd = %.1lf\n",
-			index, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ltype, rtype, rpos - lpos, ave, dev);
+	printf("partial_exon %d: [%d%s-%d%s), rid = %d, pid = %d, type = (%d, %d), length = %d, ave-abd = %.1lf, max-abd = %.1lf, std-abd = %.1lf\n",
+			index, rid, pid, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ltype, rtype, rpos - lpos, ave, max, dev);
 	return 0;
 }
 

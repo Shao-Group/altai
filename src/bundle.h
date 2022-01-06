@@ -11,6 +11,7 @@ See LICENSE for licensing.
 
 #include "interval_map.h"
 #include "bundle_base.h"
+#include "bundle_bridge.h"
 #include "junction.h"
 #include "region.h"
 #include "partial_exon.h"
@@ -22,13 +23,16 @@ See LICENSE for licensing.
 
 using namespace std;
 
-class bundle : public bundle_base
+class bundle
 {
 public:
-	bundle(const bundle_base &bb);
+	bundle(bundle_base &bb);
 	virtual ~bundle();
 
 public:
+	bundle_base &bb;				// input bundle base	
+	bundle_bridge br;				// contains fragments
+	split_interval_map fmap;		// matched interval map
 	vector<junction> junctions;													// splice junctions
 	vector<junction> allelic_junctions; 										// allelic junctions
 	map<as_pos, vector<int> > allelic_itv;										// allelic aspos intervals and hits containing them
@@ -39,30 +43,35 @@ public:
 	map<pair<as_pos32, as_pos32>, int> pmap_na;									// non allelic partial exon map, save pexon and its index
 	map<pair<as_pos32, as_pos32>, int> pmap_a;									// allelic partial exon map, save pexon and its index
 	splice_graph gr;															// splice graph
-	hyper_set hs;																// hyper edges
+	hyper_set hs;																// hyper set
 
 public:
-	virtual int build();
+	virtual int build(int mode, bool revise);
 	int count_junctions() const;
 	int print(int index);
 
-private:
+public:
+	int prepare();
 	// check and init
 	int check_left_ascending();
 	int check_right_ascending();
 	int compute_strand();
 
 	// splice graph
+	int build_intervals();
 	int build_junctions();
 	int build_allelic_junctions();
 	int build_regions();
 	int build_partial_exons();
 	vector<partial_exon> partition_allelic_partial_exons(const partial_exon&);
 	int link_partial_exons();
-	int build_splice_graph();
+	// int build_splice_graph();
+	int build_splice_graph(int mode);
 	int build_partial_exon_map();
 	int locate_left_partial_exon(as_pos32 x);
 	int locate_right_partial_exon(as_pos32 x);
+	vector<int> align_hit(hit &h);
+	vector<int> align_fragment(fragment &f);
 
 	// revise splice graph
 	VE compute_maximal_edges();
@@ -71,15 +80,22 @@ private:
 	int refine_splice_graph2(); //CLEAN:
 	bool keep_surviving_edges();
 	bool extend_boundaries();
+	bool extend_start_boundaries();
+	bool extend_end_boundaries();
 	bool remove_small_junctions();
 	bool remove_small_exons();
 	bool remove_inner_boundaries();
 	bool remove_intron_contamination();
+	bool remove_false_boundaries();
+	bool tackle_false_boundaries();
+	int find_contamination_chain();
 
 	// super edges
-	int build_hyper_edges2();			// paired end
-	bool bridge_read(int x, int y, vector<int> &s);
+	// int build_hyper_edges2();			// paired end
+	// bool bridge_read(int x, int y, vector<int> &s);
 
+	// hyper set
+	int build_hyper_set();
 };
 
 #endif

@@ -28,7 +28,11 @@ public:
 	int rtype;						// type of the right boundary
 	bool is_allelic;				// whether it is allelic exon or not
 
+	int rid;						// parental region id
+	int pid;						// index in the parental pexons
+	int type;						// label
 	double ave;						// average abundance
+	double max;						// maximum abundance
 	double dev;						// standard-deviation of abundance
 	bool operator < (partial_exon pe);
 	bool operator < (const partial_exon pe) const;

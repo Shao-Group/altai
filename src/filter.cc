@@ -431,6 +431,22 @@ int filter::keep_as_transcripts_only()
 
 int filter::filter_length_coverage()
 {
+	// calculate relative ratio (only for multi-exon transcripts)
+	double sum_cov = 0;
+	vector<double> ratio;
+	for(int i = 0; i < trs.size(); i++)
+	{
+		int e = trs[i].exons.size();
+		if(e <= 1) continue;
+		sum_cov += trs[i].coverage;
+	}
+	for(int i = 0; i < trs.size(); i++)
+	{
+		int e = trs[i].exons.size();
+		if(e <= 1) ratio.push_back(1.0);
+		else ratio.push_back(trs[i].coverage / sum_cov);
+	}
+	
 	vector<transcript> v;
 	for(int i = 0; i < trs.size(); i++)
 	{

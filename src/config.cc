@@ -20,10 +20,11 @@ using namespace std;
 // parameters
 // for bam file and reads
 int min_flank_length = 3;
-int max_num_cigar = 7;
+int max_num_cigar = 100;
 int max_edit_distance = 10;
-int32_t min_bundle_gap = 50;
-int min_num_hits_in_bundle = 20;
+int32_t min_bundle_gap = 100;		
+int min_num_hits_in_bundle = 5;	
+int min_num_splices_in_bundle = 15;	// not used; accept bundle if #hits with splices is at least this number
 uint32_t min_mapping_quality = 1;
 int32_t min_splice_boundary_hits = 1;
 bool use_second_alignment = false;
@@ -34,25 +35,49 @@ int library_type = EMPTY;
 int max_preview_reads = 2000000;
 int max_preview_spliced_reads = 50000;
 int min_preview_spliced_reads = 10000;
-double preview_infer_ratio = 0.95;
+double preview_infer_ratio = 0.85;
 bool preview_only = false;
+double insertsize_ave = 300;
+double insertsize_std = 50;
+int insertsize_median = -1;
+int insertsize_low = -1;
+int insertsize_high = -1;
+double insertsize_low_percentile = 0.005;
+double insertsize_high_percentile = 0.998;
+vector<double> insertsize_profile;
+
+// for bridging
+double min_bridging_score = 0.5;
+int max_num_path_nodes = 10000;
+int dp_solution_size = 10;
+int dp_stack_size = 5;
+bool use_overlap_scoring = false;
+int32_t max_clustering_flank = 30;
+int32_t flank_tiny_length = 10;
+double flank_tiny_ratio = 0.4;
+
 
 // for identifying subgraphs
 int32_t min_subregion_gap = 3;
-double min_subregion_overlap = 1.5;
-int32_t min_subregion_length = 15;
+// double min_subregion_overlap = 1.5;
+// int32_t min_subregion_length = 15;
+int32_t min_subregion_len = 15;
+int32_t min_subregion_max = 3;
+double min_subregion_ave = 1.5;
 double min_allele_overlap = 1.0;
 
 // for revising/decomposing splice graph
-double max_intron_contamination_coverage = 2.0;
+double min_guaranteed_edge_weight = 0.01;
 double min_surviving_edge_weight = 1.5;
-double max_decompose_error_ratio[7] = {0.33, 0.05, 0.33, 0.50, 0.50, 0.3, 1.1};
+double max_intron_contamination_coverage = 2.0;
+double max_decompose_error_ratio[7] = {0.33, 0.05, 0.33, 0.50, 0.50, 0.3, 1.1}; // para for allelic decomop
+// double max_decompose_error_ratio[7] = {0.33, 0.05, 0.0, 0.25, 0.30, 0.0, 1.1}; // para for non-allelic decomp
 
 // for selecting paths
-double min_transcript_coverage = 1.01;
+double min_transcript_coverage = 1.5;
 double min_transcript_coverage_ratio = 0.005;
 double min_single_exon_coverage = 20;
-double min_transcript_numreads = 20;
+double min_transcript_numreads = 10;
 int min_transcript_length_base = 150;
 int min_transcript_length_increase = 50;
 int min_exon_length = 20;
@@ -78,6 +103,7 @@ string ref_file1;
 string ref_file2;
 string vcf_file;
 string output_file;
+string output_file1;
 
 // AS info
 int min_num_reads_support_variant = 3;
@@ -95,6 +121,7 @@ bool output_tex_files = false;
 string fixed_gene_name = "";
 int batch_bundle_size = 100;
 int verbose = 1;
+int assemble_duplicates = 10;
 string version = "v0.0.1";
 bool DEBUG_MODE_ON = false;
 bool FILTER_BY_COV = false;
@@ -129,11 +156,9 @@ int parse_arguments(int argc, const char ** argv)
 			fai = fai_load(fasta_input.c_str());
 			i++;
 		}
-
-		// internal use
-		else if(string(argv[i]) == "-a")
+		else if(string(argv[i]) == "-f" || string(argv[i]) == "--transcript_fragments")
 		{
-			algo = string(argv[i + 1]);
+			output_file1 = string(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "-r")
@@ -200,6 +225,11 @@ int parse_arguments(int argc, const char ** argv)
 			min_num_hits_in_bundle = atoi(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--min_num_splices_in_bundle")
+		{
+			min_num_splices_in_bundle = atoi(argv[i + 1]);
+			i++;
+		}
 		else if(string(argv[i]) == "--min_mapping_quality")
 		{
 			min_mapping_quality = atoi(argv[i + 1]);
@@ -239,14 +269,19 @@ int parse_arguments(int argc, const char ** argv)
 			min_subregion_gap = atoi(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--min_subregion_length")
+		else if(string(argv[i]) == "--min_subregion_len")
 		{
-			min_subregion_length = atoi(argv[i + 1]);
+			min_subregion_len = atoi(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--min_subregion_overlap")
+		else if(string(argv[i]) == "--min_subregion_ave")
 		{
-			min_subregion_overlap = atof(argv[i + 1]);
+			min_subregion_ave = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--min_subregion_max")
+		{
+			min_subregion_max = atoi(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--min_allele_overlap")
@@ -378,9 +413,59 @@ int parse_arguments(int argc, const char ** argv)
 			verbose = atoi(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--assemble_duplicates")
+		{
+			assemble_duplicates = atoi(argv[i + 1]);
+			i++;
+		}
 		else if(string(argv[i]) == "--batch_bundle_size")
 		{
 			batch_bundle_size = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--min_bridging_score")
+		{
+			min_bridging_score = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--dp_solution_size")
+		{
+			dp_solution_size = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--dp_stack_size")
+		{
+			dp_stack_size = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--max_clustering_flank")
+		{
+			max_clustering_flank = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--flank_tiny_length")
+		{
+			flank_tiny_length = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--flank_tiny_ratio")
+		{
+			flank_tiny_ratio = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_median")
+		{
+			insertsize_median = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_low")
+		{
+			insertsize_low = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_high")
+		{
+			insertsize_high = atof(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--DEBUG_MODE")
@@ -401,6 +486,7 @@ int parse_arguments(int argc, const char ** argv)
 	if(min_surviving_edge_weight < 0.1 + min_transcript_coverage) 
 	{
 		min_surviving_edge_weight = 0.1 + min_transcript_coverage;
+		if(min_surviving_edge_weight > 10.0) min_surviving_edge_weight = 10.0;
 	}
 
 	// verify arguments
@@ -441,8 +527,11 @@ int print_parameters()
 
 	// for identifying subgraphs
 	printf("min_subregion_gap = %d\n", min_subregion_gap);
-	printf("min_subregion_length = %d\n", min_subregion_length);
-	printf("min_subregion_overlap = %.2lf\n", min_subregion_overlap);
+	// printf("min_subregion_length = %d\n", min_subregion_length);
+	// printf("min_subregion_overlap = %.2lf\n", min_subregion_overlap);
+	printf("min_subregion_len = %d\n", min_subregion_len);
+	printf("min_subregion_max = %d\n", min_subregion_max);
+	printf("min_subregion_ave = %.2lf\n", min_subregion_ave);
 	printf("min_allele_overlap = %.2lf\n", min_allele_overlap);
 
 	// for splice graph
@@ -472,6 +561,7 @@ int print_parameters()
 	printf("ref_file1 = %s\n", ref_file1.c_str());
 	printf("ref_file2 = %s\n", ref_file2.c_str());
 	printf("output_file = %s\n", output_file.c_str());
+	printf("output_file1 = %s\n", output_file1.c_str());
 
 	// for controling
 	printf("library_type = %d\n", library_type);
@@ -519,19 +609,22 @@ int print_help()
 	printf("Options:\n");
 	printf(" %-42s  %s\n", "--help",  "print usage of Altai and exit");
 	printf(" %-42s  %s\n", "--version",  "print current version of Altai and exit");
+	printf(" %-42s  %s\n", "--preview",  "determine fragment-length-range and library-type and exit");
 	printf(" %-42s  %s\n", "--verbose <0, 1, 2>",  "0: quiet; 1: one line for each graph; 2: with details, default: 1");
+	printf(" %-42s  %s\n", "-f/--transcript_fragments <filename>",  "file to which the assembled non-full-length transcripts will be written to");
 	printf(" %-42s  %s\n", "--library_type <first, second, unstranded>",  "library type of the sample, default: unstranded");
-	printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
+	// printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
+	printf(" %-42s  %s\n", "--assemble_duplicates <integer>",  "the number of consensus runs of the decomposition, default: 10");
+	printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.5");
 	printf(" %-42s  %s\n", "--min_single_exon_coverage <float>",  "minimum coverage required for a single-exon transcript, default: 20");
 	printf(" %-42s  %s\n", "--min_transcript_length_increase <integer>",  "default: 50");
 	printf(" %-42s  %s\n", "--min_transcript_length_base <integer>",  "default: 150, minimum length of a transcript would be");
 	printf(" %-42s  %s\n", "",  "--min_transcript_length_base + --min_transcript_length_increase * num-of-exons");
 	printf(" %-42s  %s\n", "--min_mapping_quality <integer>",  "ignore reads with mapping quality less than this value, default: 1");
-	printf(" %-42s  %s\n", "--max_num_cigar <integer>",  "ignore reads with CIGAR size larger than this value, default: 7");
-	printf(" %-42s  %s\n", "--min_bundle_gap <integer>",  "minimum distances required to start a new bundle, default: 50");
-	printf(" %-42s  %s\n", "--min_num_hits_in_bundle <integer>",  "minimum number of reads required in a bundle, default: 20");
+	printf(" %-42s  %s\n", "--max_num_cigar <integer>",  "ignore reads with CIGAR size larger than this value, default: 1000");
+	printf(" %-42s  %s\n", "--min_bundle_gap <integer>",  "minimum distances required to start a new bundle, default: 100");
+	printf(" %-42s  %s\n", "--min_num_hits_in_bundle <integer>",  "minimum number of reads required in a gene locus, default: 5");
 	printf(" %-42s  %s\n", "--min_flank_length <integer>",  "minimum match length in each side for a spliced read, default: 3");
-	printf(" %-42s  %s\n", "--min_splice_boundary_hits <integer>",  "minimum number of spliced reads required for a junction, default: 1");
 	printf(" %-42s  %s\n", "--min_num_reads_support_variant <integer>",  "minimum number of reads required to keep a SNP, default: 3");
 	return 0;
 }

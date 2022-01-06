@@ -394,6 +394,7 @@ int router::thread()
 	
 	double weight_remain = 0;
 	for(int k = 0; k < vw.size(); k++)
+	
 	{
 		//printf("weight remain for edge %d = %.2lf, sum = %.2lf\n", u2e[k], vw[k], weight_sum);
 		if(vw[k] <= 0) continue;
@@ -404,7 +405,8 @@ int router::thread()
 
 	for(MPID::iterator it = pe2w.begin(); it != pe2w.end(); it++)
 	{
-		if(it->second < 1.0) it->second = 1.0;
+		// if(it->second < 1.0) it->second = 1.0;
+		if(it->second < min_guaranteed_edge_weight) it->second = min_guaranteed_edge_weight;
 	}
 	return 0;
 }

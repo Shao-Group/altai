@@ -28,14 +28,19 @@ altai_SOURCES = splice_graph.h splice_graph.cc \
 				  router.h router.cc \
 				  region.h region.cc \
 				  junction.h junction.cc \
+				  fragment.h fragment.cc \
 				  bundle_base.h bundle_base.cc \
+				  bundle_bridge.h bundle_bridge.cc \
+				  bridger.h bridger.cc \
 				  bundle.h bundle.cc \
+				  fcluster.h fcluster.cc \
 				  filter.h filter.cc \
 				  path.h path.cc \
 				  equation.h equation.cc \
 				  scallop.h scallop.cc \
 				  previewer.h previewer.cc \
 				  assembler.h assembler.cc \
+				  transcript_set.h transcript_set.cc \
 				  vcf_data.h vcf_data.cc \
 				  as_pos.hpp as_pos.cpp \
 				  as_pos32.hpp as_pos32.cpp \
