@@ -28,4 +28,5 @@ experiments/
 bin/
 .vscode/
 .history/
+.idea/
 INSTALL
