@@ -40,14 +40,14 @@ public:
 	int next;		// index for next fragments in UMI-linked
 
 public:
-	bool equal(const fragment &f) const;
+	// bool equal(const fragment &f) const;
 	int append(const fragment &f);
 	int print(int index);
-	int set_paired(bool b);
+	// int set_paired(bool b);
 	int set_bridged(bool b);
 	int clear();
 };
 
-bool compare_fragment(const fragment &f1, const fragment &f2);
+// bool compare_fragment(const fragment &f1, const fragment &f2);
 
 #endif

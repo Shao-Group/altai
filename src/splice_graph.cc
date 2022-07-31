@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -1196,8 +1198,11 @@ int splice_graph::output_transcript(transcript &trst, const path &p, const strin
 		as_pos32 p1 = get_vertex_info(v[k]).lpos;
 		as_pos32 p2 = get_vertex_info(v[k]).rpos;
 		jmap += make_pair(ROI(p1, p2), 1);
-		trst.add_exon(p1, p2);
 	}
 
+	for(JIMI it = jmap.begin(); it != jmap.end(); it++)
+	{
+		trst.add_exon(lower(it->first), upper(it->first));
+	}
 	return 0;
 }

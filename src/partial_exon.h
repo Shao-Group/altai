@@ -38,7 +38,7 @@ public:
 	bool operator < (const partial_exon pe) const;
 
 public:
-	string label() const;
+	// string label() const;
 	int print(int index) const;
 };
 

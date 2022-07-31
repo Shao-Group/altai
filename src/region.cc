@@ -180,19 +180,19 @@ int region::build_partial_exons()
 	return 0;
 }
 
-bool region::left_inclusive()
-{
-	if(pexons.size() == 0) return false;
-	if(pexons[0].lpos == lpos) return true;
-	else return false;
-}
+// bool region::left_inclusive()
+// {
+// 	if(pexons.size() == 0) return false;
+// 	if(pexons[0].lpos == lpos) return true;
+// 	else return false;
+// }
 
-bool region::right_inclusive()
-{
-	if(pexons.size() == 0) return false;
-	if(pexons[pexons.size() - 1].rpos == rpos) return true;
-	else return false;
-}
+// bool region::right_inclusive()
+// {
+// 	if(pexons.size() == 0) return false;
+// 	if(pexons[pexons.size() - 1].rpos == rpos) return true;
+// 	else return false;
+// }
 
 int region::print(int index) const
 {	

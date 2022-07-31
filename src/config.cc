@@ -1,6 +1,10 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Coral
+(c) 2019 by Mingfu Shao, The Pennsylvania State University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -276,7 +280,7 @@ int parse_arguments(int argc, const char ** argv)
 		}
 		else if(string(argv[i]) == "--min_subregion_ave")
 		{
-			min_subregion_ave = atoi(argv[i + 1]);
+			min_subregion_ave = atof(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--min_subregion_max")

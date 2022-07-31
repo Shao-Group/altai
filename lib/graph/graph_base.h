@@ -50,7 +50,7 @@ public:
 	virtual int remove_edge(int s, int t) = 0;
 
 	// access functions
-	virtual size_t support_size() const;
+	// virtual size_t support_size() const;
 	virtual size_t num_vertices() const;
 	virtual size_t num_edges() const;
 	virtual int degree(int v) const;
@@ -68,7 +68,7 @@ public:
 	virtual bool bfs(const vector<int> &vs, int t, const set<edge_descriptor> &fb);
 	virtual bool check_path(int s, int t);
 	virtual bool compute_shortest_path(int s, int t, vector<int> &p);
-	virtual bool check_nested();
+	// virtual bool check_nested();
 	virtual bool intersect(edge_descriptor ex, edge_descriptor ey) = 0;
 
 	// draw

@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -837,6 +839,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			int v1 = p->source();
 			int v2 = ev2[e2];
 			gr.move_edge(p, v1, v2);
+			mev[p].push_back(root);
 			//gr.set_edge_weight(p, w);
 		}
 		else if(mdegree[e2] == 1)
@@ -848,6 +851,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			int v1 = ev1[e1];
 			int v2 = p->target();
 			gr.move_edge(p, v1, v2);
+			mev[p].insert(mev[p].begin(), root);
 			//gr.set_edge_weight(p, w);
 		}
 		else
@@ -870,6 +874,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			gr.set_edge_info(p, edge_info());
 
 			vector<int> v0;
+			v0.push_back(root);
 			if(mev.find(p) != mev.end()) mev[p] = v0;
 			else mev.insert(PEV(p, v0));
 

@@ -70,23 +70,3 @@ int equation::print(int index) const
 	
 	return 0;
 }
-
-bool equation_cmp1(const equation &x, const equation &y) 
-{
-	if(x.e < y.e - 0.00001) return true;
-	else if(x.e > y.e + 0.00001) return false;
-	else if(x.s.size() + x.t.size() < y.s.size() + y.t.size()) return true;
-	else return false;
-}
-
-bool equation_cmp2(const equation &x, const equation &y) 
-{
-	if(x.f > y.f) return true;
-	if(x.f < y.f) return false;
-	if(x.d < y.d) return true;
-	if(x.d > y.d) return false;
-	if(x.s.size() + x.t.size() < y.s.size() + y.t.size()) return true;
-	if(x.s.size() + x.t.size() > y.s.size() + y.t.size()) return false;
-	if(x.w < y.w) return true;
-	return false;
-}

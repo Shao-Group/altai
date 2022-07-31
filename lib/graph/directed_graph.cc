@@ -56,50 +56,50 @@ int directed_graph::remove_edge(edge_descriptor e)
 	return 0;
 }
 
-int directed_graph::exchange(int x, int y, int z)
-{
-	assert(x >= 0 && x < num_vertices());
-	assert(y >= 0 && y < num_vertices());
-	assert(z >= 0 && z < num_vertices());
+// int directed_graph::exchange(int x, int y, int z)
+// {
+// 	assert(x >= 0 && x < num_vertices());
+// 	assert(y >= 0 && y < num_vertices());
+// 	assert(z >= 0 && z < num_vertices());
 
-	set<edge_descriptor> m;
-	PEEI pei;
-	edge_iterator it1, it2;
-	for(pei = out_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		if(check_path((*it1)->target(), y) == false) continue;
-		m.insert(*it1);
-	}
-	for(pei = in_edges(y), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		if(check_path(x, (*it1)->source()) == false) continue;
-		m.insert(*it1);
-	}
-	for(pei = out_edges(y), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		if(check_path((*it1)->target(), z) == false) continue;
-		m.insert(*it1);
-	}
-	for(pei = in_edges(z), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		if(check_path(y, (*it1)->source()) == false) continue;
-		m.insert(*it1);
-	}
+// 	set<edge_descriptor> m;
+// 	PEEI pei;
+// 	edge_iterator it1, it2;
+// 	for(pei = out_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		if(check_path((*it1)->target(), y) == false) continue;
+// 		m.insert(*it1);
+// 	}
+// 	for(pei = in_edges(y), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		if(check_path(x, (*it1)->source()) == false) continue;
+// 		m.insert(*it1);
+// 	}
+// 	for(pei = out_edges(y), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		if(check_path((*it1)->target(), z) == false) continue;
+// 		m.insert(*it1);
+// 	}
+// 	for(pei = in_edges(z), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		if(check_path(y, (*it1)->source()) == false) continue;
+// 		m.insert(*it1);
+// 	}
 
-	for(set<edge_descriptor>::iterator it = m.begin(); it != m.end(); it++)
-	{
-		int s = (*it)->source();
-		int t = (*it)->target();
-		if(s == x && t == y) move_edge(*it, y, z);
-		else if(s == x) move_edge(*it, y, t);
-		else if(t == y) move_edge(*it, s, z);
-		else if(s == y && t == z) move_edge(*it, x, y);
-		else if(s == y) move_edge(*it, x, t);
-		else if(t == z) move_edge(*it, s, y);
-		else assert(false);
-	}
-	return 0;
-}
+// 	for(set<edge_descriptor>::iterator it = m.begin(); it != m.end(); it++)
+// 	{
+// 		int s = (*it)->source();
+// 		int t = (*it)->target();
+// 		if(s == x && t == y) move_edge(*it, y, z);
+// 		else if(s == x) move_edge(*it, y, t);
+// 		else if(t == y) move_edge(*it, s, z);
+// 		else if(s == y && t == z) move_edge(*it, x, y);
+// 		else if(s == y) move_edge(*it, x, t);
+// 		else if(t == z) move_edge(*it, s, y);
+// 		else assert(false);
+// 	}
+// 	return 0;
+// }
 
 int directed_graph::rotate(int x, int y)
 {
@@ -293,60 +293,60 @@ bool directed_graph::compute_shortest_path(edge_descriptor ex, edge_descriptor e
 	return graph_base::compute_shortest_path(s, t, p);
 }
 
-bool directed_graph::intersect(edge_descriptor ex, edge_descriptor ey)
-{
-	int xs = ex->source();
-	int xt = ex->target();
-	int ys = ey->source();
-	int yt = ey->target();
-	if(xs == ys || xs == yt) return false;
-	if(xt == ys || xt == yt) return false;
-	if(check_path(xs, ys) == true)
-	{
-		if(check_path(ys, xt) == false) return false;
-		if(check_path(xt, yt) == false) return false;
-		return true;
-	}
-	if(check_path(ys, xs) == true)
-	{
-		if(check_path(xs, yt) == false) return false;
-		if(check_path(yt, xt) == false) return false;
-		return true;
-	}
-	return false;
-}
+// bool directed_graph::intersect(edge_descriptor ex, edge_descriptor ey)
+// {
+// 	int xs = ex->source();
+// 	int xt = ex->target();
+// 	int ys = ey->source();
+// 	int yt = ey->target();
+// 	if(xs == ys || xs == yt) return false;
+// 	if(xt == ys || xt == yt) return false;
+// 	if(check_path(xs, ys) == true)
+// 	{
+// 		if(check_path(ys, xt) == false) return false;
+// 		if(check_path(xt, yt) == false) return false;
+// 		return true;
+// 	}
+// 	if(check_path(ys, xs) == true)
+// 	{
+// 		if(check_path(xs, yt) == false) return false;
+// 		if(check_path(yt, xt) == false) return false;
+// 		return true;
+// 	}
+// 	return false;
+// }
 
-vector<int> directed_graph::topological_sort_reverse()
-{
-	vector<int> v;
-	vector<int> q;
-	vector<int> vd;
-	for(int i = num_vertices() - 1; i >= 0; i--)
-	{
-		int d = out_degree(i);
-		vd.push_back(d);
-		if(d == 0) q.push_back(i);
-	}
+// vector<int> directed_graph::topological_sort_reverse()
+// {
+// 	vector<int> v;
+// 	vector<int> q;
+// 	vector<int> vd;
+// 	for(int i = num_vertices() - 1; i >= 0; i--)
+// 	{
+// 		int d = out_degree(i);
+// 		vd.push_back(d);
+// 		if(d == 0) q.push_back(i);
+// 	}
 
-	int k = 0;
+// 	int k = 0;
 
-	while(k < q.size())
-	{
-		int x = q[k++];
-		v.push_back(x);
+// 	while(k < q.size())
+// 	{
+// 		int x = q[k++];
+// 		v.push_back(x);
 
-		edge_iterator it1, it2;
-		PEEI pei;
-		for(pei = in_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			int t = (*it1)->target();
-			vd[t]--;
-			assert(vd[t] >= 0);
-			if(vd[t] == 0) q.push_back(t);
-		}
-	}
-	return v;
-}
+// 		edge_iterator it1, it2;
+// 		PEEI pei;
+// 		for(pei = in_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			int t = (*it1)->target();
+// 			vd[t]--;
+// 			assert(vd[t] >= 0);
+// 			if(vd[t] == 0) q.push_back(t);
+// 		}
+// 	}
+// 	return v;
+// }
 
 vector<int> directed_graph::topological_sort()
 {
@@ -381,152 +381,152 @@ vector<int> directed_graph::topological_sort()
 	return v;
 }
 
-vector<int> directed_graph::topological_sort0()
-{
-	vector<int> v;
+// vector<int> directed_graph::topological_sort0()
+// {
+// 	vector<int> v;
 
-	vector<int> vd;
-	for(int i = 0; i < num_vertices(); i++)
-	{
-		int d = in_degree(i);
-		vd.push_back(d);
-	}
+// 	vector<int> vd;
+// 	for(int i = 0; i < num_vertices(); i++)
+// 	{
+// 		int d = in_degree(i);
+// 		vd.push_back(d);
+// 	}
 
-	vector<bool> vb;
-	vb.assign(num_vertices(), false);
-	for(int i = 0; i < num_vertices(); i++)
-	{
-		int k = -1;
-		int mind = INT_MAX;
-		for(int j = 0; j < num_vertices(); j++)
-		{
-			if(vb[j] == true) continue;
-			if(vd[j] < mind)
-			{
-				mind = vd[j];
-				k = j;
-			}
-		}
-		assert(k != -1);
-		v.push_back(k);
-		vb[k] = true;
+// 	vector<bool> vb;
+// 	vb.assign(num_vertices(), false);
+// 	for(int i = 0; i < num_vertices(); i++)
+// 	{
+// 		int k = -1;
+// 		int mind = INT_MAX;
+// 		for(int j = 0; j < num_vertices(); j++)
+// 		{
+// 			if(vb[j] == true) continue;
+// 			if(vd[j] < mind)
+// 			{
+// 				mind = vd[j];
+// 				k = j;
+// 			}
+// 		}
+// 		assert(k != -1);
+// 		v.push_back(k);
+// 		vb[k] = true;
 
-		edge_iterator it1, it2;
-		PEEI pei;
-		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			int t = (*it1)->target();
-			vd[t]--;
-		}
-	}
-	return v;
-}
+// 		edge_iterator it1, it2;
+// 		PEEI pei;
+// 		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			int t = (*it1)->target();
+// 			vd[t]--;
+// 		}
+// 	}
+// 	return v;
+// }
 
-int directed_graph::compute_in_partner(int x)
-{
-	vector<int> v = topological_sort();
-	assert(v.size() == num_vertices());
-	vector<int> order;
-	order.assign(num_vertices(), -1);
-	for(int i = 0; i < v.size(); i++)
-	{
-		order[v[i]] = i;
-	}
+// int directed_graph::compute_in_partner(int x)
+// {
+// 	vector<int> v = topological_sort();
+// 	assert(v.size() == num_vertices());
+// 	vector<int> order;
+// 	order.assign(num_vertices(), -1);
+// 	for(int i = 0; i < v.size(); i++)
+// 	{
+// 		order[v[i]] = i;
+// 	}
 
-	set<edge_descriptor> se;
-	set<int> sv;
-	edge_iterator it1, it2;
-	PEEI pei;
-	for(pei = in_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		assert((*it1)->target() == x);
-		int s = (*it1)->source();
-		if(sv.find(s) == sv.end()) sv.insert(s);
-		if(se.find(*it1) == se.end()) se.insert(*it1);
-	}
+// 	set<edge_descriptor> se;
+// 	set<int> sv;
+// 	edge_iterator it1, it2;
+// 	PEEI pei;
+// 	for(pei = in_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		assert((*it1)->target() == x);
+// 		int s = (*it1)->source();
+// 		if(sv.find(s) == sv.end()) sv.insert(s);
+// 		if(se.find(*it1) == se.end()) se.insert(*it1);
+// 	}
 
-	while(sv.size() >= 2)
-	{
-		int k = -1;
-		for(set<int>::iterator it = sv.begin(); it != sv.end(); it++)
-		{
-			if(k == -1 || order[*it] > order[k])
-			{
-				k = *it;
-			}
-		}
-		assert(k != -1);
+// 	while(sv.size() >= 2)
+// 	{
+// 		int k = -1;
+// 		for(set<int>::iterator it = sv.begin(); it != sv.end(); it++)
+// 		{
+// 			if(k == -1 || order[*it] > order[k])
+// 			{
+// 				k = *it;
+// 			}
+// 		}
+// 		assert(k != -1);
 
-		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			if(se.find(*it1) == se.end()) return -1;
-		}
+// 		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			if(se.find(*it1) == se.end()) return -1;
+// 		}
 
-		for(pei = in_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			assert(se.find(*it1) == se.end());
-			se.insert(*it1);
-			int s = (*it1)->source();
-			if(sv.find(s) == sv.end()) sv.insert(s);
-		}
-		sv.erase(k);
-	}
-	if(sv.size() == 0) return -1;
-	else return *(sv.begin());
-}
+// 		for(pei = in_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			assert(se.find(*it1) == se.end());
+// 			se.insert(*it1);
+// 			int s = (*it1)->source();
+// 			if(sv.find(s) == sv.end()) sv.insert(s);
+// 		}
+// 		sv.erase(k);
+// 	}
+// 	if(sv.size() == 0) return -1;
+// 	else return *(sv.begin());
+// }
 
-int directed_graph::compute_out_partner(int x)
-{
-	vector<int> v = topological_sort();
-	vector<int> order;
-	order.assign(num_vertices(), -1);
-	for(int i = 0; i < v.size(); i++)
-	{
-		order[v[i]] = i;
-	}
+// int directed_graph::compute_out_partner(int x)
+// {
+// 	vector<int> v = topological_sort();
+// 	vector<int> order;
+// 	order.assign(num_vertices(), -1);
+// 	for(int i = 0; i < v.size(); i++)
+// 	{
+// 		order[v[i]] = i;
+// 	}
 
-	set<edge_descriptor> se;
-	set<int> sv;
-	edge_iterator it1, it2;
-	PEEI pei;
-	for(pei = out_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		assert((*it1)->source() == x);
-		int t = (*it1)->target();
-		if(sv.find(t) == sv.end()) sv.insert(t);
-		if(se.find(*it1) == se.end()) se.insert(*it1);
-	}
+// 	set<edge_descriptor> se;
+// 	set<int> sv;
+// 	edge_iterator it1, it2;
+// 	PEEI pei;
+// 	for(pei = out_edges(x), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 	{
+// 		assert((*it1)->source() == x);
+// 		int t = (*it1)->target();
+// 		if(sv.find(t) == sv.end()) sv.insert(t);
+// 		if(se.find(*it1) == se.end()) se.insert(*it1);
+// 	}
 
-	while(sv.size() >= 2)
-	{
-		int k = -1;
-		for(set<int>::iterator it = sv.begin(); it != sv.end(); it++)
-		{
-			if(k == -1 || order[*it] < order[k])
-			{
-				k = *it;
-			}
-		}
-		assert(k != -1);
+// 	while(sv.size() >= 2)
+// 	{
+// 		int k = -1;
+// 		for(set<int>::iterator it = sv.begin(); it != sv.end(); it++)
+// 		{
+// 			if(k == -1 || order[*it] < order[k])
+// 			{
+// 				k = *it;
+// 			}
+// 		}
+// 		assert(k != -1);
 
-		for(pei = in_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			if(se.find(*it1) == se.end()) return -1;
-		}
+// 		for(pei = in_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			if(se.find(*it1) == se.end()) return -1;
+// 		}
 
-		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			assert(se.find(*it1) == se.end());
-			se.insert(*it1);
-			int t = (*it1)->target();
-			if(sv.find(t) == sv.end()) sv.insert(t);
-		}
-		sv.erase(k);
-	}
+// 		for(pei = out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+// 		{
+// 			assert(se.find(*it1) == se.end());
+// 			se.insert(*it1);
+// 			int t = (*it1)->target();
+// 			if(sv.find(t) == sv.end()) sv.insert(t);
+// 		}
+// 		sv.erase(k);
+// 	}
 
-	if(sv.size() == 0) return -1;
-	else return *(sv.begin());
-}
+// 	if(sv.size() == 0) return -1;
+// 	else return *(sv.begin());
+// }
 
 int directed_graph::compute_out_equivalent_vertex(int x)
 {

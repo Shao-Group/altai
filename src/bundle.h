@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -47,7 +49,7 @@ public:
 
 public:
 	virtual int build(int mode, bool revise);
-	int count_junctions() const;
+	// int count_junctions() const;
 	int print(int index);
 
 public:
@@ -77,7 +79,6 @@ public:
 	VE compute_maximal_edges();
 	int revise_splice_graph();
 	int refine_splice_graph();
-	int refine_splice_graph2(); //CLEAN:
 	bool keep_surviving_edges();
 	bool extend_boundaries();
 	bool extend_start_boundaries();
@@ -88,7 +89,7 @@ public:
 	bool remove_intron_contamination();
 	bool remove_false_boundaries();
 	bool tackle_false_boundaries();
-	int find_contamination_chain();
+	// int find_contamination_chain();
 
 	// super edges
 	// int build_hyper_edges2();			// paired end

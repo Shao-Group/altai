@@ -34,13 +34,13 @@ int fcluster::add_phase(const vector<int> &v)
 	return 0;
 }
 
-const vector<int> & fcluster::get_vlist() const
-{
-	if(type == 0) return v0;
-	if(type == 1) return v1;
-	if(type == 2) return v2;
-	assert(false);
-}
+// const vector<int> & fcluster::get_vlist() const
+// {
+// 	if(type == 0) return v0;
+// 	if(type == 1) return v1;
+// 	if(type == 2) return v2;
+// 	assert(false);
+// }
 
 int fcluster::print(int index) const
 {
@@ -62,25 +62,25 @@ int fcluster::print(int index) const
 	return 0;
 }
 
-bool compare_fcluster(const fcluster &fx, const fcluster &fy)
-{
-	const vector<int> &vx = fx.get_vlist();
-	const vector<int> &vy = fy.get_vlist();
+// bool compare_fcluster(const fcluster &fx, const fcluster &fy)
+// {
+// 	const vector<int> &vx = fx.get_vlist();
+// 	const vector<int> &vy = fy.get_vlist();
 
-	for(int k = 0; k < vx.size() && k < vy.size(); k++)
-	{
-		if(vx[k] < vy[k]) return true;
-		if(vx[k] > vy[k]) return false;
-	}
+// 	for(int k = 0; k < vx.size() && k < vy.size(); k++)
+// 	{
+// 		if(vx[k] < vy[k]) return true;
+// 		if(vx[k] > vy[k]) return false;
+// 	}
 
-	if(vx.size() < vy.size()) return true;
-	if(vx.size() > vy.size()) return false;
+// 	if(vx.size() < vy.size()) return true;
+// 	if(vx.size() > vy.size()) return false;
 
-	if(fx.type < fy.type) return true;
-	if(fx.type > fy.type) return false;
+// 	if(fx.type < fy.type) return true;
+// 	if(fx.type > fy.type) return false;
 
-	return false;
-}
+// 	return false;
+// }
 
 bool compare_fcluster_v1_v2(const fcluster &fx, const fcluster &fy)
 {

@@ -19,12 +19,12 @@ partial_exon::partial_exon(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtyp
 	pid = -1;
 }
 
-string partial_exon::label() const
-{
-	string l = tostring((lpos.p32 + 1) % 100000) + lpos.ale;
-	string r = tostring(rpos.p32 % 100000) + rpos.ale;
-	return (l + "-" + r);
-}
+// string partial_exon::label() const
+// {
+// 	string l = tostring((lpos.p32 + 1) % 100000) + lpos.ale;
+// 	string r = tostring(rpos.p32 % 100000) + rpos.ale;
+// 	return (l + "-" + r);
+// }
 
 int partial_exon::print(int index) const
 {

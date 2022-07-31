@@ -81,11 +81,11 @@ vector<int> path::index(int n) const
 	return vv;
 }
 
-bool compare_path_abundance(const path &p1, const path &p2)
-{
-	if(p1.abd > p2.abd) return true;
-	else return false;
-}
+// bool compare_path_abundance(const path &p1, const path &p2)
+// {
+// 	if(p1.abd > p2.abd) return true;
+// 	else return false;
+// }
 
 bool compare_path_vertices(const path &p1, const path &p2)
 {
@@ -99,8 +99,8 @@ bool compare_path_vertices(const path &p1, const path &p2)
 	return false;
 }
 
-bool compare_path_score(const path &p1, const path &p2)
-{
-	if(p1.score > p2.score) return true;
-	else return false;
-}
+// bool compare_path_score(const path &p1, const path &p2)
+// {
+// 	if(p1.score > p2.score) return true;
+// 	else return false;
+// }

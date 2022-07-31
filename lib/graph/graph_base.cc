@@ -130,16 +130,16 @@ set<int> graph_base::adjacent_vertices(int s)
 	return ss;
 }
 
-size_t graph_base::support_size() const
-{
-	int s = 0;
-	for(int i = 0; i < num_vertices(); i++)
-	{
-		if(degree(i) == 0) continue;
-		s++;
-	}
-	return s;
-}
+// size_t graph_base::support_size() const
+// {
+// 	int s = 0;
+// 	for(int i = 0; i < num_vertices(); i++)
+// 	{
+// 		if(degree(i) == 0) continue;
+// 		s++;
+// 	}
+// 	return s;
+// }
 
 size_t graph_base::num_vertices() const
 {
@@ -292,21 +292,21 @@ bool graph_base::compute_shortest_path(int s, int t, vector<int> &p)
 	return true;
 }
 
-bool graph_base::check_nested() 
-{
-	PEEI p = edges();
-	for(edge_iterator i = p.first; i != p.second; i++)
-	{
-		edge_iterator j = i;
-		j++;
-		for(; j != p.second; j++)
-		{
-			bool b = intersect(*i, *j);
-			if(b == true) return false;
-		}
-	}
-	return true;
-}
+// bool graph_base::check_nested() 
+// {
+// 	PEEI p = edges();
+// 	for(edge_iterator i = p.first; i != p.second; i++)
+// 	{
+// 		edge_iterator j = i;
+// 		j++;
+// 		for(; j != p.second; j++)
+// 		{
+// 			bool b = intersect(*i, *j);
+// 			if(b == true) return false;
+// 		}
+// 	}
+// 	return true;
+// }
 
 int graph_base::print() const
 {

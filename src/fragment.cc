@@ -75,34 +75,34 @@ int fragment::append(const fragment &f)
 	return 0;
 }
 
-bool fragment::equal(const fragment &f) const
-{
-	if(h1->vlist != f.h1->vlist) return false;
-	if(h2->vlist != f.h2->vlist) return false;
-	if(lpos != f.lpos) return false;
-	if(rpos != f.rpos) return false;
-	if(k1l != f.k1l) return false;
-	if(k1r != f.k1r) return false;
-	if(k2l != f.k2l) return false;
-	if(k2r != f.k2r) return false;
-	if(b1 != f.b1) return false;
-	if(b2 != f.b2) return false;
-	return true;
-}
+// bool fragment::equal(const fragment &f) const
+// {
+// 	if(h1->vlist != f.h1->vlist) return false;
+// 	if(h2->vlist != f.h2->vlist) return false;
+// 	if(lpos != f.lpos) return false;
+// 	if(rpos != f.rpos) return false;
+// 	if(k1l != f.k1l) return false;
+// 	if(k1r != f.k1r) return false;
+// 	if(k2l != f.k2l) return false;
+// 	if(k2r != f.k2r) return false;
+// 	if(b1 != f.b1) return false;
+// 	if(b2 != f.b2) return false;
+// 	return true;
+// }
 
-int fragment::set_paired(bool b)
-{
-	hit *x = h1;
-	hit *y = h2;
-	while(x != NULL && y != NULL)
-	{
-		x->paired = b;
-		y->paired = b;
-		x = x->next;
-		y = y->next;
-	}
-	return 0;
-}
+// int fragment::set_paired(bool b)
+// {
+// 	hit *x = h1;
+// 	hit *y = h2;
+// 	while(x != NULL && y != NULL)
+// 	{
+// 		x->paired = b;
+// 		y->paired = b;
+// 		x = x->next;
+// 		y = y->next;
+// 	}
+// 	return 0;
+// }
 
 int fragment::set_bridged(bool b)
 {
@@ -120,36 +120,36 @@ int fragment::set_bridged(bool b)
 	return 0;
 }
 
-bool compare_fragment(const fragment &f1, const fragment &f2)
-{
-	if(f1.h1->vlist.size() < f2.h1->vlist.size()) return true;
-	if(f1.h1->vlist.size() > f2.h1->vlist.size()) return false;
-	if(f1.h2->vlist.size() < f2.h2->vlist.size()) return true;
-	if(f1.h2->vlist.size() > f2.h2->vlist.size()) return false;
+// bool compare_fragment(const fragment &f1, const fragment &f2)
+// {
+// 	if(f1.h1->vlist.size() < f2.h1->vlist.size()) return true;
+// 	if(f1.h1->vlist.size() > f2.h1->vlist.size()) return false;
+// 	if(f1.h2->vlist.size() < f2.h2->vlist.size()) return true;
+// 	if(f1.h2->vlist.size() > f2.h2->vlist.size()) return false;
 
-	for(int k = 0; k < f1.h1->vlist.size(); k++)
-	{
-		if(f1.h1->vlist[k] < f2.h1->vlist[k]) return true;
-		if(f1.h1->vlist[k] > f2.h1->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1.h1->vlist.size(); k++)
+// 	{
+// 		if(f1.h1->vlist[k] < f2.h1->vlist[k]) return true;
+// 		if(f1.h1->vlist[k] > f2.h1->vlist[k]) return false;
+// 	}
 
-	for(int k = 0; k < f1.h2->vlist.size(); k++)
-	{
-		if(f1.h2->vlist[k] < f2.h2->vlist[k]) return true;
-		if(f1.h2->vlist[k] > f2.h2->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1.h2->vlist.size(); k++)
+// 	{
+// 		if(f1.h2->vlist[k] < f2.h2->vlist[k]) return true;
+// 		if(f1.h2->vlist[k] > f2.h2->vlist[k]) return false;
+// 	}
 
-	if(f1.b1 == true && f2.b1 == false) return true;
-	if(f1.b1 == false && f2.b1 == true) return false;
-	if(f1.b2 == true && f2.b2 == false) return true;
-	if(f1.b2 == false && f2.b2 == true) return false;
+// 	if(f1.b1 == true && f2.b1 == false) return true;
+// 	if(f1.b1 == false && f2.b1 == true) return false;
+// 	if(f1.b2 == true && f2.b2 == false) return true;
+// 	if(f1.b2 == false && f2.b2 == true) return false;
 
-	if(f1.k1l + f1.k1r + f1.k2l + f1.k2r < f2.k1l + f2.k1r + f2.k2l + f2.k2r) return true;
-	if(f1.k1l + f1.k1r + f1.k2l + f1.k2r > f2.k1l + f2.k1r + f2.k2l + f2.k2r) return false;
-	if(f1.k2l + f1.k1r < f2.k2l + f2.k1r) return true;
-	if(f1.k2l + f1.k1r > f2.k2l + f2.k1r) return false;
-	if(f1.k1l + f1.k2r < f2.k1l + f2.k2r) return true;
-	if(f1.k1l + f1.k2r > f2.k1l + f2.k2r) return false;
+// 	if(f1.k1l + f1.k1r + f1.k2l + f1.k2r < f2.k1l + f2.k1r + f2.k2l + f2.k2r) return true;
+// 	if(f1.k1l + f1.k1r + f1.k2l + f1.k2r > f2.k1l + f2.k1r + f2.k2l + f2.k2r) return false;
+// 	if(f1.k2l + f1.k1r < f2.k2l + f2.k1r) return true;
+// 	if(f1.k2l + f1.k1r > f2.k2l + f2.k1r) return false;
+// 	if(f1.k1l + f1.k2r < f2.k1l + f2.k2r) return true;
+// 	if(f1.k1l + f1.k2r > f2.k1l + f2.k2r) return false;
 
-	return (f1.lpos.p32 < f2.lpos.p32);
-}
+// 	return (f1.lpos.p32 < f2.lpos.p32);
+// }

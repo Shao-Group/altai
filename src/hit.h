@@ -1,6 +1,10 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Coral package
+(c) 2019 by Mingfu Shao, The Pennsylvania State University
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -67,7 +71,7 @@ public:
 	char ts;								// ts tag used in minimap2
 	int32_t nh;								// NH aux in sam
 	int32_t hi;								// HI aux in sam
-	int32_t nm;								// NM aux in sam
+src/hit.h	int32_t nm;								// NM aux in sam
 	bool concordant;						// whether it is concordant
 	bool paired;							// whether this hit has been paired
 	bool bridged;							// whether this hit has been bridged 
@@ -91,7 +95,7 @@ public:
 	int make_itvna();
 	int set_tags(bam1_t *b);
 	int set_strand();
-	int set_concordance();
+	// int set_concordance();
 	int get_aligned_intervals(vector<as_pos> &v) const;
 	int print() const;
 };

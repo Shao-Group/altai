@@ -44,9 +44,9 @@ public:
 	vector<int> index(int n) const;
 };
 
-bool compare_path_abundance(const path &p1, const path &p2);
+// bool compare_path_abundance(const path &p1, const path &p2);
 bool compare_path_vertices(const path &p1, const path &p2);
-bool compare_path_score(const path &p1, const path &p2);
+// bool compare_path_score(const path &p1, const path &p2);
 
 
 #endif

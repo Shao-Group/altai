@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -1003,8 +1005,7 @@ int bundle::link_partial_exons()
 		}
 		else //FIXME: 
 		{
-			b.lexon = -1;
-			b.rexon = -1;
+			b.lexon = b.rexon = -1;
 		}
 	}
 
@@ -1928,83 +1929,83 @@ bool bundle::tackle_false_boundaries()
 	return b;
 }
 
-int bundle::find_contamination_chain()
-{
-	int min_vertices = 5;
-	double max_coverage = 4.0;
-	int32_t max_distance = 2000;
+// int bundle::find_contamination_chain()
+// {
+// 	int min_vertices = 5;
+// 	double max_coverage = 4.0;
+// 	int32_t max_distance = 2000;
 
-	vector<int> chain;
-	vector<string> types;
-	for(int i = 1; i < pexons.size() - 1; i++)
-	{
-		string type = "";
-		partial_exon &pe = pexons[i];
-		if(pe.max > max_coverage) continue;
+// 	vector<int> chain;
+// 	vector<string> types;
+// 	for(int i = 1; i < pexons.size() - 1; i++)
+// 	{
+// 		string type = "";
+// 		partial_exon &pe = pexons[i];
+// 		if(pe.max > max_coverage) continue;
 
-		if(pe.ltype == START_BOUNDARY && pe.rtype == END_BOUNDARY) type = "island";
-		if(pe.ltype == START_BOUNDARY && pe.rtype == RIGHT_SPLICE) type = "start";
-		if(pe.ltype == LEFT_SPLICE && pe.rtype == RIGHT_SPLICE && gr.edge(i - 1, i + 1).second == true) type = "intron";
-		if(pe.ltype == LEFT_SPLICE && pe.rtype == END_BOUNDARY) type = "end";
+// 		if(pe.ltype == START_BOUNDARY && pe.rtype == END_BOUNDARY) type = "island";
+// 		if(pe.ltype == START_BOUNDARY && pe.rtype == RIGHT_SPLICE) type = "start";
+// 		if(pe.ltype == LEFT_SPLICE && pe.rtype == RIGHT_SPLICE && gr.edge(i - 1, i + 1).second == true) type = "intron";
+// 		if(pe.ltype == LEFT_SPLICE && pe.rtype == END_BOUNDARY) type = "end";
 
-		if(type == "") continue;
+// 		if(type == "") continue;
 
-		chain.push_back(i);
-		types.push_back(type);
-	}
+// 		chain.push_back(i);
+// 		types.push_back(type);
+// 	}
 
-	if(chain.size() == 0) return 0;
+// 	if(chain.size() == 0) return 0;
 
-	int32_t pre = 0;
-	for(int k = 0; k < chain.size(); k++)
-	{
-		partial_exon &pe = pexons[chain[k]];
-		printf("chain %d, pexon = %d, type = %s, pos = %d%s-%d%s, len = %d, cov = %.2lf, dist = %d\n", k, chain[k], types[k].c_str(), pe.lpos.p32, pe.lpos.ale.c_str(), pe.rpos.p32, pe.rpos.ale.c_str(), pe.rpos - pe.lpos, pe.max, pe.lpos - pre);
-		pre = pe.rpos;
-	}
+// 	int32_t pre = 0;
+// 	for(int k = 0; k < chain.size(); k++)
+// 	{
+// 		partial_exon &pe = pexons[chain[k]];
+// 		printf("chain %d, pexon = %d, type = %s, pos = %d%s-%d%s, len = %d, cov = %.2lf, dist = %d\n", k, chain[k], types[k].c_str(), pe.lpos.p32, pe.lpos.ale.c_str(), pe.rpos.p32, pe.rpos.ale.c_str(), pe.rpos - pe.lpos, pe.max, pe.lpos - pre);
+// 		pre = pe.rpos;
+// 	}
 
-	int k1 = -1;
-	pre = 0 - max_distance - 1;
-	for(int k = 0; k < chain.size(); k++)
-	{
-		partial_exon &pe = pexons[chain[k]];
-		int32_t dist = pe.lpos - pre;
-		if(dist > max_distance)
-		{
-			if(k - k1 > min_vertices)
-			{
-				printf("delete chain: %d-%d\n", k1 + 1, k - 1);
-				for(int i = k1 + 1; i < k; i++)
-				{
-					gr.clear_vertex(chain[k] + 1);
-				}
-			}
-			k1 = k - 1;
-		}
-		pre = pe.rpos;
-	}
+// 	int k1 = -1;
+// 	pre = 0 - max_distance - 1;
+// 	for(int k = 0; k < chain.size(); k++)
+// 	{
+// 		partial_exon &pe = pexons[chain[k]];
+// 		int32_t dist = pe.lpos - pre;
+// 		if(dist > max_distance)
+// 		{
+// 			if(k - k1 > min_vertices)
+// 			{
+// 				printf("delete chain: %d-%d\n", k1 + 1, k - 1);
+// 				for(int i = k1 + 1; i < k; i++)
+// 				{
+// 					gr.clear_vertex(chain[k] + 1);
+// 				}
+// 			}
+// 			k1 = k - 1;
+// 		}
+// 		pre = pe.rpos;
+// 	}
 
-	if((int)(chain.size()) > min_vertices + k1)
-	{
-		printf("delete chain: %d-%d\n", k1 + 1, (int)(chain.size()) - 1);
-		for(int i = k1 + 1; i < chain.size(); i++)
-		{
-			gr.clear_vertex(chain[i] + 1);
-		}
-	}
-	return 0;
-}
+// 	if((int)(chain.size()) > min_vertices + k1)
+// 	{
+// 		printf("delete chain: %d-%d\n", k1 + 1, (int)(chain.size()) - 1);
+// 		for(int i = k1 + 1; i < chain.size(); i++)
+// 		{
+// 			gr.clear_vertex(chain[i] + 1);
+// 		}
+// 	}
+// 	return 0;
+// }
 
 
-int bundle::count_junctions() const
-{
-	int x = 0;
-	for(int i = 0; i < junctions.size(); i++)
-	{
-		x += junctions[i].count;
-	}
-	return x;
-}
+// int bundle::count_junctions() const
+// {
+// 	int x = 0;
+// 	for(int i = 0; i < junctions.size(); i++)
+// 	{
+// 		x += junctions[i].count;
+// 	}
+// 	return x;
+// }
 
 int bundle::print(int index)
 {

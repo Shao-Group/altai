@@ -54,7 +54,7 @@ public:
 	int bridge_overlapped_fragments();
 	int bridge_overlapped_fragment(fragment &fr, int ex1, int ex2);
 
-	int bridge_phased_fragments();
+	// int bridge_phased_fragments();
 	int phase_cluster(fcluster &fc);
 	int bridge_phased_cluster(fcluster &fc);
 
@@ -70,17 +70,17 @@ public:
 	bool determine_identical(const vector<int> &vx, const vector<int> &vy, int x1, int x2, int y1, int y2);
 
 	int build_overlap_index();
-	int bridge_tough_fragments();
+	// int bridge_tough_fragments();
 	int dynamic_programming(int k1, int k2, vector<int> &trace, vector< vector<int> > &table_cov, vector<int32_t> &table_len);
 	int compare_stack(const vector<int> &x, const vector<int> &y);
 	vector<int> update_stack(const vector<int> &v, int s);
 
 	vector<int> trace_back(int k1, int k2, const vector<int> &trace);
-	vector<int> get_bridge(const vector<int> &vv, const vector<int> &v1, const vector<int> &v2);
-	int32_t get_extended_length1(int k2, int p1, int p2);
+	// vector<int> get_bridge(const vector<int> &vv, const vector<int> &v1, const vector<int> &v2);
+	// int32_t get_extended_length1(int k2, int p1, int p2);
 	int32_t get_extended_length2(int k1, int p1, int p2);
-	vector<int> get_suffix(const vector<int> &v);
-	vector<int> get_prefix(const vector<int> &v);
+	// vector<int> get_suffix(const vector<int> &v);
+	// vector<int> get_prefix(const vector<int> &v);
 
 	int cluster_open_fragments(vector<fcluster> &fclusters);
 	int build_path_nodes();
@@ -88,20 +88,19 @@ public:
 	int build_path_nodes(int low, int high);
 	int build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, int cnt);
 	int add_consecutive_path_nodes();
-	int adjust_path_score(path &p);
+	// int adjust_path_score(path &p);
 
-	int set_thresholds();
 	int update_length();
 	int filter_paths();
 	int get_paired_fragments();
 	vector<int> get_bridged_fragments_type();
 };
 
-bool compare_fragment_v1(fragment *f1, fragment *f2);
-bool compare_fragment_v2(fragment *f1, fragment *f2);
-bool compare_fragment_v3(fragment *f1, fragment *f2);
+// bool compare_fragment_v1(fragment *f1, fragment *f2);
+// bool compare_fragment_v2(fragment *f1, fragment *f2);
+// bool compare_fragment_v3(fragment *f1, fragment *f2);
 bool compare_fragment_v3_flank(fragment *f1, fragment *f2);
-bool compare_fragment_path(fragment *f1, fragment *f2);
-bool check_suffix(const vector<int> &vx, const vector<int> &vy);
+// bool compare_fragment_path(fragment *f1, fragment *f2);
+// bool check_suffix(const vector<int> &vx, const vector<int> &vy);
 
 #endif

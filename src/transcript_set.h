@@ -46,10 +46,10 @@ public:
 public:
 	int add(const transcript &t, int count, int sid, int mode1, int mode2);
 	int add(const transcript_set &ts, int mode1, int mode2);
-	int increase_count(int count);
+	// int increase_count(int count);
 	int filter(int min_count);
 	int print() const;
-	pair<bool, trans_item> query(const transcript &t) const;
+	// pair<bool, trans_item> query(const transcript &t) const;
 	vector<transcript> get_transcripts(int min_count) const;
 	vector<transcript> get_transcripts(int min1, int min2) const;
 };

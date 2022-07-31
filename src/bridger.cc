@@ -142,25 +142,25 @@ int bridger::bridge_overlapped_fragment(fragment &fr, int ex1, int ex2)
 	return 0;
 }
 
-int bridger::bridge_phased_fragments()
-{
-	vector<fcluster> fclusters;
-	cluster_open_fragments(fclusters);
+// int bridger::bridge_phased_fragments()
+// {
+// 	vector<fcluster> fclusters;
+// 	cluster_open_fragments(fclusters);
 
-	for(int k = 0; k < fclusters.size(); k++)
-	{
-		fcluster &fc = fclusters[k];
+// 	for(int k = 0; k < fclusters.size(); k++)
+// 	{
+// 		fcluster &fc = fclusters[k];
 
-		if(fc.v1.size() <= 0) continue;
-		if(fc.v2.size() <= 0) continue;
+// 		if(fc.v1.size() <= 0) continue;
+// 		if(fc.v2.size() <= 0) continue;
 
-		phase_cluster(fc);
+// 		phase_cluster(fc);
 
-		if(fc.phase.size() <= 0) continue;
-		bridge_phased_cluster(fc);
-	}
-	return 0;
-}
+// 		if(fc.phase.size() <= 0) continue;
+// 		bridge_phased_cluster(fc);
+// 	}
+// 	return 0;
+// }
 
 int bridger::cluster_open_fragments(vector<fcluster> &fclusters)
 {
@@ -327,20 +327,20 @@ int bridger::build_path_nodes(int max_len)
 	return 0;
 }
 
-int bridger::adjust_path_score(path &p)
-{
-	double m = p.score;
-	for(int k = 0; k < p.v.size(); k++)
-	{
-		region &r = bd->regions[p.v[k]];
-		if(r.ave < m) m = r.ave;
-		//if(r.ltype != LEFT_SPLICE || r.rtype != RIGHT_SPLICE) continue;
-		//if(r.ave - r.dev < m) m = r.ave - r.dev;
-	}
-	p.score = m * 100;
-	//if(p.score < 0) p.score = 0;
-	return 0;
-}
+// int bridger::adjust_path_score(path &p)
+// {
+// 	double m = p.score;
+// 	for(int k = 0; k < p.v.size(); k++)
+// 	{
+// 		region &r = bd->regions[p.v[k]];
+// 		if(r.ave < m) m = r.ave;
+// 		//if(r.ltype != LEFT_SPLICE || r.rtype != RIGHT_SPLICE) continue;
+// 		//if(r.ave - r.dev < m) m = r.ave - r.dev;
+// 	}
+// 	p.score = m * 100;
+// 	//if(p.score < 0) p.score = 0;
+// 	return 0;
+// }
 
 int bridger::build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, int cnt)
 {
@@ -361,73 +361,73 @@ int bridger::build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, in
 	return 0;
 }
 
-int bridger::phase_cluster(fcluster &fc)
-{
-	fc.phase.clear();
-	map<int, int> xm;
-	vector<PI> xp = bd->ref_index[fc.v1.front()];
-	for(int j = 0; j < xp.size(); j++)
-	{
-		int ti = xp[j].first;
-		int ki = xp[j].second;
-		bool b = true;
-		for(int k = 0; k < fc.v1.size(); k++)
-		{
-			if(ki + k >= bd->ref_phase[ti].size() || fc.v1[k] != bd->ref_phase[ti][ki + k])
-			{
-				b = false;
-				break;
-			}
-		}
-		if(b == false) continue;
-		xm.insert(pair<int, int>(ti, ki));
-	}
+// int bridger::phase_cluster(fcluster &fc)
+// {
+// 	fc.phase.clear();
+// 	map<int, int> xm;
+// 	vector<PI> xp = bd->ref_index[fc.v1.front()];
+// 	for(int j = 0; j < xp.size(); j++)
+// 	{
+// 		int ti = xp[j].first;
+// 		int ki = xp[j].second;
+// 		bool b = true;
+// 		for(int k = 0; k < fc.v1.size(); k++)
+// 		{
+// 			if(ki + k >= bd->ref_phase[ti].size() || fc.v1[k] != bd->ref_phase[ti][ki + k])
+// 			{
+// 				b = false;
+// 				break;
+// 			}
+// 		}
+// 		if(b == false) continue;
+// 		xm.insert(pair<int, int>(ti, ki));
+// 	}
 
-	vector<PI> yp = bd->ref_index[fc.v2.front()];
-	for(int j = 0; j < yp.size(); j++)
-	{
-		int ti = yp[j].first;
-		int ki = yp[j].second;
-		if(xm.find(ti) == xm.end()) continue;
-		if(ki < xm[ti] + fc.v1.size()) continue;
+// 	vector<PI> yp = bd->ref_index[fc.v2.front()];
+// 	for(int j = 0; j < yp.size(); j++)
+// 	{
+// 		int ti = yp[j].first;
+// 		int ki = yp[j].second;
+// 		if(xm.find(ti) == xm.end()) continue;
+// 		if(ki < xm[ti] + fc.v1.size()) continue;
 
-		bool b = true;
-		for(int k = 0; k < fc.v2.size(); k++)
-		{
-			if(ki + k >= bd->ref_phase[ti].size() || fc.v2[k] != bd->ref_phase[ti][ki + k])
-			{
-				b = false;
-				break;
-			}
-		}
-		if(b == false) continue;
+// 		bool b = true;
+// 		for(int k = 0; k < fc.v2.size(); k++)
+// 		{
+// 			if(ki + k >= bd->ref_phase[ti].size() || fc.v2[k] != bd->ref_phase[ti][ki + k])
+// 			{
+// 				b = false;
+// 				break;
+// 			}
+// 		}
+// 		if(b == false) continue;
 
-		vector<int> vv(bd->ref_phase[ti].begin() + xm[ti], bd->ref_phase[ti].begin() + ki + fc.v2.size());
-		fc.add_phase(vv);
-	}
+// 		vector<int> vv(bd->ref_phase[ti].begin() + xm[ti], bd->ref_phase[ti].begin() + ki + fc.v2.size());
+// 		fc.add_phase(vv);
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
-int bridger::bridge_phased_cluster(fcluster &fc)
-{
-	for(int i = 0; i < fc.fset.size(); i++)
-	{
-		fragment *fr = fc.fset[i];
-		for(int k = 0; k < fc.phase.size(); k++)
-		{
-			path p;
-			p.ex1 = p.ex2 = 0;
-			p.v = fc.phase[k];
-			p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
-			p.v = encode_vlist(p.v);
-			if(p.length >= length_low && p.length <= length_high) p.type = 1;
-			else p.type = 2;
-			fr->paths.push_back(p);
-		}
-	}
-	return 0;
-}
+// int bridger::bridge_phased_cluster(fcluster &fc)
+// {
+// 	for(int i = 0; i < fc.fset.size(); i++)
+// 	{
+// 		fragment *fr = fc.fset[i];
+// 		for(int k = 0; k < fc.phase.size(); k++)
+// 		{
+// 			path p;
+// 			p.ex1 = p.ex2 = 0;
+// 			p.v = fc.phase[k];
+// 			p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
+// 			p.v = encode_vlist(p.v);
+// 			if(p.length >= length_low && p.length <= length_high) p.type = 1;
+// 			else p.type = 2;
+// 			fr->paths.push_back(p);
+// 		}
+// 	}
+// 	return 0;
+// }
 
 int bridger::remove_tiny_boundary()
 {
@@ -707,127 +707,127 @@ int bridger::bridge_hard_fragments()
 	return 0;
 }
 
-int bridger::bridge_tough_fragments()
-{
-	build_path_nodes();
-	build_overlap_index();
+// int bridger::bridge_tough_fragments()
+// {
+// 	build_path_nodes();
+// 	build_overlap_index();
 
-	for(int k = 0; k < pnodes.size(); k++) pnodes[k].print_bridge(k);
+// 	for(int k = 0; k < pnodes.size(); k++) pnodes[k].print_bridge(k);
 
-	//printf("max_pnode_length = %d, nodes = %lu\n", max_pnode_length, pnodes.size());
+// 	//printf("max_pnode_length = %d, nodes = %lu\n", max_pnode_length, pnodes.size());
 
-	//build_path_clusters();
+// 	//build_path_clusters();
 
-	vector<fcluster> open;
-	cluster_open_fragments(open);
-	sort(open.begin(), open.end(), compare_fcluster_v1_v2);
+// 	vector<fcluster> open;
+// 	cluster_open_fragments(open);
+// 	sort(open.begin(), open.end(), compare_fcluster_v1_v2);
 
-	for(int k = 0; k < open.size(); k++)
-	{
-		open[k].print(k);
-	}
+// 	for(int k = 0; k < open.size(); k++)
+// 	{
+// 		open[k].print(k);
+// 	}
 
-	vector<PI> open_indices;
-	vector< set<int> > affected(pnodes.size());
-	for(int k = 0; k < open.size(); k++)
-	{
-		fcluster &fc = open[k];
-		path p1, p2;
-		p1.v = get_suffix(fc.v1);
-		p2.v = get_prefix(fc.v2);
-		vector<path>::const_iterator x1 = lower_bound(pnodes.begin(), pnodes.end(), p1, compare_path_vertices);
-		vector<path>::const_iterator x2 = lower_bound(pnodes.begin(), pnodes.end(), p2, compare_path_vertices);
-		assert(x1 != pnodes.end());
-		assert(x2 != pnodes.end());
-		int k1 = x1 - pnodes.begin();
-		int k2 = x2 - pnodes.begin();
+// 	vector<PI> open_indices;
+// 	vector< set<int> > affected(pnodes.size());
+// 	for(int k = 0; k < open.size(); k++)
+// 	{
+// 		fcluster &fc = open[k];
+// 		path p1, p2;
+// 		p1.v = get_suffix(fc.v1);
+// 		p2.v = get_prefix(fc.v2);
+// 		vector<path>::const_iterator x1 = lower_bound(pnodes.begin(), pnodes.end(), p1, compare_path_vertices);
+// 		vector<path>::const_iterator x2 = lower_bound(pnodes.begin(), pnodes.end(), p2, compare_path_vertices);
+// 		assert(x1 != pnodes.end());
+// 		assert(x2 != pnodes.end());
+// 		int k1 = x1 - pnodes.begin();
+// 		int k2 = x2 - pnodes.begin();
 
-		open_indices.push_back(PI(k1, k2));
-		affected[k1].insert(k);
-	}
+// 		open_indices.push_back(PI(k1, k2));
+// 		affected[k1].insert(k);
+// 	}
 
-	// print pexons
-	for(int k = 0; k < bd->regions.size(); k++)
-	{
-		printf("region %d: [%d%s, %d%s), length = %d\n", 
-				k, bd->regions[k].lpos.p32, bd->regions[k].lpos.ale.c_str(), bd->regions[k].rpos.p32, bd->regions[k].rpos.ale.c_str(), bd->regions[k].rpos - bd->regions[k].lpos);
-	}
+// 	// print pexons
+// 	for(int k = 0; k < bd->regions.size(); k++)
+// 	{
+// 		printf("region %d: [%d%s, %d%s), length = %d\n", 
+// 				k, bd->regions[k].lpos.p32, bd->regions[k].lpos.ale.c_str(), bd->regions[k].rpos.p32, bd->regions[k].rpos.ale.c_str(), bd->regions[k].rpos - bd->regions[k].lpos);
+// 	}
 
-	vector<int> max_needed(pnodes.size(), -1);
-	for(int k = 0; k < open.size(); k++)
-	{
-		int k1 = open_indices[k].first;
-		int k2 = open_indices[k].second;
-		if(max_needed[k1] < k2) max_needed[k1] = k2;
-	}
+// 	vector<int> max_needed(pnodes.size(), -1);
+// 	for(int k = 0; k < open.size(); k++)
+// 	{
+// 		int k1 = open_indices[k].first;
+// 		int k2 = open_indices[k].second;
+// 		if(max_needed[k1] < k2) max_needed[k1] = k2;
+// 	}
 
-	// iteratively bridging open fragments
-	vector< vector<int> > table_cov;
-	vector<int32_t> table_len;
-	vector<int> trace;
-	table_cov.resize(pnodes.size());
-	table_len.resize(pnodes.size());
-	trace.resize(pnodes.size());
+// 	// iteratively bridging open fragments
+// 	vector< vector<int> > table_cov;
+// 	vector<int32_t> table_len;
+// 	vector<int> trace;
+// 	table_cov.resize(pnodes.size());
+// 	table_len.resize(pnodes.size());
+// 	trace.resize(pnodes.size());
 
-	for(int i = 0; i < table_cov.size(); i++) table_cov[i].resize(dp_stack_size);
+// 	for(int i = 0; i < table_cov.size(); i++) table_cov[i].resize(dp_stack_size);
 
-	for(int k1 = 0; k1 < pnodes.size(); k1++)
-	{
-		/*
-		printf("RUN: k = %d, max_needed = %d, affected = (", k, max_needed[k]);
-		prints(affected[k]);
-		printf(")\n");
-		*/
+// 	for(int k1 = 0; k1 < pnodes.size(); k1++)
+// 	{
+// 		/*
+// 		printf("RUN: k = %d, max_needed = %d, affected = (", k, max_needed[k]);
+// 		prints(affected[k]);
+// 		printf(")\n");
+// 		*/
 
-		if(max_needed[k1] < k1) continue;
+// 		if(max_needed[k1] < k1) continue;
 
-		dynamic_programming(k1, max_needed[k1], trace, table_cov, table_len);
+// 		dynamic_programming(k1, max_needed[k1], trace, table_cov, table_len);
 
-		for(set<int>::iterator si = affected[k1].begin(); si != affected[k1].end(); si++)
-		{
-			int i = *si;
-			fcluster &fc = open[i];
+// 		for(set<int>::iterator si = affected[k1].begin(); si != affected[k1].end(); si++)
+// 		{
+// 			int i = *si;
+// 			fcluster &fc = open[i];
 
-			assert(open_indices[i].first == k1);
-			int k2 = open_indices[i].second;
+// 			assert(open_indices[i].first == k1);
+// 			int k2 = open_indices[i].second;
 
-			double score = (double)(table_cov[k2][0]);
+// 			double score = (double)(table_cov[k2][0]);
 			
-			//fc.print(i);
-			printf("#fragments = %lu, score = %.1lf, k1 = %d, k2 = %d, max[k1] = %d, p1 = ( ", fc.fset.size(), score, k1, k2, max_needed[k1]);
-			printv(pnodes[k1].v);
-			printf("), p2 = ( ");
-			printv(pnodes[k2].v);
-			printf(")\n");
+// 			//fc.print(i);
+// 			printf("#fragments = %lu, score = %.1lf, k1 = %d, k2 = %d, max[k1] = %d, p1 = ( ", fc.fset.size(), score, k1, k2, max_needed[k1]);
+// 			printv(pnodes[k1].v);
+// 			printf("), p2 = ( ");
+// 			printv(pnodes[k2].v);
+// 			printf(")\n");
 
-			// TODO, setup minimum score
-			if(score <= min_bridging_score) continue;
+// 			// TODO, setup minimum score
+// 			if(score <= min_bridging_score) continue;
 
-			vector<int> pn = trace_back(k1, k2, trace);
-			vector<int> pb = get_bridge(pn, fc.v1, fc.v2);
+// 			vector<int> pn = trace_back(k1, k2, trace);
+// 			vector<int> pb = get_bridge(pn, fc.v1, fc.v2);
 
-			printf("pn = ( ");
-			printv(pn);
-			printf("), pb = ( ");
-			printv(pb);
-			printf(")\n");
+// 			printf("pn = ( ");
+// 			printv(pn);
+// 			printf("), pb = ( ");
+// 			printv(pb);
+// 			printf(")\n");
 
-			for(int j = 0; j < fc.fset.size(); j++)
-			{
-				fragment *fr = fc.fset[j];
-				path p;
-				p.ex1 = p.ex2 = 0;
-				p.v = pb;
-				p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
-				p.v = encode_vlist(p.v);
-				fr->paths.push_back(p);
-				//printf(" fragment %d length = %d\n", j, p.length);
-			}
-		}
-	}
+// 			for(int j = 0; j < fc.fset.size(); j++)
+// 			{
+// 				fragment *fr = fc.fset[j];
+// 				path p;
+// 				p.ex1 = p.ex2 = 0;
+// 				p.v = pb;
+// 				p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
+// 				p.v = encode_vlist(p.v);
+// 				fr->paths.push_back(p);
+// 				//printf(" fragment %d length = %d\n", j, p.length);
+// 			}
+// 		}
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 int bridger::compare_stack(const vector<int> &x, const vector<int> &y)
 {
@@ -1027,15 +1027,15 @@ int bridger::dynamic_programming(int k1, int k2, vector<int> &trace, vector< vec
 	return 0;
 }
 
-int32_t bridger::get_extended_length1(int k2, int p1, int p2)
-{
-	path &px = pnodes[p1];
-	path &py = pnodes[p2];
-	int l = k2 + 1;
-	int k1 = py.v.size() - l;
-	if(k1 == 0) return 0;
-	else return px.acc[k1 - 1];
-}
+// int32_t bridger::get_extended_length1(int k2, int p1, int p2)
+// {
+// 	path &px = pnodes[p1];
+// 	path &py = pnodes[p2];
+// 	int l = k2 + 1;
+// 	int k1 = py.v.size() - l;
+// 	if(k1 == 0) return 0;
+// 	else return px.acc[k1 - 1];
+// }
 
 int32_t bridger::get_extended_length2(int k1, int p1, int p2)
 {
@@ -1083,29 +1083,29 @@ vector<int> bridger::trace_back(int k1, int k2, const vector<int> &trace)
 	return v;
 }
 
-vector<int> bridger::get_bridge(const vector<int> &vv, const vector<int> &v1, const vector<int> &v2)
-{
-	vector<int> v;
-	if(vv.size() == 0) return v;
+// vector<int> bridger::get_bridge(const vector<int> &vv, const vector<int> &v1, const vector<int> &v2)
+// {
+// 	vector<int> v;
+// 	if(vv.size() == 0) return v;
 
-	v = v1;
-	for(int k = 0; k < vv.size(); k++)
-	{
-		const path &p = pnodes[vv[k]];
-		int x = v.back();
-		vector<int>::const_iterator it = lower_bound(p.v.begin(), p.v.end(), x);
-		assert(it != p.v.end());
-		assert((*it) == x);
-		v.insert(v.end(), it + 1, p.v.end());
-	}
+// 	v = v1;
+// 	for(int k = 0; k < vv.size(); k++)
+// 	{
+// 		const path &p = pnodes[vv[k]];
+// 		int x = v.back();
+// 		vector<int>::const_iterator it = lower_bound(p.v.begin(), p.v.end(), x);
+// 		assert(it != p.v.end());
+// 		assert((*it) == x);
+// 		v.insert(v.end(), it + 1, p.v.end());
+// 	}
 
-	int x = v.back();
-	vector<int>::const_iterator it = lower_bound(v2.begin(), v2.end(), x);
-	assert(it != v2.end());
-	assert((*it) == x);
-	v.insert(v.end(), it + 1, v2.end());
-	return v;
-}
+// 	int x = v.back();
+// 	vector<int>::const_iterator it = lower_bound(v2.begin(), v2.end(), x);
+// 	assert(it != v2.end());
+// 	assert((*it) == x);
+// 	v.insert(v.end(), it + 1, v2.end());
+// 	return v;
+// }
 
 int bridger::build_overlap_index()
 {
@@ -1409,20 +1409,20 @@ int bridger::build_overlap_index()
 	return 0;
 }
 
-vector<int> bridger::get_prefix(const vector<int> &v)
-{
-	if(max_pnode_length >= v.size()) return v;
-	vector<int> s(v.begin(), v.begin() + max_pnode_length);
-	return s;
-}
+// vector<int> bridger::get_prefix(const vector<int> &v)
+// {
+// 	if(max_pnode_length >= v.size()) return v;
+// 	vector<int> s(v.begin(), v.begin() + max_pnode_length);
+// 	return s;
+// }
 
-vector<int> bridger::get_suffix(const vector<int> &v)
-{
-	if(max_pnode_length >= v.size()) return v;
-	int k = v.size() - max_pnode_length;
-	vector<int> s(v.begin() + k, v.end());
-	return s;
-}
+// vector<int> bridger::get_suffix(const vector<int> &v)
+// {
+// 	if(max_pnode_length >= v.size()) return v;
+// 	int k = v.size() - max_pnode_length;
+// 	vector<int> s(v.begin() + k, v.end());
+// 	return s;
+// }
 
 bool bridger::determine_identical(const vector<int> &vx, const vector<int> &vy, int x1, int x2, int y1, int y2)
 {
@@ -1502,10 +1502,10 @@ int bridger::determine_overlap1(const vector<int> &vx, const vector<int> &vy, PI
 	return -1;
 }
 
-int bridger::set_thresholds()
-{
-	return 0;
-}
+// int bridger::set_thresholds()
+// {
+// 	return 0;
+// }
 
 int bridger::update_length()
 {
@@ -1713,55 +1713,55 @@ int bridger::print()
 	return 0;
 }
 
-bool compare_fragment_v1(fragment *f1, fragment *f2)
-{
-	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
-	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
+// bool compare_fragment_v1(fragment *f1, fragment *f2)
+// {
+// 	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
+// 	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
 
-	for(int k = 0; k < f1->h1->vlist.size(); k++)
-	{
-		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
-		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1->h1->vlist.size(); k++)
+// 	{
+// 		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
+// 		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
+// 	}
 
-	return (f1->lpos < f2->lpos);
-}
+// 	return (f1->lpos < f2->lpos);
+// }
 
-bool compare_fragment_v2(fragment *f1, fragment *f2)
-{
-	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
-	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
+// bool compare_fragment_v2(fragment *f1, fragment *f2)
+// {
+// 	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
+// 	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
 
-	for(int k = 0; k < f1->h2->vlist.size(); k++)
-	{
-		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
-		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1->h2->vlist.size(); k++)
+// 	{
+// 		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
+// 		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
+// 	}
 
-	return (f1->lpos < f2->lpos);
-}
+// 	return (f1->lpos < f2->lpos);
+// }
 
-bool compare_fragment_v3(fragment *f1, fragment *f2)
-{
-	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
-	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
-	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
-	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
+// bool compare_fragment_v3(fragment *f1, fragment *f2)
+// {
+// 	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
+// 	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
+// 	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
+// 	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
 
-	for(int k = 0; k < f1->h1->vlist.size(); k++)
-	{
-		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
-		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1->h1->vlist.size(); k++)
+// 	{
+// 		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
+// 		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
+// 	}
 
-	for(int k = 0; k < f1->h2->vlist.size(); k++)
-	{
-		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
-		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
-	}
+// 	for(int k = 0; k < f1->h2->vlist.size(); k++)
+// 	{
+// 		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
+// 		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
+// 	}
 
-	return (f1->lpos < f2->lpos);
-}
+// 	return (f1->lpos < f2->lpos);
+// }
 
 bool compare_fragment_v3_flank(fragment *f1, fragment *f2)
 {
@@ -1788,66 +1788,66 @@ bool compare_fragment_v3_flank(fragment *f1, fragment *f2)
 	return (f1->lpos < f2->lpos);
 }
 
-bool compare_fragment_path(fragment *f1, fragment *f2)
-{
-	assert(f1->paths.size() >= 1);
-	assert(f2->paths.size() >= 1);
+// bool compare_fragment_path(fragment *f1, fragment *f2)
+// {
+// 	assert(f1->paths.size() >= 1);
+// 	assert(f2->paths.size() >= 1);
 
-	int n1 = f1->paths[0].v.size();
-	int n2 = f2->paths[0].v.size();
+// 	int n1 = f1->paths[0].v.size();
+// 	int n2 = f2->paths[0].v.size();
 
-	for(int k = 0; k < n1 && k < n2; k++)
-	{
-		if(f1->paths[0].v[k] < f2->paths[0].v[k]) return true;
-		if(f1->paths[0].v[k] > f2->paths[0].v[k]) return false;
-	}
+// 	for(int k = 0; k < n1 && k < n2; k++)
+// 	{
+// 		if(f1->paths[0].v[k] < f2->paths[0].v[k]) return true;
+// 		if(f1->paths[0].v[k] > f2->paths[0].v[k]) return false;
+// 	}
 
-	if(n1 < n2) return true;
-	if(n1 > n2) return false;
+// 	if(n1 < n2) return true;
+// 	if(n1 > n2) return false;
 
-	return (f1->lpos < f2->lpos);
-}
+// 	return (f1->lpos < f2->lpos);
+// }
 
-bool check_suffix(const vector<int> &vx, const vector<int> &vy) 
-{
-	if(vx.size() == 0) return true;
-	if(vy.size() == 0) return true;
+// bool check_suffix(const vector<int> &vx, const vector<int> &vy) 
+// {
+// 	if(vx.size() == 0) return true;
+// 	if(vy.size() == 0) return true;
 
-	double overlap = 0.4;
-	if(vx.size() <= vy.size())
-	{
-		vector<int>::const_iterator it = lower_bound(vx.begin(), vx.end(), vy[0]);
-		if(it == vx.end()) return false;
-		if(vx.end() - it < overlap * vx.size()) return false;
-		for(int kx = vx.size() - 1, ky = (vx.end() - it) - 1; kx >= 0 && ky >= 0; kx--, ky--)
-		{
-			if(vx[kx] != vy[ky]) return false;
-		}
-		/*
-		for(int k = 0; it != vx.end(); it++, k++)
-		{
-			assert(k < vy.size());
-			if((*it) != vy[k]) return false;
-		}
-		*/
-	}
-	else
-	{
-		vector<int>::const_iterator it = lower_bound(vy.begin(), vy.end(), vx.back());
-		if(it == vy.end()) return false;
-		if(it - vy.begin() + 1 < overlap * vy.size()) return false;
-		for(int kx = vx.size() - (it - vy.begin()) - 1, ky = 0; kx < vx.size() && ky < vy.size(); kx++, ky++)
-		{
-			if(vx[kx] != vy[ky]) return false;
-		}
-		/*
-		for(int k = vx.size() - 1; k >= 0; it--, k--)
-		{
-			if((*it) != vx[k]) return false;
-			if(it == vy.begin()) break;
-		}
-		*/
-	}
-	return true;
-}
+// 	double overlap = 0.4;
+// 	if(vx.size() <= vy.size())
+// 	{
+// 		vector<int>::const_iterator it = lower_bound(vx.begin(), vx.end(), vy[0]);
+// 		if(it == vx.end()) return false;
+// 		if(vx.end() - it < overlap * vx.size()) return false;
+// 		for(int kx = vx.size() - 1, ky = (vx.end() - it) - 1; kx >= 0 && ky >= 0; kx--, ky--)
+// 		{
+// 			if(vx[kx] != vy[ky]) return false;
+// 		}
+// 		/*
+// 		for(int k = 0; it != vx.end(); it++, k++)
+// 		{
+// 			assert(k < vy.size());
+// 			if((*it) != vy[k]) return false;
+// 		}
+// 		*/
+// 	}
+// 	else
+// 	{
+// 		vector<int>::const_iterator it = lower_bound(vy.begin(), vy.end(), vx.back());
+// 		if(it == vy.end()) return false;
+// 		if(it - vy.begin() + 1 < overlap * vy.size()) return false;
+// 		for(int kx = vx.size() - (it - vy.begin()) - 1, ky = 0; kx < vx.size() && ky < vy.size(); kx++, ky++)
+// 		{
+// 			if(vx[kx] != vy[ky]) return false;
+// 		}
+// 		/*
+// 		for(int k = vx.size() - 1; k >= 0; it--, k--)
+// 		{
+// 			if((*it) != vx[k]) return false;
+// 			if(it == vy.begin()) break;
+// 		}
+// 		*/
+// 	}
+// 	return true;
+// }
 

@@ -98,20 +98,20 @@ int32_t compute_sum_overlap(const split_interval_map &imap, SIMI &p, SIMI &q)
 	return s;
 }
 
-int32_t compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q)
-{
-	if(p == imap.end()) return 0;
+// int32_t compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q)
+// {
+// 	if(p == imap.end()) return 0;
 
-	int32_t s = 0;
-	for(SIMI it = p; it != q; it++)
-	{
-		s += upper(it->first) - lower(it->first);
-	}
+// 	int32_t s = 0;
+// 	for(SIMI it = p; it != q; it++)
+// 	{
+// 		s += upper(it->first) - lower(it->first);
+// 	}
 
-	if(q != imap.end()) s += upper(q->first) - lower(q->first);
+// 	if(q != imap.end()) s += upper(q->first) - lower(q->first);
 
-	return s;
-}
+// 	return s;
+// }
 
 int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev, double &max)
 {
@@ -143,69 +143,69 @@ int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr,
 	return 0;
 }
 
-int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev)
-{
-	ave = 0;
-	dev = 1.0;
+// int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev)
+// {
+// 	ave = 0;
+// 	dev = 1.0;
 
-	PSIMI pei = locate_boundary_iterators(imap, ll, rr);
-	SIMI lit = pei.first, rit = pei.second;
+// 	PSIMI pei = locate_boundary_iterators(imap, ll, rr);
+// 	SIMI lit = pei.first, rit = pei.second;
 
-	if(lit == imap.end()) return 0;
-	if(rit == imap.end()) return 0;
+// 	if(lit == imap.end()) return 0;
+// 	if(rit == imap.end()) return 0;
 
-	vector<double> xv;
-	vector<double> yv;
-	double xm = 0;
-	double ym = 0;
-	for(SIMI it = lit; ; it++)
-	{
-		assert(upper(it->first) > lower(it->first));
-		double xi = (lower(it->first) + upper(it->first)) / 2.0;
-		double yi = it->second;
-		xv.push_back(xi);
-		yv.push_back(yi);
-		xm += xi;
-		ym += yi;
-		if(it == rit) break;
-	}
+// 	vector<double> xv;
+// 	vector<double> yv;
+// 	double xm = 0;
+// 	double ym = 0;
+// 	for(SIMI it = lit; ; it++)
+// 	{
+// 		assert(upper(it->first) > lower(it->first));
+// 		double xi = (lower(it->first) + upper(it->first)) / 2.0;
+// 		double yi = it->second;
+// 		xv.push_back(xi);
+// 		yv.push_back(yi);
+// 		xm += xi;
+// 		ym += yi;
+// 		if(it == rit) break;
+// 	}
 
-	xm /= xv.size();
-	ym /= yv.size();
+// 	xm /= xv.size();
+// 	ym /= yv.size();
 
-	double f1 = 0;
-	double f2 = 0;
-	for(int i = 0; i < xv.size(); i++)
-	{
-		f1 += (xv[i] - xm) * (yv[i] - ym);
-		f2 += (xv[i] - xm) * (xv[i] - xm);
-	}
+// 	double f1 = 0;
+// 	double f2 = 0;
+// 	for(int i = 0; i < xv.size(); i++)
+// 	{
+// 		f1 += (xv[i] - xm) * (yv[i] - ym);
+// 		f2 += (xv[i] - xm) * (xv[i] - xm);
+// 	}
 
-	double b1 = f1 / f2;
-	double b0 = ym - b1 * xm;
+// 	double b1 = f1 / f2;
+// 	double b0 = ym - b1 * xm;
 
-	double a1 = b1 * rr + b0;
-	double a0 = b1 * ll + b0;
-	ave = (a1 > a0) ? a1 : a0;
+// 	double a1 = b1 * rr + b0;
+// 	double a0 = b1 * ll + b0;
+// 	ave = (a1 > a0) ? a1 : a0;
 
-	double var = 0;
-	for(SIMI it = lit; ; it++)
-	{
-		assert(upper(it->first) > lower(it->first));
-		double xi = (upper(it->first) + lower(it->first)) / 2.0;
-		double yi = b1 * xi + b0;
-		var += (it->second - yi) * (it->second - yi) * (upper(it->first) - lower(it->first));
-		if(it == rit) break;
-	}
+// 	double var = 0;
+// 	for(SIMI it = lit; ; it++)
+// 	{
+// 		assert(upper(it->first) > lower(it->first));
+// 		double xi = (upper(it->first) + lower(it->first)) / 2.0;
+// 		double yi = b1 * xi + b0;
+// 		var += (it->second - yi) * (it->second - yi) * (upper(it->first) - lower(it->first));
+// 		if(it == rit) break;
+// 	}
 
-	dev = sqrt(var / (rr - ll));
-	if(dev < 1.0) dev = 1.0;
+// 	dev = sqrt(var / (rr - ll));
+// 	if(dev < 1.0) dev = 1.0;
 
-	return 0;
-}
+// 	return 0;
+// }
 
-int test_split_interval_map()
-{
+// int test_split_interval_map()
+// {
 	// split_interval_map imap;
 
 	// imap += make_pair(ROI(6, 7), 3);
@@ -273,7 +273,7 @@ int test_split_interval_map()
 	// 	}
 	// }
 
-	return 0;
-}
+// 	return 0;
+// }
 
 

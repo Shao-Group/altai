@@ -176,17 +176,17 @@ int transcript_set::filter(int min_count)
 	return 0;
 }
 
-int transcript_set::increase_count(int count)
-{
-	for(auto &x : mt)
-	{
-		for(auto &z : x.second)
-		{
-			z.count += count;
-		}
-	}
-	return 0;
-}
+// int transcript_set::increase_count(int count)
+// {
+// 	for(auto &x : mt)
+// 	{
+// 		for(auto &z : x.second)
+// 		{
+// 			z.count += count;
+// 		}
+// 	}
+// 	return 0;
+// }
 
 int transcript_set::print() const
 {
@@ -223,30 +223,30 @@ vector<transcript> transcript_set::get_transcripts(int min_count_single, int min
 	return v;
 }
 
-pair<bool, trans_item> transcript_set::query(const transcript &t) const
-{
-	pair<bool, trans_item> p;
-	size_t h = t.get_intron_chain_hashing();
-	auto it = mt.find(h);
-	if(it == mt.end()) 
-	{
-		p.first = false;
-		return p;
-	}
+// pair<bool, trans_item> transcript_set::query(const transcript &t) const
+// {
+// 	pair<bool, trans_item> p;
+// 	size_t h = t.get_intron_chain_hashing();
+// 	auto it = mt.find(h);
+// 	if(it == mt.end()) 
+// 	{
+// 		p.first = false;
+// 		return p;
+// 	}
 
-	auto &v = it->second;
-	for(int k = 0; k < v.size(); k++)
-	{
-		const transcript &x = v[k].trst;
-		if(x.strand != t.strand) continue;
-		bool b = x.equal1(t, single_exon_overlap);
-		if(b == true) 
-		{
-			p.first = true;
-			p.second = v[k];
-			return p;
-		}
-	}
-	p.first = true;
-	return p;
-}
+// 	auto &v = it->second;
+// 	for(int k = 0; k < v.size(); k++)
+// 	{
+// 		const transcript &x = v[k].trst;
+// 		if(x.strand != t.strand) continue;
+// 		bool b = x.equal1(t, single_exon_overlap);
+// 		if(b == true) 
+// 		{
+// 			p.first = true;
+// 			p.second = v[k];
+// 			return p;
+// 		}
+// 	}
+// 	p.first = true;
+// 	return p;
+// }

@@ -49,7 +49,7 @@ public:
 	int build_regions();
 
 	int build_fragments();
-	int group_fragments();
+	// int group_fragments();
 
 	int align_hits_transcripts();
 	int align_hit(const map<as_pos32, int> &m, const hit &h, vector<int> &v);

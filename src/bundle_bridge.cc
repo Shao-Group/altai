@@ -711,39 +711,39 @@ int bundle_bridge::build_fragments()
 	return 0;
 }
 
-int bundle_bridge::group_fragments()
-{
-	if(fragments.size() == 0) return 0;
+// int bundle_bridge::group_fragments()
+// {
+// 	if(fragments.size() == 0) return 0;
 
-	sort(fragments.begin(), fragments.end(), compare_fragment);
+// 	sort(fragments.begin(), fragments.end(), compare_fragment);
 
-	vector<fragment> ff;
+// 	vector<fragment> ff;
 
-	fragment fx = fragments[0];
-	assert(fx.h1->vlist.size() >= 1);
-	assert(fx.h2->vlist.size() >= 1);
-	for(int k = 1; k < fragments.size(); k++)
-	{
-		fragment &fr = fragments[k];
-		assert(fr.h1->vlist.size() >= 1);
-		assert(fr.h2->vlist.size() >= 1);
+// 	fragment fx = fragments[0];
+// 	assert(fx.h1->vlist.size() >= 1);
+// 	assert(fx.h2->vlist.size() >= 1);
+// 	for(int k = 1; k < fragments.size(); k++)
+// 	{
+// 		fragment &fr = fragments[k];
+// 		assert(fr.h1->vlist.size() >= 1);
+// 		assert(fr.h2->vlist.size() >= 1);
 
-		if(fx.equal(fr) == true)
-		{
-			fx.append(fr);
-		}
-		else
-		{
-			ff.push_back(fx);
-			fx = fr;
-		}
-	}
-	ff.push_back(fx);
-	fragments = ff;
+// 		if(fx.equal(fr) == true)
+// 		{
+// 			fx.append(fr);
+// 		}
+// 		else
+// 		{
+// 			ff.push_back(fx);
+// 			fx = fr;
+// 		}
+// 	}
+// 	ff.push_back(fx);
+// 	fragments = ff;
 
-	//printf("grouped fragments = %lu\n", fragments.size());
-	return 0;
-}
+// 	//printf("grouped fragments = %lu\n", fragments.size());
+// 	return 0;
+// }
 
 int32_t bundle_bridge::compute_aligned_length(int32_t k1l, int32_t k2r, const vector<int>& v)
 {

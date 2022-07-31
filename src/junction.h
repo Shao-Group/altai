@@ -32,9 +32,6 @@ public:
 	as_pos32 rpos;		// right position
 	int count;			// number of hits having this splice junction
 	char strand;		// strandness of this junction
-
-	// int lexon;			// region index corresponds to lpos
-	// int rexon;			// region index corresponds to rpos
 	int lexon;			// pexon index corresponds to lpos
 	int rexon;			// pexon index corresponds to rpos
 	int lregion;		// region index corresponds to lpos
@@ -45,5 +42,6 @@ public:
 public:
 	int print(const string &chrm, int index) const;
 };
+bool junction_cmp_length(const junction &x, const junction &y);
 
 #endif

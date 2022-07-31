@@ -28,10 +28,10 @@ public:
 	int clear();
 	int print(int k) const;
 	int add_phase(const vector<int> &v);
-	const vector<int> & get_vlist() const;
+	// const vector<int> & get_vlist() const;
 };
 
-bool compare_fcluster(const fcluster &fx, const fcluster &fy);
+// bool compare_fcluster(const fcluster &fx, const fcluster &fy);
 bool compare_fcluster_v1_v2(const fcluster &fx, const fcluster &fy);
 
 #endif

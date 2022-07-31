@@ -18,6 +18,7 @@ config.log
 config.status
 config.h.in
 config.h
+example
 depcomp
 missing
 install-sh

@@ -26,14 +26,14 @@ genome::~genome()
 {
 }
 
-int genome::add_gene(const gene &g)
-{
-	//printf("add gene %s with %lu transcripts\n", g.get_gene_id().c_str(), g.transcripts.size());
-	assert(g2i.find(g.get_gene_id()) == g2i.end());
-	g2i.insert(pair<string, int>(g.get_gene_id(), genes.size()));
-	genes.push_back(g);
-	return 0;
-}
+// int genome::add_gene(const gene &g)
+// {
+// 	//printf("add gene %s with %lu transcripts\n", g.get_gene_id().c_str(), g.transcripts.size());
+// 	assert(g2i.find(g.get_gene_id()) == g2i.end());
+// 	g2i.insert(pair<string, int>(g.get_gene_id(), genes.size()));
+// 	genes.push_back(g);
+// 	return 0;
+// }
 
 int genome::read(const string &file)
 {
@@ -98,70 +98,70 @@ int genome::sort()
 	return 0;
 }
 
-const gene* genome::get_gene(string name) const
-{
-	map<string, int>::const_iterator it = g2i.find(name);
-	if(it == g2i.end()) return NULL;
-	int k = it->second;
-	return &(genes[k]);
-}
+// const gene* genome::get_gene(string name) const
+// {
+// 	map<string, int>::const_iterator it = g2i.find(name);
+// 	if(it == g2i.end()) return NULL;
+// 	int k = it->second;
+// 	return &(genes[k]);
+// }
 
-const gene* genome::locate_gene(const string &chrm, const PI32 &p) const
-{
-	assert(p.first.leftsameto(p.second));
-	pair<int, int> p_int = pair<int, int>(p.first.p32, p.second.p32);
-	const gene * x = NULL;
-	int32_t oo = 0;
-	for(int i = 0; i < genes.size(); i++)
-	{
-		const gene &g = genes[i];
-		if(g.get_seqname() != chrm) continue;
-		PI32 b = g.get_bounds();
-		pair<int, int> b_int = pair<int, int>(b.first.p32, b.second.p32);
-		assert(b.first.leftsameto(b.second));
-		int32_t o = compute_overlap(p_int, b_int);
-		if(o > 0 && o > oo)
-		{
-			x = &(genes[i]);
-			oo = o;
-		}
-	}
-	return x;
-}
+// const gene* genome::locate_gene(const string &chrm, const PI32 &p) const
+// {
+// 	assert(p.first.leftsameto(p.second));
+// 	pair<int, int> p_int = pair<int, int>(p.first.p32, p.second.p32);
+// 	const gene * x = NULL;
+// 	int32_t oo = 0;
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		const gene &g = genes[i];
+// 		if(g.get_seqname() != chrm) continue;
+// 		PI32 b = g.get_bounds();
+// 		pair<int, int> b_int = pair<int, int>(b.first.p32, b.second.p32);
+// 		assert(b.first.leftsameto(b.second));
+// 		int32_t o = compute_overlap(p_int, b_int);
+// 		if(o > 0 && o > oo)
+// 		{
+// 			x = &(genes[i]);
+// 			oo = o;
+// 		}
+// 	}
+// 	return x;
+// }
 
-int genome::assign_RPKM(double factor)
-{
-	for(int i = 0; i < genes.size(); i++)
-	{
-		genes[i].assign_RPKM(factor);
-	}
-	return 0;
-}
+// int genome::assign_RPKM(double factor)
+// {
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		genes[i].assign_RPKM(factor);
+// 	}
+// 	return 0;
+// }
 
-int genome::assign_TPM_by_RPKM()
-{
-	double sum = 0;
-	for(int i = 0; i < genes.size(); i++)
-	{
-		vector<transcript> &v = genes[i].transcripts;
-		for(int k = 0; k < v.size(); k++)
-		{
-			transcript &t = v[k];
-			sum += t.RPKM;
-		}
-	}
+// int genome::assign_TPM_by_RPKM()
+// {
+// 	double sum = 0;
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		vector<transcript> &v = genes[i].transcripts;
+// 		for(int k = 0; k < v.size(); k++)
+// 		{
+// 			transcript &t = v[k];
+// 			sum += t.RPKM;
+// 		}
+// 	}
 
-	for(int i = 0; i < genes.size(); i++)
-	{
-		vector<transcript> &v = genes[i].transcripts;
-		for(int k = 0; k < v.size(); k++)
-		{
-			transcript &t = v[k];
-			t.TPM = t.RPKM * 1e6 / sum;
-		}
-	}
-	return 0;
-}
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		vector<transcript> &v = genes[i].transcripts;
+// 		for(int k = 0; k < v.size(); k++)
+// 		{
+// 			transcript &t = v[k];
+// 			t.TPM = t.RPKM * 1e6 / sum;
+// 		}
+// 	}
+// 	return 0;
+// }
 
 int genome::assign_TPM_by_FPKM()
 {
@@ -206,13 +206,13 @@ int genome::filter_low_coverage_transcripts(double min_coverage)
 	return 0;
 }
 
-vector<transcript> genome::collect_transcripts() const
-{
-	vector<transcript> vv;
-	for(int i = 0; i < genes.size(); i++)
-	{
-		const vector<transcript> &v = genes[i].transcripts;
-		vv.insert(vv.end(), v.begin(), v.end());
-	}
-	return vv;
-}
+// vector<transcript> genome::collect_transcripts() const
+// {
+// 	vector<transcript> vv;
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		const vector<transcript> &v = genes[i].transcripts;
+// 		vv.insert(vv.end(), v.begin(), v.end());
+// 	}
+// 	return vv;
+// }

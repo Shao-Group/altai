@@ -42,8 +42,8 @@ public:
 
 public:
 	int print(int index) const;
-	bool left_inclusive();
-	bool right_inclusive();
+	// bool left_inclusive();
+	// bool right_inclusive();
 
 private:
 	int build_join_interval_map();
