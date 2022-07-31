@@ -31,3 +31,4 @@ bin/
 .history/
 .idea/
 INSTALL
+log/
