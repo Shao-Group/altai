@@ -69,7 +69,7 @@ public:
 	virtual bool check_path(int s, int t);
 	virtual bool compute_shortest_path(int s, int t, vector<int> &p);
 	// virtual bool check_nested();
-	virtual bool intersect(edge_descriptor ex, edge_descriptor ey) = 0;
+	// virtual bool intersect(edge_descriptor ex, edge_descriptor ey) = 0;
 
 	// draw
 	virtual int draw(const string &file, const MIS &mis, const MES &mes, double len) = 0;

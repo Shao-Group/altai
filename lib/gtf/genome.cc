@@ -163,30 +163,30 @@ int genome::sort()
 // 	return 0;
 // }
 
-int genome::assign_TPM_by_FPKM()
-{
-	double sum = 0;
-	for(int i = 0; i < genes.size(); i++)
-	{
-		vector<transcript> &v = genes[i].transcripts;
-		for(int k = 0; k < v.size(); k++)
-		{
-			transcript &t = v[k];
-			sum += t.FPKM;
-		}
-	}
+// int genome::assign_TPM_by_FPKM()
+// {
+// 	double sum = 0;
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		vector<transcript> &v = genes[i].transcripts;
+// 		for(int k = 0; k < v.size(); k++)
+// 		{
+// 			transcript &t = v[k];
+// 			sum += t.FPKM;
+// 		}
+// 	}
 
-	for(int i = 0; i < genes.size(); i++)
-	{
-		vector<transcript> &v = genes[i].transcripts;
-		for(int k = 0; k < v.size(); k++)
-		{
-			transcript &t = v[k];
-			t.TPM = t.FPKM * 1e6 / sum;
-		}
-	}
-	return 0;
-}
+// 	for(int i = 0; i < genes.size(); i++)
+// 	{
+// 		vector<transcript> &v = genes[i].transcripts;
+// 		for(int k = 0; k < v.size(); k++)
+// 		{
+// 			transcript &t = v[k];
+// 			t.TPM = t.FPKM * 1e6 / sum;
+// 		}
+// 	}
+// 	return 0;
+// }
 
 int genome::filter_single_exon_transcripts()
 {
