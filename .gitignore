@@ -4,6 +4,7 @@
 *.swp
 *.aux
 *.log
+.deps
 Makefile
 Makefile.in
 .DS_Store
