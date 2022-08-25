@@ -12,12 +12,12 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 configure
-configure.ac
+configure~
 compile
 config.log
 config.status
 config.h.in
-config.h
+/config.h
 example
 depcomp
 missing
