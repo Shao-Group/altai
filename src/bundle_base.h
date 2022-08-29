@@ -27,6 +27,7 @@ public:
 
 public:
 	bool is_allelic;				// if contains allelic sites
+	map<as_pos, int> apos_count;  	// count of AS pos
 	int32_t tid;					// chromosome ID
 	string chrm;					// chromosome name
 	int32_t lpos;					// the leftmost boundary on reference

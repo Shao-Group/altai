@@ -29,9 +29,9 @@ public:
 	vector<fragment> fragments;			// to-be-filled fragments
 	vector<junction> junctions;			// splice junctions
 	vector<region> regions;				// pexons
-	vector<transcript> ref_trsts;		// overlaped genes in reference
-	vector< vector<int> > ref_phase;	// phasing paths for ref transcripts
-	vector< vector<PI> > ref_index;		// the set of trsts that contain each region
+	vector<transcript> ref_trsts;		// overlaped genes in reference					// FIXME: not used?
+	vector< vector<int> > ref_phase;	// phasing paths for ref transcripts			// FIXME: not used?
+	vector< vector<PI> > ref_index;		// the set of trsts that contain each region	// FIXME: not used?
 
 	vector< vector<int> > umiLink;			// umi linked list: fragments index
 

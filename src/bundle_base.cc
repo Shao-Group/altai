@@ -49,13 +49,17 @@ int bundle_base::add_hit(const hit &ht)
 	assert(strand == ht.strand);
 
 	// set bundle is_allelic
-	if (ht.apos.size() != 0) is_allelic = true;
+	if (! is_allelic)
+	{
+		if (ht.has_variant) is_allelic = true;
+	}	
 	return 0;
 }
 
 int bundle_base::buildbase()
 {
-	map<as_pos, int> apos_count;  // count of AS pos - used to keep or filter out AS pos
+	map<as_pos, int> apos_count;  // count of AS pos 
+
 	// count apos
 	for(int i = 0; i < hits.size(); i++)
 	{
@@ -73,30 +77,31 @@ int bundle_base::buildbase()
 			}
 		}
 	}
-	// filter apos
-	vector<hit> h;
-	for(int i = 0; i < hits.size(); i++)
-	{
-		hit &ht = hits[i];
+	// FIXME: filter apos
+	// vector<hit> h;
+	// for(int i = 0; i < hits.size(); i++)
+	// {
+	// 	hit &ht = hits[i];
 	
-		bool b = false;
-		auto it = ht.apos.begin();
-		while (it != ht.apos.end())
-		{
-			if(apos_count.find(*it)->second < min_num_reads_support_variant)
-			{
-				// it = ht.apos.erase(it);
-				b = true;
-				break;
-			}
-			else {
-				++it;
-			}
-    	}
-		// if(b) ht.make_itvna(); //TODO: optimize making of itvna
-		if (!b) h.push_back(ht);
-	}
-	hits = h;
+	// 	bool b = false;
+	// 	auto it = ht.apos.begin();
+	// 	while (it != ht.apos.end())
+	// 	{
+	// 		if(apos_count.find(*it)->second < min_num_reads_support_variant)
+	// 		{
+	// 			// it = ht.apos.erase(it);
+	// 			b = true;
+	// 			break;
+	// 		}
+	// 		else {
+	// 			++it;
+	// 		}
+    // 	}
+	// 	// if(b) ht.make_itvna(); //TODO: optimize making of itvna
+	// 	if (!b) h.push_back(ht);
+	// }
+	// hits = h;
+	// apos_count;  	// FIXME: remove accordingly count of AS pos
 
 	
 	for(int i = 0; i < hits.size(); i++)
@@ -137,7 +142,7 @@ int bundle_base::buildbase()
 			imap += make_pair(ROI(s, t), 1);
 		}
 
-		if (vcf_file == "")
+		if (vcf_file == "") 
 			nammap = mmap;
 		else
 		{

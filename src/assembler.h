@@ -17,6 +17,7 @@ See LICENSE for licensing.
 #include "splice_graph.h"
 #include "hyper_set.h"
 #include "transcript_set.h"
+#include "phaser.h"
 
 using namespace std;
 
@@ -33,6 +34,7 @@ private:
 	bundle_base bb1;		// +
 	bundle_base bb2;		// -
 	vector<bundle_base> pool;
+	phaser ph;
 
 	int hid;
 	int index;
@@ -47,7 +49,6 @@ public:
 
 private:
 	int process(int n);
-	// int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic);
 	int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic, transcript_set &ts1, transcript_set &ts2);
 	int assign_RPKM();
 	int write();

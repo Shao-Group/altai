@@ -129,6 +129,7 @@ int assemble_duplicates = 10;
 string version = "v0.0.1";
 bool DEBUG_MODE_ON = false;
 bool FILTER_BY_COV = false;
+bool phasing_profile_only = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -484,6 +485,10 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			min_num_reads_support_variant  = atoi(argv[i + 1]);
 			i++;
+		}
+		else if(string(argv[i]) == "--phasing_profile_only")
+		{
+			phasing_profile_only = true;
 		}
 	}
 

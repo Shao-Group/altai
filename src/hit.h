@@ -98,6 +98,7 @@ public:
 	// int set_concordance();
 	int get_aligned_intervals(vector<as_pos> &v) const;
 	int print() const;
+	bool has_variant() const;
 };
 
 vector<int> encode_vlist(const vector<int> &v);

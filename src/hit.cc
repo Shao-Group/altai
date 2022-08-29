@@ -479,6 +479,15 @@ int hit::print() const
 	return 0;
 }
 
+bool hit::has_variant() const
+{
+	if (apos.size() != 0)
+	{
+		return true;
+	}
+	return false;
+}
+
 vector<int> encode_vlist(const vector<int> &v)
 {
 	vector<int> vv;
@@ -531,3 +540,4 @@ vector<int> decode_vlist(const vector<int> &v)
 	}
 	return vv;
 }
+

@@ -30,18 +30,29 @@ bundle_bridge::~bundle_bridge()
 
 int bundle_bridge::build()
 {
-	build_junctions();
-	extend_junctions();
-	build_regions();
+	build_fragments_profile_only();		// pair MEPPS
+	make_splice_graph()
+	phaser()
+	
+	// bridge phased reads
+	
+	if (!phasing_profile_only) //FIXME:
+	{
+		build_junctions();
+		extend_junctions();
+		build_regions();
+		align_hits_transcripts();
+		index_references();
 
-	align_hits_transcripts();
-	index_references();
+		build_fragments();		// pair MEPPS
 
-	build_fragments();
-	//group_fragments();
-
-	bridger bdg(this);
-	bdg.bridge();
+		bridger bdg(this); 		// bridge
+		bdg.bridge();
+	}
+	else 
+	{
+	
+	}
 	return 0;
 }
 
@@ -109,6 +120,7 @@ int bundle_bridge::build_junctions()
 
 int bundle_bridge::extend_junctions()
 {
+	// FIXME: this funciton not used
 	map< as_pos, vector<int> > m;
 	for(int i = 0; i < ref_trsts.size(); i++)
 	{

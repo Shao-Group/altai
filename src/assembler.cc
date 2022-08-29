@@ -8,6 +8,7 @@ Part of Altai
 See LICENSE for licensing.
 */
 
+#include <algorithm>
 #include <cstdio>
 #include <cassert>
 #include <sstream>
@@ -130,11 +131,12 @@ int assembler::assemble()
 
 int assembler::process(int n)
 {
+	//FIXME: phasing should be done regardless of strand
 	if(pool.size() < n) return 0;
-
 	for(int i = 0; i < pool.size(); i++)
 	{
 		bundle_base &bb = pool[i];
+		if (phasing_profile_only && (!bb.is_allelic) ) continue; // skip non-as bb if phasing only
 		bb.buildbase();
 
 		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
@@ -162,11 +164,19 @@ int assembler::process(int n)
 
 		bundle bd(bb);
 
-		// bd.chrm = string(buf);
-		// bd.build();
-		// if(verbose >= 1) bd.print(index);
 		bd.build(1, true);
 		bd.print(index++);
+
+		// write phasing profile
+		ph.phase(bd.gr, bd.hs, bd);
+		ph.clear();
+
+		if (phasing_profile_only)
+		{
+			assert(bb.is_allelic);
+			continue;
+		}
+
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
 		bd.build(2, true);
@@ -202,18 +212,13 @@ int assembler::process(int n)
 	return 0;
 }
 
-// int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic)
 int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic, transcript_set &ts1, transcript_set &ts2)
 {
 	super_graph sg(gr0, hs0);
 	sg.build();
 
-	// vector<transcript> gv;
 	for(int k = 0; k < sg.subs.size(); k++)
 	{
-		// string gid = "gene." + tostring(index) + "." + tostring(k);
-		// if(fixed_gene_name != "" && gid != fixed_gene_name) continue;
-
 		// if(verbose >= 2 && (k == 0 || fixed_gene_name != "")) sg.print();
 
 		splice_graph &gr = sg.subs[k];
@@ -300,6 +305,4 @@ int assembler::write()
 			t.write(fout1);
 	}
     fout1.close();
-
-	return 0;
 }

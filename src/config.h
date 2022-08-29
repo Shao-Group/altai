@@ -22,7 +22,7 @@ See LICENSE for licensing.
 
 using namespace std;
 
-//// constants
+// constants
 #define START_BOUNDARY 1
 #define END_BOUNDARY 2
 #define LEFT_SPLICE 3
@@ -57,7 +57,7 @@ using namespace std;
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MAX 3
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MIN 4
 
-//// parameters
+// parameters
 // for bam file and reads
 extern int min_flank_length;
 extern int max_num_cigar;
@@ -167,6 +167,7 @@ extern int assemble_duplicates;
 extern string version;
 extern bool DEBUG_MODE_ON;
 extern bool FILTER_BY_COV;
+extern bool phasing_profile_only;
 
 // parse arguments
 int print_command_line(int argc, const char ** argv);

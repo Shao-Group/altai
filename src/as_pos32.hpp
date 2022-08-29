@@ -10,6 +10,8 @@ See LICENSE for licensing.
 #include <string>
 #include "as_pos.hpp"
 
+using namespace std;
+
 class as_pos32
 {
     public:
@@ -47,6 +49,8 @@ class as_pos32
         bool operator<=(as_pos32 a) const                   { return (*this)< a || (*this) ==a; }
         bool operator>=(as_pos32 a) const                   { return (*this)> a || (*this) ==a; }     
         operator int32_t() const                            { return p32;}
+
+        string aspos32string() const; 
 };
 
 

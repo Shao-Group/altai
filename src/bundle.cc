@@ -56,6 +56,9 @@ int bundle::prepare()
 int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
+	// TODO: phasing
+	// TODO: future AS bridge
+
 	if(revise == true) revise_splice_graph(); // TODO: this might result an error for allelic regions
 	build_hyper_set();
 	return 0;
@@ -80,28 +83,6 @@ int bundle::compute_strand()
 
 	return 0;
 }
-
-// int bundle::check_left_ascending()
-// {
-// 	for(int i = 1; i < hits.size(); i++)
-// 	{
-// 		int32_t p1 = hits[i - 1].pos;
-// 		int32_t p2 = hits[i].pos;
-// 		assert(p1 <= p2);
-// 	}
-// 	return 0;
-// }
-
-// int bundle::check_right_ascending()
-// {
-// 	for(int i = 1; i < hits.size(); i++)
-// 	{
-// 		int32_t p1 = hits[i - 1].rpos;
-// 		int32_t p2 = hits[i].rpos;
-// 		assert(p1 <= p2);
-// 	}
-// 	return 0;
-// }
 
 int bundle::build_intervals()
 {

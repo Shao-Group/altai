@@ -76,3 +76,9 @@ bool as_pos32::operator>(as_pos32 a) const
     if ((p32 == a.p32) && (ale.compare(a.ale) > 0)) return true;
     return false;
 }
+
+string as_pos32::aspos32string() const
+{
+    string s = to_string(p32) + ale;
+    return s;
+}
