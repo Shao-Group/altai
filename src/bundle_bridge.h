@@ -46,7 +46,7 @@ public:
 	vector<as_pos32> get_splices(fragment &fr);
 
 private:
-	int splicetype_set_to_int(set<int>);
+	int splicetype_set_to_int(set<int>&);
 
 public:
 	int build_junctions();

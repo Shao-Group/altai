@@ -381,7 +381,7 @@ int bundle_bridge::build_regions()
 	return 0;
 }
 
-int bundle_bridge::splicetype_set_to_int(set<int> s)
+int bundle_bridge::splicetype_set_to_int(set<int>& s)
 {
 	if (s.size() == 1) return (*s.begin());
 
@@ -404,8 +404,8 @@ int bundle_bridge::splicetype_set_to_int(set<int> s)
 	else if (s.find(ALLELIC_RIGHT_SPLICE) != s.end())  as_type = ALLELIC_RIGHT_SPLICE;
 	else as_type = -1;
 	
-	if (na_type = -1) return as_type;
-	if (as_type = -1) return na_type;
+	if (na_type == -1) return as_type;
+	if (as_type == -1) return na_type;
 
 	if (na_type == LEFT_SPLICE)
 	{
