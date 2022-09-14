@@ -23,28 +23,41 @@ See LICENSE for licensing.
 using namespace std;
 
 // constants
+
+// just define basic types
+// START_BOUNDARY: bit 0
+// END_BOUNDARY: bit 1
+// LEFT_SPLICE: bit 2
+// RIGHT_SPLICE: bit 3, 
+// ALLELIC_LEFT_SPLICE: bit 4
+// ALLELIC_RIGHT_SPLICE: bit 5
+// example: 101000 -> RIGHT_SPLICE + ALLELIC_RIGHT_SPLICE, i.e., RIGHT_AL_RIGHT_SPLICE previously
+// to combine two or types, simply add up them
+// therefore, we don't need to explicitly define any combined-type
+
 #define START_BOUNDARY 1
 #define END_BOUNDARY 2
-#define LEFT_SPLICE 3
-#define RIGHT_SPLICE 4
-#define LEFT_RIGHT_SPLICE 5
-#define MIDDLE_CUT 6
+#define LEFT_SPLICE 4
+#define RIGHT_SPLICE 8
+#define ALLELIC_LEFT_SPLICE 16
+#define ALLELIC_RIGHT_SPLICE 32
 
-#define ALLELIC_LEFT_SPLICE 7
-#define ALLELIC_RIGHT_SPLICE 8
-#define ALLELIC_LEFT_RIGHT_SPLICE 9
-
-#define LEFT_AL_LEFT_SPLICE 10
-#define LEFT_AL_RIGHT_SPLICE 11
-#define LEFT_AL_LEFT_RIGHT_SPLICE 12
-
-#define RIGHT_AL_LEFT_SPLICE 13
-#define RIGHT_AL_RIGHT_SPLICE 14
-#define RIGHT_AL_LEFT_RIGHT_SPLICE 15
-
-#define LEFT_RIGHT_AL_LEFT_SPLICE 16
-#define LEFT_RIGHT_AL_RIGHT_SPLICE 17
-#define LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE 18
+// #define MIDDLE_CUT 6, seems not used
+// #define ALLELIC_LEFT_SPLICE 7
+// #define ALLELIC_RIGHT_SPLICE 8
+// #define ALLELIC_LEFT_RIGHT_SPLICE 9
+// 
+// #define LEFT_AL_LEFT_SPLICE 10
+// #define LEFT_AL_RIGHT_SPLICE 11
+// #define LEFT_AL_LEFT_RIGHT_SPLICE 12
+// 
+// #define RIGHT_AL_LEFT_SPLICE 13
+// #define RIGHT_AL_RIGHT_SPLICE 14
+// #define RIGHT_AL_LEFT_RIGHT_SPLICE 15
+// 
+// #define LEFT_RIGHT_AL_LEFT_SPLICE 16
+// #define LEFT_RIGHT_AL_RIGHT_SPLICE 17
+// #define LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE 18
 
 #define TRIVIAL 0
 #define NORMAL 1
