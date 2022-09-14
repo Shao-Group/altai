@@ -403,26 +403,28 @@ int bundle_bridge::splicetype_set_to_int(set<int>& s)
 	}
 	else if (s.find(ALLELIC_RIGHT_SPLICE) != s.end())  as_type = ALLELIC_RIGHT_SPLICE;
 	else as_type = -1;
+
+	assert(as_type != -1 || na_type != -1);
 	
 	if (na_type == -1) return as_type;
 	if (as_type == -1) return na_type;
 
 	if (na_type == LEFT_SPLICE)
 	{
-		if (as_type == ALLELIC_LEFT_SPLICE)  LEFT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) LEFT_AL_RIGHT_SPLICE;
+		if (as_type == ALLELIC_LEFT_SPLICE)  return LEFT_AL_LEFT_SPLICE;
+		else if (as_type == ALLELIC_RIGHT_SPLICE) return LEFT_AL_RIGHT_SPLICE;
 		else return LEFT_AL_LEFT_RIGHT_SPLICE;
 	}
 	else if (na_type == RIGHT_SPLICE)
 	{
-		if (as_type == ALLELIC_LEFT_SPLICE)  RIGHT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) RIGHT_AL_RIGHT_SPLICE;
+		if (as_type == ALLELIC_LEFT_SPLICE)  return RIGHT_AL_LEFT_SPLICE;
+		else if (as_type == ALLELIC_RIGHT_SPLICE) return RIGHT_AL_RIGHT_SPLICE;
 		else return RIGHT_AL_LEFT_RIGHT_SPLICE;
 	}
 	else  // na_type = LEFT_RIGHT_SPLICE
 	{
-		if (as_type == ALLELIC_LEFT_SPLICE)  LEFT_RIGHT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) LEFT_RIGHT_AL_RIGHT_SPLICE;
+		if (as_type == ALLELIC_LEFT_SPLICE) return LEFT_RIGHT_AL_LEFT_SPLICE;
+		else if (as_type == ALLELIC_RIGHT_SPLICE) return LEFT_RIGHT_AL_RIGHT_SPLICE;
 		else return LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE;
 	}
 	
