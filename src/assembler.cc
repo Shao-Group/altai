@@ -114,8 +114,7 @@ int assembler::assemble()
 	assign_RPKM();
 
 	filter ft(trsts);
-	// ft.merge_single_exon_transcripts(); // FIXME: 
-	ft.keep_as_transcripts_only();
+	ft.merge_single_exon_transcripts();
 	trsts = ft.trs;
 
 	filter ft1(non_full_trsts);
@@ -131,12 +130,11 @@ int assembler::assemble()
 
 int assembler::process(int n)
 {
-	//FIXME: phasing should be done regardless of strand
 	if(pool.size() < n) return 0;
 	for(int i = 0; i < pool.size(); i++)
 	{
 		bundle_base &bb = pool[i];
-		if (phasing_profile_only && (!bb.is_allelic) ) continue; // skip non-as bb if phasing only
+		if (phasing_profile_only && (!bb.is_allelic) ) continue;
 		bb.buildbase();
 
 		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
@@ -167,15 +165,10 @@ int assembler::process(int n)
 		bd.build(1, true);
 		bd.print(index++);
 
-		// write phasing profile
-		ph.phase(bd.gr, bd.hs, bd);
-		ph.clear();
-
-		if (phasing_profile_only)
-		{
-			assert(bb.is_allelic);
-			continue;
-		}
+		// // TODO: phase & write phasing profile
+		// ph.build(bd.gr, bd.hs, bd)
+		// ph.phase();
+		// ph.clear();
 
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
@@ -235,7 +228,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			// scallop sc(gr, hs);
 			scallop sc(gr, hs, r == 0 ? false : true);
 			sc.assemble(is_allelic);
-			if(verbose >=3) for(auto i: sc.paths) i.print(index);
+			if(verbose >=3) for(auto& i: sc.paths) i.print(index);
 
 			if(verbose >= 2)
 			{

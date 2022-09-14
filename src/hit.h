@@ -24,17 +24,17 @@ using namespace std;
 
 
 /*! @typedef
- @abstract Structure for core alignment information.
- @field  tid     chromosome ID, defined by bam_hdr_t
- @field  pos     0-based leftmost coordinate
- @field  bin     bin calculated by bam_reg2bin()
- @field  qual    mapping quality
- @field  l_qname length of the query name
- @field  flag    bitwise flag
- @field  n_cigar number of CIGAR operations
- @field  l_qseq  length of the query sequence (read)
- @field  mtid    chromosome ID of next read in template, defined by bam_hdr_t
- @field  mpos    0-based leftmost coordinate of next read in template
+@abstract Structure for core alignment information.
+@field  tid     chromosome ID, defined by bam_hdr_t
+@field  pos     0-based leftmost coordinate
+@field  bin     bin calculated by bam_reg2bin()
+@field  qual    mapping quality
+@field  l_qname length of the query name
+@field  flag    bitwise flag
+@field  n_cigar number of CIGAR operations
+@field  l_qseq  length of the query sequence (read)
+@field  mtid    chromosome ID of next read in template, defined by bam_hdr_t
+@field  mpos    0-based leftmost coordinate of next read in template
 
 typedef struct {
     int32_t tid;
@@ -55,7 +55,7 @@ public:
 	//hit(bam1_t *b, std::string chrm_name);
 	hit(bam1_t *b, std::string chrm_name, int id);
 	hit(const hit &h);
-	~hit();
+	// ~hit();
 	bool operator<(const hit &h) const;
 	hit& operator=(const hit &h);
 
@@ -72,7 +72,6 @@ public:
 	int32_t nh;								// NH aux in sam
 	int32_t hi;								// HI aux in sam
 	int32_t nm;								// NM aux in sam
-	bool concordant;						// whether it is concordant
 	bool paired;							// whether this hit has been paired
 	bool bridged;							// whether this hit has been bridged 
 	vector<int> vlist;						// list of spanned vertices in the junction graph
@@ -83,6 +82,7 @@ public:
 	vector<as_pos> itvi;					// insert interval
 	vector<as_pos> itvd;					// delete interval		
 	hit *next;								// next hit that is equivalent with current one
+	genotype gt;
 
 	// UMI
 	string umi;
@@ -95,10 +95,10 @@ public:
 	int make_itvna();
 	int set_tags(bam1_t *b);
 	int set_strand();
-	// int set_concordance();
 	int get_aligned_intervals(vector<as_pos> &v) const;
 	int print() const;
 	bool has_variant() const;
+	int assign_genotype();
 };
 
 vector<int> encode_vlist(const vector<int> &v);

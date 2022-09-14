@@ -80,7 +80,11 @@ int vcf_data::read_as_counts(const string & name)
 		}
 		vcf_count_file.close();
 	}
-	else cout << "Unable to open file" << name << endl;  // TODO: catch IO error
+	else
+	{
+		cerr << "Unable to open vcf file " << name << endl;
+		throw runtime_error("Unable to open vcf file.");
+	} 
 
 	return 0;
 }
@@ -93,6 +97,11 @@ int vcf_data::increse_it(map <int, vector <std::string> >::iterator &it1, map <i
 	return 0;
 }
 
+
+// TODO: find variant positions between lpos and rpos log (n), returned value is in v
+int vcf_data::find_var_between(string chrm, int lpos, int rpos, vector < map< string, map<int, int> >::iterator > v)
+{ 
+}
 
 int vcf_data::print(int k)
 {

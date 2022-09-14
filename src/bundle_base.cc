@@ -22,6 +22,7 @@ bundle_base::bundle_base()
 	lpos = 1 << 30;
 	rpos = 0;
 	strand = '.';
+	is_allelic = false;
 }
 
 bundle_base::~bundle_base()
@@ -51,7 +52,7 @@ int bundle_base::add_hit(const hit &ht)
 	// set bundle is_allelic
 	if (! is_allelic)
 	{
-		if (ht.has_variant) is_allelic = true;
+		if (ht.has_variant()) is_allelic = true;
 	}	
 	return 0;
 }
@@ -77,31 +78,6 @@ int bundle_base::buildbase()
 			}
 		}
 	}
-	// FIXME: filter apos
-	// vector<hit> h;
-	// for(int i = 0; i < hits.size(); i++)
-	// {
-	// 	hit &ht = hits[i];
-	
-	// 	bool b = false;
-	// 	auto it = ht.apos.begin();
-	// 	while (it != ht.apos.end())
-	// 	{
-	// 		if(apos_count.find(*it)->second < min_num_reads_support_variant)
-	// 		{
-	// 			// it = ht.apos.erase(it);
-	// 			b = true;
-	// 			break;
-	// 		}
-	// 		else {
-	// 			++it;
-	// 		}
-    // 	}
-	// 	// if(b) ht.make_itvna(); //TODO: optimize making of itvna
-	// 	if (!b) h.push_back(ht);
-	// }
-	// hits = h;
-	// apos_count;  	// FIXME: remove accordingly count of AS pos
 
 	
 	for(int i = 0; i < hits.size(); i++)
@@ -167,11 +143,13 @@ bool bundle_base::overlap(const hit &ht) const
 
 int bundle_base::clear()
 {
+	is_allelic = false;
 	tid = -1;
 	chrm = "";
 	lpos = 1 << 30;
 	rpos = 0;
 	strand = '.';
+	apos_count.clear();
 	hits.clear();
 	mmap.clear();
 	imap.clear();

@@ -44,6 +44,8 @@ int bundle::prepare()
 {
 	compute_strand();
 	build_intervals();
+	// FIXME: remove accordingly count of AS pos
+	// remove insufficiently supported as pos
 	build_junctions();
 	build_regions();
 	build_partial_exons();
@@ -298,13 +300,14 @@ int bundle::build_allelic_junctions()
 				hv.push_back(i);
 				m.push_back(p);
 				n.push_back(hv);
-				assert(p.ale != "$");  // assert not allele
+				assert(p.ale != "$");  // assert being allele
 			}
 			else
 			{
 				n[it - m.begin()].push_back(i);
 			}
 			// consecutive junctions
+			/*
 			if(k < v.size() -1)
 			{
 				as_pos32 p1 = low32(p);
@@ -325,6 +328,7 @@ int bundle::build_allelic_junctions()
 					
 				}
 			}
+			*/
 		}
 	}
 
@@ -342,7 +346,7 @@ int bundle::build_allelic_junctions()
 	if (verbose >= 3) 
 	{
 		printf("bundle al junctions m.size() = %lu, n.size() = %lu\n", m.size(), n.size());
-		for (auto i: m) cout << "\tapos vector " << high32(i).p32 << high32(i).ale << "-" << low32(i).p32 << low32(i).ale << endl;
+		for (auto&& i: m) cout << "\tapos vector " << high32(i).p32 << high32(i).ale << "-" << low32(i).p32 << low32(i).ale << endl;
 		cout << "printf apos finished\n";
 	}
 
@@ -443,6 +447,7 @@ int bundle::build_allelic_junctions()
 
 int bundle::build_regions()
 {
+	// TODO: Fix splice types in vector as bundle_bridge::regions
 	MPI s1;
 	s1.insert(PI(as_pos32(bb.lpos, "$"), START_BOUNDARY));
 	s1.insert(PI(as_pos32(bb.rpos, "$"), END_BOUNDARY));
@@ -458,10 +463,10 @@ int bundle::build_regions()
 		assert(l.ale == "$");
 		assert(r.ale == "$");
 		if(s1.find(l) == s1.end()) s1.insert(make_pair(l, LEFT_SPLICE));
-		else if(s1[l] == RIGHT_SPLICE) s1[l] = LEFT_RIGHT_SPLICE;
+		// else if(s1[l] == RIGHT_SPLICE) s1[l] = LEFT_RIGHT_SPLICE; // TODO: Fix splice types in vector as bundle_bridge::regions
 
 		if(s1.find(r) == s1.end()) s1.insert(make_pair(r, RIGHT_SPLICE));
-		else if(s1[r] == LEFT_SPLICE) s1[r] = LEFT_RIGHT_SPLICE;
+		// else if(s1[r] == LEFT_SPLICE) s1[r] = LEFT_RIGHT_SPLICE;
 	}
 
 	vector<PPI> v(s1.begin(), s1.end());
@@ -479,10 +484,10 @@ int bundle::build_regions()
 		assert(r.ale == "$");
 		int ltype = v[k].second; 
 		int rtype = v[k + 1].second;
-		if(ltype == LEFT_RIGHT_SPLICE) ltype = RIGHT_SPLICE;
-		if(rtype == LEFT_RIGHT_SPLICE) rtype = LEFT_SPLICE;
-		if(ltype == ALLELIC_LEFT_RIGHT_SPLICE) ltype = ALLELIC_LEFT_SPLICE;
-		if(rtype == ALLELIC_LEFT_RIGHT_SPLICE) rtype = ALLELIC_RIGHT_SPLICE;
+		// if(ltype == LEFT_RIGHT_SPLICE) ltype = RIGHT_SPLICE; // TODO: Fix splice types in vector as bundle_bridge::regions
+		// if(rtype == LEFT_RIGHT_SPLICE) rtype = LEFT_SPLICE;
+		// if(ltype == ALLELIC_LEFT_RIGHT_SPLICE) ltype = ALLELIC_LEFT_SPLICE;
+		// if(rtype == ALLELIC_LEFT_RIGHT_SPLICE) rtype = ALLELIC_RIGHT_SPLICE;
 		// regions.push_back(region(l, r, ltype, rtype, &nammap, &imap));
 		regions.push_back(region(l, r, ltype, rtype, &fmap, &(bb.imap))); // TODO:
 	}
@@ -505,7 +510,7 @@ int bundle::build_partial_exons()
 			pe.rid = i;
 			pe.pid = pexons.size();
 			vector<partial_exon> pev = partition_allelic_partial_exons(pe);
-			for(auto partitioned_pe: pev)
+			for(auto& partitioned_pe: pev)
 			{
 				// if((partitioned_pe.lpos != lpos || partitioned_pe.rpos != rpos) && partitioned_pe.ltype == START_BOUNDARY && partitioned_pe.rtype == END_BOUNDARY) regional.push_back(true);
 				if((partitioned_pe.lpos != bb.lpos || partitioned_pe.rpos != bb.rpos) && partitioned_pe.ltype == START_BOUNDARY && partitioned_pe.rtype == END_BOUNDARY) regional.push_back(true);
@@ -570,12 +575,12 @@ vector<partial_exon> bundle::partition_allelic_partial_exons(const partial_exon&
 		if (l.ale == "$")
 		{
 			if(s2.find(l) == s2.end()) s2.insert(make_pair(l, ALLELIC_LEFT_SPLICE));
-			else if(s2[l] == ALLELIC_RIGHT_SPLICE) s2[l] = ALLELIC_LEFT_RIGHT_SPLICE;
+			// else if(s2[l] == ALLELIC_RIGHT_SPLICE) s2[l] = ALLELIC_LEFT_RIGHT_SPLICE;  // TODO: Fix splice types in vector as bundle_bridge::regions
 		}
 		if(r.ale == "$")
 		{
 			if(s2.find(r) == s2.end()) s2.insert(make_pair(r, ALLELIC_RIGHT_SPLICE));
-			else if(s2[r] == ALLELIC_LEFT_SPLICE) s2[r] = ALLELIC_LEFT_RIGHT_SPLICE;
+			// else if(s2[r] == ALLELIC_LEFT_SPLICE) s2[r] = ALLELIC_LEFT_RIGHT_SPLICE;  // TODO: Fix splice types in vector as bundle_bridge::regions
 		}
 	}
 

@@ -17,14 +17,14 @@ See LICENSE for licensing.
 #include "bundle_bridge.h"
 #include "bridger.h"
 #include "config.h"
-#include "gurobi_c++.h"
+// #include "gurobi_c++.h"
 
 int previewer::open_file()
 {
     sfn = sam_open(input_file.c_str(), "r");
     hdr = sam_hdr_read(sfn);
     b1t = bam_init1();
-	GRBEnv env = GRBEnv(); // test Gurobi
+	// GRBEnv env = GRBEnv(); // check Gurobi
 	return 0;
 }
 
@@ -138,8 +138,6 @@ int previewer::solve_strandness()
 
 	if(verbose >= 1)
 	{
-		// printf("preview: reads = %d, single = %d, paired = %d, spliced reads = %d, first = %d, second = %d, inferred library_type = %s, given library_type = %s\n",
-		// 	total, single, paired, sp, first, second, vv[s1 + 1].c_str(), vv[library_type + 1].c_str());
 		printf("preview strandness: sampled reads = %d, single = %d, paired = %d, first = %d, second = %d, inferred = %s, given = %s\n",
 			total, single, paired, first, second, vv[s1 + 1].c_str(), vv[library_type + 1].c_str());
 	}
@@ -240,6 +238,13 @@ int previewer::solve_insertsize()
 	insertsize_ave = insertsize_ave * 1.0 / n;
 	insertsize_std = sqrt((sx2 - n * insertsize_ave * insertsize_ave) * 1.0 / n);
 
+	if(verbose >= 1)
+	{
+		printf("preview insertsize: sampled reads = %d, isize = %.2lf +/- %.2lf, median = %d, low = %d, high = %d\n", 
+				total, insertsize_ave, insertsize_std, insertsize_median, insertsize_low, insertsize_high);
+	}
+	
+	/*
 	insertsize_profile.assign(insertsize_high, 1);
 	n = insertsize_high;
 	for(map<int, int>::iterator it = m.begin(); it != m.end(); it++)
@@ -249,21 +254,16 @@ int previewer::solve_insertsize()
 		n += it->second;
 	}
 
-	if(verbose >= 1)
-	{
-		printf("preview insertsize: sampled reads = %d, isize = %.2lf +/- %.2lf, median = %d, low = %d, high = %d\n", 
-				total, insertsize_ave, insertsize_std, insertsize_median, insertsize_low, insertsize_high);
-	}
-
 	for(int i = 0; i < insertsize_profile.size(); i++)
 	{
 		insertsize_profile[i] = insertsize_profile[i] * 1.0 / n;
-		//printf("insertsize_profile %d %.8lf\n", i, insertsize_profile[i]);
+		printf("insertsize_profile %d %.8lf\n", i, insertsize_profile[i]);
 	}
 
-	// further relax bounds of insertsize
-	//insertsize_low = insertsize_low / 1.15;
-	//insertsize_high = insertsize_high * 1.15;
+	further relax bounds of insertsize
+	insertsize_low = insertsize_low / 1.15;
+	insertsize_high = insertsize_high * 1.15;
+	*/
 
 	return 0;
 }
@@ -274,6 +274,8 @@ int previewer::process_bundle(bundle_base &bb, map<int, int>& m)
 	if(bb.tid < 0) return 0;
 
 	int cnt = 0;
+
+	bb.buildbase();
 
 	bundle_bridge br(bb);
 

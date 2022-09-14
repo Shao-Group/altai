@@ -180,20 +180,6 @@ int region::build_partial_exons()
 	return 0;
 }
 
-// bool region::left_inclusive()
-// {
-// 	if(pexons.size() == 0) return false;
-// 	if(pexons[0].lpos == lpos) return true;
-// 	else return false;
-// }
-
-// bool region::right_inclusive()
-// {
-// 	if(pexons.size() == 0) return false;
-// 	if(pexons[pexons.size() - 1].rpos == rpos) return true;
-// 	else return false;
-// }
-
 int region::print(int index) const
 {	
 	printf("region %d: length = %d, pexons = %lu, type = (%d, %d), pos = [%d%s, %d%s), cov/dev = (%.2lf, %.2lf)\n", 
@@ -213,4 +199,25 @@ int region::print(int index) const
 	*/
 
 	return 0;
+}
+
+bool region::is_allelic() const
+{
+	if (lpos.ale != "$")
+	{
+		assert (rpos.ale != "$");
+		return true;
+	}
+	else return false;
+}
+
+
+bool region::operator<(const region &j) const
+{
+	if (this->lpos < j.lpos) return true;
+	if (this->lpos == j.lpos) 
+	{	
+		if (this->rpos < j.rpos) return true;
+	}
+	return false;
 }

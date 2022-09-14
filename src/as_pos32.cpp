@@ -82,3 +82,9 @@ string as_pos32::aspos32string() const
     string s = to_string(p32) + ale;
     return s;
 }
+
+bool as_pos32::inside_strict(as_pos32 l1, as_pos32 r1, as_pos32 l2, as_pos32 r2)
+{
+    if (l2.rightto(l1) && r2.leftto(r1)) return true;
+    return false;
+}

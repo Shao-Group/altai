@@ -63,6 +63,7 @@ hit& hit::operator=(const hit &h)
 	bridged = h.bridged;
 	qhash = h.qhash;
 	next = h.next;
+	gt = h.gt;
 
 	umi = h.umi;
 	return *this;
@@ -93,13 +94,14 @@ hit::hit(const hit &h)
 	bridged = h.bridged;
 	qhash = h.qhash;
 	next = h.next;
+	gt = h.gt;
 
 	umi = h.umi;
 }
 
-hit::~hit()
-{
-}
+// hit::~hit()
+// {
+// }
 
 
 // hit::hit(bam1_t *b, std::string chrm_name)
@@ -206,7 +208,8 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 				if (alelpos < s)  continue;
 				if (alerpos > p)
 					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar || bam_cigar_op(cigar[k+1]) != BAM_CDEL)
-						continue;												// the later condition checks whether it is DEL 				
+						continue;												// the later condition checks whether it is DEL
+				if (ale == "*") continue; 
 				apos.push_back(as_pos(pack(alelpos, alerpos), ale));
 			}
 		}
@@ -215,6 +218,7 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 	// open for scallop+coral
 	itvi.clear();
 	itvd.clear();
+	itvm.clear();
 	p = pos;
     for(int k = 0; k < n_cigar; k++)
 	{
@@ -241,15 +245,15 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 		}
 	}
 
-	if (apos.size() != 0) make_itvna();
-	else itvna = itvm;
+	// if (has_variant()) make_itvna();
+	// else itvna = itvm;
 }
 
 
 int hit::make_itvna()
 {
 	itvna.clear();
-	if (apos.size() == 0) 
+	if (!has_variant()) 
 	{
 		itvna = itvm;
 		return 0;
@@ -446,8 +450,8 @@ int hit::print() const
 	// print basic information
 	// printf("Hit %s: chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d\n", 
 			// qname.c_str(), chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi);
-	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c\n", 
-			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F');
+	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, genotype = %d\n", 
+			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', gt);
 
 	printf(" start position [%d - )\n", pos);
 	for(int i = 0; i < spos.size(); i++)
@@ -457,19 +461,19 @@ int hit::print() const
 		as_pos32 p2 = low32(p);
 		printf(" splice position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
 	}
-	for (auto i: apos)
+	for (auto&& i: apos)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);
 		printf(" apos position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
 	}
-	for (auto i: itvm)
+	for (auto&& i: itvm)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);
 		printf(" itvm position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
 	}
-	for (auto i: itvna)
+	for (auto&& i: itvna)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);

@@ -34,7 +34,7 @@ private:
 	bundle_base bb1;		// +
 	bundle_base bb2;		// -
 	vector<bundle_base> pool;
-	phaser ph;
+	// phaser ph;
 
 	int hid;
 	int index;

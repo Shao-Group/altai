@@ -42,8 +42,9 @@ public:
 
 public:
 	int print(int index) const;
-	// bool left_inclusive();
-	// bool right_inclusive();
+	bool is_allelic() const;
+
+	bool operator<(const region &x) const;
 
 private:
 	int build_join_interval_map();

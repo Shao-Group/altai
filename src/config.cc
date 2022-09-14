@@ -48,7 +48,7 @@ int insertsize_low = -1;
 int insertsize_high = -1;
 double insertsize_low_percentile = 0.005;
 double insertsize_high_percentile = 0.998;
-vector<double> insertsize_profile;
+
 
 // for bridging
 double min_bridging_score = 0.5;
@@ -59,6 +59,9 @@ bool use_overlap_scoring = false;
 int32_t max_clustering_flank = 30;
 int32_t flank_tiny_length = 10;
 double flank_tiny_ratio = 0.4;
+double bridger_suppl_coefficient1 = 0.5;
+double bridger_suppl_coefficient2 = 0.5;
+
 
 
 // for identifying subgraphs
@@ -458,6 +461,16 @@ int parse_arguments(int argc, const char ** argv)
 			flank_tiny_ratio = atof(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--bridger_suppl_coefficient1")
+		{
+			bridger_suppl_coefficient1 = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--bridger_suppl_coefficient2")
+		{
+			bridger_suppl_coefficient2 = atof(argv[i + 1]);
+			i++;
+		}
 		else if(string(argv[i]) == "--insertsize_median")
 		{
 			insertsize_median = atof(argv[i + 1]);
@@ -471,6 +484,16 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--insertsize_high")
 		{
 			insertsize_high = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_std")
+		{
+			insertsize_std = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_ave")
+		{
+			insertsize_ave = atof(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--DEBUG_MODE")
@@ -489,6 +512,12 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--phasing_profile_only")
 		{
 			phasing_profile_only = true;
+		}
+		else
+		{
+			cerr << "Unkown arugment received: " << string(argv[i]) << endl;
+			print_help();
+			abort();
 		}
 	}
 

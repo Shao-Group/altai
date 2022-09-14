@@ -24,7 +24,7 @@ int filter::simple_phase_set_by_coverage()
 	vector<PI32> as_exons;
 	for(int i = 0; i < trs.size(); ++i)
 	{
-		for (PI32 j: trs[i].exons)
+		for (PI32& j: trs[i].exons)
 		{
 			if (j.first.ale !="$") 
 			{
@@ -43,7 +43,7 @@ int filter::simple_phase_set_by_coverage()
 	for(int i = 0; i < trs.size(); ++i)
 	{
 		vector<int> e;
-		for (PI32 j: trs[i].exons)
+		for (PI32& j: trs[i].exons)
 		{
 			if (j.first.ale !="$") 
 			{
@@ -193,7 +193,7 @@ int filter::simple_phase_set_by_variant_number()
 	vector<PI32> as_exons;
 	for(int i = 0; i < trs.size(); ++i)
 	{
-		for (PI32 j: trs[i].exons)
+		for (PI32& j: trs[i].exons)
 		{
 			if (j.first.ale !="$") 
 			{
@@ -212,7 +212,7 @@ int filter::simple_phase_set_by_variant_number()
 	for(int i = 0; i < trs.size(); ++i)
 	{
 		vector<int> e;
-		for (PI32 j: trs[i].exons)
+		for (PI32& j: trs[i].exons)
 		{
 			if (j.first.ale !="$") 
 			{
@@ -599,7 +599,7 @@ int filter::locate_next_transcript(int t)
 	return -1;
 }
 
-int filter::merge_single_exon_transcripts(vector<transcript> &trs0)
+int filter::merge_single_exon_transcripts(vector<transcript> &trs0) 		// FIXME: TODO: don't merge transcripts from two alleles
 {
 	typedef pair<PI32, int> PPI;
 	vector<PPI> vv;

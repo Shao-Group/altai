@@ -11,12 +11,13 @@ See LICENSE for licensing.
 #include "splice_graph.h"
 #include "hyper_set.h"
 #include "as_pos32.hpp"
+#include "bundle.h"
 
 class phaser
 {
 public:
 	phaser();
-	~phaser();
+
 
 private:
     splice_graph gr;
@@ -29,7 +30,7 @@ private:
                             // allele1.size() == allele2.size() == var_sites.size()
                             
 private:
-    phase(const splice_graph gr, const hyper_set hs, const bundle bd);
-    clear();
+    int phase(const splice_graph gr, const hyper_set hs, const bundle bd);
+    int clear();
 };
 #endif

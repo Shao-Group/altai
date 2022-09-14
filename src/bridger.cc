@@ -45,6 +45,8 @@ int bridger::bridge()
 	printf("===\n");
 	*/
 
+	// TODO: bridge twice
+
 
 	update_length();
 	int n = bd->fragments.size();
@@ -87,6 +89,22 @@ int bridger::bridge()
 	*/
 
 	return 0;
+}
+
+int bridger::build_suppl_graphs()
+{
+	double c1, c2;
+	if (bridger_suppl_coefficient1 > 0 || bridger_suppl_coefficient2 > 0)
+	{
+		c1 = bridger_suppl_coefficient1; // default 0.5
+		c2 = bridger_suppl_coefficient2; // default 0.5
+	}
+	else
+	{
+		//TODO: using global ratio of alleles
+	}
+
+	//TODO: make suppl graphs
 }
 
 int bridger::bridge_overlapped_fragments()

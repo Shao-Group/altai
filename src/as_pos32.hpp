@@ -51,6 +51,7 @@ class as_pos32
         operator int32_t() const                            { return p32;}
 
         string aspos32string() const; 
+        static bool inside_strict(as_pos32 l1, as_pos32 r1, as_pos32 l2, as_pos32 r2); // true if l2/r2 is strictly inside l1/r1
 };
 
 

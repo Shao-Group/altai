@@ -29,9 +29,22 @@ using namespace std;
 #define RIGHT_SPLICE 4
 #define LEFT_RIGHT_SPLICE 5
 #define MIDDLE_CUT 6
+
 #define ALLELIC_LEFT_SPLICE 7
 #define ALLELIC_RIGHT_SPLICE 8
 #define ALLELIC_LEFT_RIGHT_SPLICE 9
+
+#define LEFT_AL_LEFT_SPLICE 10
+#define LEFT_AL_RIGHT_SPLICE 11
+#define LEFT_AL_LEFT_RIGHT_SPLICE 12
+
+#define RIGHT_AL_LEFT_SPLICE 13
+#define RIGHT_AL_RIGHT_SPLICE 14
+#define RIGHT_AL_LEFT_RIGHT_SPLICE 15
+
+#define LEFT_RIGHT_AL_LEFT_SPLICE 16
+#define LEFT_RIGHT_AL_RIGHT_SPLICE 17
+#define LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE 18
 
 #define TRIVIAL 0
 #define NORMAL 1
@@ -56,6 +69,8 @@ using namespace std;
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_NUL 2
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MAX 3
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MIN 4
+
+enum genotype {NONSPECIFIC, ALLELE1, ALLELE2, UNPHASED};
 
 // parameters
 // for bam file and reads
@@ -83,7 +98,7 @@ extern int insertsize_low;
 extern int insertsize_high;
 extern double insertsize_low_percentile;
 extern double insertsize_high_percentile;
-extern vector<double> insertsize_profile;
+
 
 // for bridging
 extern double min_bridging_score;
@@ -94,6 +109,8 @@ extern bool use_overlap_scoring;
 extern int32_t max_clustering_flank; 
 extern int32_t flank_tiny_length;
 extern double flank_tiny_ratio;
+extern double bridger_suppl_coefficient1;
+extern double bridger_suppl_coefficient2;
 
 // for identifying subgraphs
 extern int32_t min_subregion_gap;
@@ -147,12 +164,12 @@ extern string output_file1;
 extern int min_num_reads_support_variant;
 extern string vmap_chrm;
 extern vcf_data asp;
-extern map < std::string, map <int, vector <std::string> > > vcf_map;
-extern map < std::string, map <int, int > > vcf_map_len;
-extern map <int, vector <std::string> >::iterator vcf_map_it;
-extern map <int, int >::iterator vcf_map_len_it;
-extern map <int, vector <std::string> >::iterator vcf_map_end;
-extern map <int, int >::iterator vcf_map_len_end;
+extern map < std::string, map <int, vector <std::string> > >  vcf_map;
+extern map < std::string, map <int, int > >                   vcf_map_len;
+extern map <int, vector <std::string> >::iterator             vcf_map_it;
+extern map <int, int >::iterator                              vcf_map_len_it;
+extern map <int, vector <std::string> >::iterator             vcf_map_end;
+extern map <int, int >::iterator                              vcf_map_len_end;
 
 
 // for controling

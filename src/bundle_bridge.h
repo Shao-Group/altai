@@ -24,16 +24,18 @@ public:
 	virtual ~bundle_bridge();
 
 public:
-	bundle_base &bb;					// input bundle base
-	set<string> breads;					// bridged reads
-	vector<fragment> fragments;			// to-be-filled fragments
-	vector<junction> junctions;			// splice junctions
-	vector<region> regions;				// pexons
-	vector<transcript> ref_trsts;		// overlaped genes in reference					// FIXME: not used?
-	vector< vector<int> > ref_phase;	// phasing paths for ref transcripts			// FIXME: not used?
-	vector< vector<PI> > ref_index;		// the set of trsts that contain each region	// FIXME: not used?
+	bundle_base &bb;							// input bundle base
+	set<string> breads;							// bridged reads
+	vector<fragment> fragments;					// to-be-filled fragments
+	vector<junction> junctions;					// splice junctions
+	vector<junction> allelic_junctions;			// allelic pseudo splice junctions
+	map<as_pos, vector<int> > allelic_itv; 		// allelic aspos intervals and hits containing them
+	vector<region> regions;						// pexons
+	vector<transcript> ref_trsts;				// overlaped genes in reference						// not used
+	vector< vector<int> > ref_phase;			// phasing paths for ref transcripts				// not used
+	vector< vector<PI> > ref_index;				// the set of trsts that contain each region		// not used
 
-	vector< vector<int> > umiLink;			// umi linked list: fragments index
+	vector< vector<int> > umiLink;				// umi linked list: fragments index
 
 public:
 	int build();
@@ -43,13 +45,16 @@ public:
 	vector<as_pos32> get_aligned_intervals(fragment &fr);
 	vector<as_pos32> get_splices(fragment &fr);
 
+private:
+	int splicetype_set_to_int(set<int>);
+
 public:
 	int build_junctions();
-	int extend_junctions();
+	int build_allelic_junctions();
+	int extend_junctions();  // not used w/o ref
 	int build_regions();
 
 	int build_fragments();
-	// int group_fragments();
 
 	int align_hits_transcripts();
 	int align_hit(const map<as_pos32, int> &m, const hit &h, vector<int> &v);
