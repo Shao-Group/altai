@@ -42,23 +42,6 @@ using namespace std;
 #define ALLELIC_LEFT_SPLICE 16
 #define ALLELIC_RIGHT_SPLICE 32
 
-// #define MIDDLE_CUT 6, seems not used
-// #define ALLELIC_LEFT_SPLICE 7
-// #define ALLELIC_RIGHT_SPLICE 8
-// #define ALLELIC_LEFT_RIGHT_SPLICE 9
-// 
-// #define LEFT_AL_LEFT_SPLICE 10
-// #define LEFT_AL_RIGHT_SPLICE 11
-// #define LEFT_AL_LEFT_RIGHT_SPLICE 12
-// 
-// #define RIGHT_AL_LEFT_SPLICE 13
-// #define RIGHT_AL_RIGHT_SPLICE 14
-// #define RIGHT_AL_LEFT_RIGHT_SPLICE 15
-// 
-// #define LEFT_RIGHT_AL_LEFT_SPLICE 16
-// #define LEFT_RIGHT_AL_RIGHT_SPLICE 17
-// #define LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE 18
-
 #define TRIVIAL 0
 #define NORMAL 1
 

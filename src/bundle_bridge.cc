@@ -381,10 +381,16 @@ int bundle_bridge::build_regions()
 	return 0;
 }
 
+
 int bundle_bridge::splicetype_set_to_int(set<int>& s)
 {
-	if (s.size() == 1) return (*s.begin());
-
+	int s = 0;
+	for (int i: s)
+	{
+		s += i;
+	}
+	return s;
+	/*
 	int na_type = -1;
 	int as_type = -1;
 
@@ -427,9 +433,9 @@ int bundle_bridge::splicetype_set_to_int(set<int>& s)
 		else if (as_type == ALLELIC_RIGHT_SPLICE) return LEFT_RIGHT_AL_RIGHT_SPLICE;
 		else return LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE;
 	}
-	
-	return -1;
+	*/
 }
+
 
 int bundle_bridge::align_hits_transcripts()
 {
