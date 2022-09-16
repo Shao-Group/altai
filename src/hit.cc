@@ -189,7 +189,7 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 				int32_t alelpos = it->first; 									// 0-based ref pos, included
 				int32_t qpos = alelpos - p + q;									// 0-based query pos, included
 
-				std::string ale = "*";
+				string ale = "*";
 				uint8_t *seq_ptr = bam_get_seq (b);
 				for (auto iit = (it->second).begin(); iit != (it->second).end(); iit++) 								// Note: INS also take in here
 				{
@@ -209,7 +209,7 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 				if (alerpos > p)
 					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar || bam_cigar_op(cigar[k+1]) != BAM_CDEL)
 						continue;												// the later condition checks whether it is DEL
-				if (ale == "*") continue; 
+				// if (ale == "*") continue; 
 				apos.push_back(as_pos(pack(alelpos, alerpos), ale));
 			}
 		}
@@ -448,10 +448,8 @@ bool hit::operator<(const hit &h) const
 int hit::print() const
 {
 	// print basic information
-	// printf("Hit %s: chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d\n", 
-			// qname.c_str(), chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi);
-	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, genotype = %d\n", 
-			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', gt);
+	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, genotype = %d, #var = %d\n", 
+			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', gt, apos.size());
 
 	printf(" start position [%d - )\n", pos);
 	for(int i = 0; i < spos.size(); i++)

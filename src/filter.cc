@@ -8,7 +8,7 @@ See LICENSE for licensing.
 
 #include "filter.h"
 #include "config.h"
-#include "gurobi_c++.h"
+// #include "gurobi_c++.h"
 #include <cassert>
 #include <algorithm>
 #include "as_pos32.hpp"
@@ -17,7 +17,7 @@ filter::filter(const vector<transcript> &v)
 	:trs(v)
 {}
 
-int filter::simple_phase_set_by_coverage()
+/* int filter::simple_phase_set_by_coverage()
 {
 	int NUM_PHASE_SET = 2; // for human, number of phase set is 2 (diploid)
 
@@ -165,15 +165,15 @@ int filter::simple_phase_set_by_coverage()
 					cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
 			}
 		}
-		/* // print x_ik values
-		for (int k = 0; k < NUM_PHASE_SET; ++k) 
-		{
-			for (int i = 0; i < as_exons.size(); ++i)
-			{
-				cout << i << ' ' <<k << " x_ik: " <<x[i][k].get(GRB_DoubleAttr_X) << endl;
-			}
-		}
-		*/
+		// print x_ik values
+		// for (int k = 0; k < NUM_PHASE_SET; ++k) 
+		// {
+		// 	for (int i = 0; i < as_exons.size(); ++i)
+		// 	{
+		// 		cout << i << ' ' <<k << " x_ik: " <<x[i][k].get(GRB_DoubleAttr_X) << endl;
+		// 	}
+		// }
+		
 		trs = v;
 	}
 	// catch (GRBException e)
@@ -185,8 +185,9 @@ int filter::simple_phase_set_by_coverage()
 
 	return 0;
 }
+*/
 
-int filter::simple_phase_set_by_variant_number()
+/* int filter::simple_phase_set_by_variant_number()
 {
 	int NUM_PHASE_SET = 2; // for human, number of phase set is 2 (diploid)
 
@@ -376,15 +377,15 @@ int filter::simple_phase_set_by_variant_number()
 					cout << m << ' ' <<k << " z_mk: " <<z[m][k].get(GRB_DoubleAttr_X) << endl;
 			}
 		}
-		/* // print x_ik values
-		for (int k = 0; k < NUM_PHASE_SET; ++k) 
-		{
-			for (int i = 0; i < as_exons.size(); ++i)
-			{
-				cout << i << ' ' <<k << " x_ik: " <<x[i][k].get(GRB_DoubleAttr_X) << endl;
-			}
-		}
-		*/
+		// print x_ik values
+		// for (int k = 0; k < NUM_PHASE_SET; ++k) 
+		// {
+		// 	for (int i = 0; i < as_exons.size(); ++i)
+		// 	{
+		// 		cout << i << ' ' <<k << " x_ik: " <<x[i][k].get(GRB_DoubleAttr_X) << endl;
+		// 	}
+		// }
+		
 		trs = v;
 	}
 	// catch (GRBException e)
@@ -395,7 +396,8 @@ int filter::simple_phase_set_by_variant_number()
 	// }
 
 	return 0;
-}
+} 
+*/
 
 int filter::keep_as_transcripts_only()
 {

@@ -12,7 +12,8 @@ GUROBI_LIB = $(GUROBI_HOME)/lib
 
 altai_CPPFLAGS = -I$(GTF_INCLUDE) -I$(GRAPH_INCLUDE) -I$(UTIL_INCLUDE) -I$(GUROBI_INCLUDE)
 altai_LDFLAGS = -pthread -L$(GTF_LIB) -L$(GRAPH_LIB) -L$(UTIL_LIB) -L$(GUROBI_LIB)
-altai_LDADD = -lgtf -lgraph -lutil -lgurobi_c++ -lgurobi95
+#altai_LDADD = -lgtf -lgraph -lutil -lgurobi_c++ -lgurobi95
+altai_LDADD = -lgtf -lgraph -lutil -lgurobi_c++
 
 altai_SOURCES = splice_graph.h splice_graph.cc \
 				  super_graph.h super_graph.cc \
