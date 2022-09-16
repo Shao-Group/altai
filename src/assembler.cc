@@ -37,6 +37,9 @@ assembler::assembler()
 	terminate = false;
 	qlen = 0;
 	qcnt = 0;
+
+	// reset vcf pointers
+	vmap_chrm = "";
 }
 
 assembler::~assembler()
@@ -66,12 +69,11 @@ int assembler::assemble()
 		char buf[1024];
 		strcpy(buf, hdr->target_name[p.tid]);
 
-		// hit ht(b1t, string(buf));
 		hit ht(b1t, string(buf), hid++);
 		ht.set_tags(b1t);
 		ht.set_strand();
 		
-		if(verbose >= 4) ht.print();
+		if(verbose >= 3) ht.print();
 
 		
 		qlen += ht.qlen;
@@ -134,12 +136,10 @@ int assembler::process(int n)
 	for(int i = 0; i < pool.size(); i++)
 	{
 		bundle_base &bb = pool[i];
-		if (phasing_profile_only && (!bb.is_allelic) ) continue;
 		bb.buildbase();
 
 		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
 
-		// if(bb.hits.size() < min_num_hits_in_bundle) continue;
 		int cnt1 = 0;
 		int cnt2 = 0;
 		for(int k = 0; k < bb.hits.size(); k++)
@@ -159,10 +159,10 @@ int assembler::process(int n)
 		transcript_set ts1(bb.chrm, 0.9);		// full-length set
 		transcript_set ts2(bb.chrm, 0.9);		// non-full-length set
 
-
 		bundle bd(bb);
-
 		bd.build(1, true);
+		cout << "bundle build done" << endl;
+		throw DebugBreakPoint();
 		bd.print(index++);
 
 		// // TODO: phase & write phasing profile
@@ -174,6 +174,9 @@ int assembler::process(int n)
 
 		bd.build(2, true);
 		bd.print(index++);
+		
+		throw DebugBreakPoint();
+		
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
 		int sdup = assemble_duplicates / 1 + 1;
@@ -191,6 +194,8 @@ int assembler::process(int n)
 			if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
 		}
 		
+		throw DebugBreakPoint();
+
 		filter ft1(gv1);
 		ft1.filter_length_coverage();
 		ft1.remove_nested_transcripts();

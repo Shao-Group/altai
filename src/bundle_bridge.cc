@@ -118,96 +118,166 @@ int bundle_bridge::build_junctions()
 
 int bundle_bridge::build_allelic_junctions()
 {
-	// allelic_junctions.clear();
-	// map< as_pos, vector<int> > m;
-	// map<pair<as_pos32, as_pos32>, vector<int> > consecutive_al_junction;
-	// for(int i = 0; i < bb.hits.size(); i++)
-	// {
-	// 	vector<as_pos> v = bb.hits[i].apos;
-	// 	if(v.size() == 0) continue;
+		allelic_junctions.clear();
+	vector<as_pos> m;
+	vector<vector<int> > n;
+	map<pair<as_pos32, as_pos32>, vector<int> > consecutive_al_junction;
+	for(int i = 0; i < bb.hits.size(); i++)
+	{
+		vector<as_pos> v = bb.hits[i].apos;
+		if(v.size() == 0) continue;
+		for(int k = 0; k < v.size(); k++)
+		{
+			as_pos p = v[k];
+			vector<as_pos>::iterator it = find(m.begin(), m.end(), p);
+			if(it == m.end())
+			{
+				vector<int> hv;
+				hv.push_back(i);
+				m.push_back(p);
+				n.push_back(hv);
+				assert(p.ale != "$");  // assert being allele
+			}
+			else
+			{
+				n[it - m.begin()].push_back(i);
+			}
+			// consecutive junctions
+			/*
+			if(k < v.size() -1)
+			{
+				as_pos32 p1 = low32(p);
+				as_pos32 p2 = high32(v[k+1]);
+				if(p1.samepos(p2)) 
+				{
+					pair<as_pos32, as_pos32> con_al_j = make_pair(p1, p2);
+					if (consecutive_al_junction.find(con_al_j) == consecutive_al_junction.end())
+					{
+						vector<int> hv;
+						hv.push_back(i);
+						consecutive_al_junction.insert(make_pair(con_al_j, hv));
+					}
+					else
+					{
+						consecutive_al_junction.find(con_al_j)->second.push_back(i);
+					}
+					
+				}
+			}
+			*/
+		}
+	}
 
-	// 	for(int k = 0; k < v.size(); k++)
-	// 	{
-	// 		as_pos p = v[k];
+	assert(m.size() == n.size());
+	allelic_itv.clear();
+	for (int i = 0; i < m.size(); i ++) allelic_itv.insert(make_pair(m[i], n[i]));
 
-	// 		if(m.find(p) == m.end())
-	// 		{
-	// 			vector<int> hv;
-	// 			hv.push_back(i);
-	// 			m.insert(pair< as_pos, vector<int> >(p, hv));
-	// 			assert(p.ale != "$");  // assert being allele
-	// 		}
-	// 		else
-	// 		{
-	// 			m[p].push_back(i);
-	// 		}
-	// 	}
-	// }
+	// sort m, n
+	vector<pair< as_pos, vector<int> > > mn (allelic_itv.begin(), allelic_itv.end());
+	sort(mn.begin(), mn.end());
+	m.clear();
+	n.clear();
+	for(int i = 0; i < mn.size(); i++) {m.push_back(mn[i].first); n.push_back(mn[i].second);}
 
-	// sort(m.begin(), m.end());
-	// map< as_pos, vector<int> >::iterator it;
+	if (verbose >= 3) 
+	{
+		printf("bundle al junctions m.size() = %lu, n.size() = %lu\n", m.size(), n.size());
+		for (auto&& i: m) cout << "\tapos vector " << high32(i).p32 << high32(i).ale << "-" << low32(i).p32 << low32(i).ale << endl;
+		cout << "printf apos finished\n";
+	}
 
-	// for(it = m.begin(); it != m.end(); it++)
-	// {
-	// 	vector<int> &v = it->second;
-	// 	if(v.size() < min_allele_overlap) continue;
+	for(int it = 0; it < m.size(); it++)
+	{
+		vector<int> &v = n[it];
+		if(v.size() < min_allele_overlap) continue;
 
-	// 	as_pos32 p1 = high32(it->first);
-	// 	as_pos32 p2 = low32(it->first);
+		as_pos32 p1 = high32(m[it]);
+		as_pos32 p2 = low32(m[it]);
 
-	// 	int s0 = 0;
-	// 	int s1 = 0;
-	// 	int s2 = 0;
-	// 	int nm = 0;
-	// 	for(int k = 0; k < v.size(); k++)
-	// 	{
-	// 		hit &h = bb.hits[v[k]];
-	// 		nm += h.nm;
-	// 		if(h.xs == '.') s0++;
-	// 		if(h.xs == '+') s1++;
-	// 		if(h.xs == '-') s2++;
-	// 	}
+		int s0 = 0;
+		int s1 = 0;
+		int s2 = 0;
+		int nm = 0;
+		// check strandness of junction
+		for(int k = 0; k < v.size(); k++)
+		{
+			hit &h = bb.hits[v[k]];
+			if(h.xs == '.') s0++;
+			if(h.xs == '+') s1++;
+			if(h.xs == '-') s2++;
+		}
 
-	// 	as_pos32 p1_prev(p1.p32, "$");
-	// 	as_pos32 p2_next(p2.p32, "$");
+		as_pos32 p1_prev(p1.p32, "$");
+		as_pos32 p2_next(p2.p32, "$");
 
-	// 	// Add left al junction 
-	// 	// not beginning bundle & not consecutive al site
-	// 	int itt = it - 1;
-	// 	while(itt >= 0 && m[itt].sameasitv(m[it])) --itt;  //m[itt] = previous allele
-	// 	if((it == 0 && p1.p32 > bb.lpos) || (itt <= 0 && it >= 1 && p1.p32 > bb.lpos) 
-	// 		|| (it >= 1 && itt >= 0 && low32(m[itt]).leftto(p1)))
-	// 	{
-	// 		junction jc1(p1_prev, p1, v.size());
-	// 		if(s1 == 0 && s2 == 0) jc1.strand = '.';
-	// 		else if(s1 >= 1 && s2 >= 1) jc1.strand = '.';
-	// 		else if(s1 > s2) jc1.strand = '+';
-	// 		else jc1.strand = '-';
-	// 		allelic_junctions.push_back(jc1);
-	// 	}
+		// Add left al junction 
+		// not beginning bundle & not consecutive al site
+		int itt = it - 1;
+		while(itt >= 0 && m[itt].sameasitv(m[it])) --itt;  //m[itt] = previous allele
+		if((it == 0 && p1.p32 > bb.lpos) || (itt <= 0 && it >= 1 && p1.p32 > bb.lpos) 
+			|| (it >= 1 && itt >= 0 && low32(m[itt]).leftto(p1)))
+		{
+			junction jc1(p1_prev, p1, v.size());
+			if(s1 == 0 && s2 == 0) jc1.strand = '.';
+			else if(s1 >= 1 && s2 >= 1) jc1.strand = '.';
+			else if(s1 > s2) jc1.strand = '+';
+			else jc1.strand = '-';
+			allelic_junctions.push_back(jc1);
+		}
 		
-	// 	// Add right al junction
-	// 	// Not end of bundle
-	// 	itt = it + 1;
-	// 	while(itt < m.size() && m[itt].sameasitv(m[it])) ++itt;  //m[itt] = next allele
-	// 	if (((it == m.size() - 1 && p2.p32 < bb.rpos) || (it < m.size() - 1))
-	// 		&& !(it < m.size() - 1 && itt < m.size() && high32(m[itt]).samepos(p2))) 
-	// 	{
-	// 		junction jc2(p2, p2_next, v.size());
-	// 		if(s1 == 0 && s2 == 0) jc2.strand = '.';
-	// 		else if(s1 >= 1 && s2 >= 1) jc2.strand = '.';
-	// 		else if(s1 > s2) jc2.strand = '+';
-	// 		else jc2.strand = '-';
-	// 		allelic_junctions.push_back(jc2);
-	// 	}
-		
-	// }
-	// sort(allelic_junctions.begin(), allelic_junctions.end());
-	// if (verbose >= 3)
-	// {
-	// 	cout << "bundle build_allelic_junctions DEBUG: \n al_junctions size = " << allelic_junctions.size() << endl; 
-	// 	for (int i = 0; i < allelic_junctions.size(); i++) allelic_junctions[i].print(bb.chrm, i);
-	// }
+		// Add right al junction
+		// Not end of bundle
+		itt = it + 1;
+		while(itt < m.size() && m[itt].sameasitv(m[it])) ++itt;  //m[itt] = next allele
+		if (((it == m.size() - 1 && p2.p32 < bb.rpos) || (it < m.size() - 1))
+			&& !(it < m.size() - 1 && itt < m.size() && high32(m[itt]).samepos(p2))) 
+		{
+			junction jc2(p2, p2_next, v.size());
+			if(s1 == 0 && s2 == 0) jc2.strand = '.';
+			else if(s1 >= 1 && s2 >= 1) jc2.strand = '.';
+			else if(s1 > s2) jc2.strand = '+';
+			else jc2.strand = '-';
+			allelic_junctions.push_back(jc2);
+		}
+	}
+
+	// add consecutive junctions
+	for(auto it = consecutive_al_junction.begin(); it != consecutive_al_junction.end(); ++it)
+	{
+		vector<int> &v = it->second;
+		if(v.size() < min_allele_overlap) continue;
+
+		as_pos32 p1 = it->first.first;
+		as_pos32 p2 = it->first.second;
+
+		int s0 = 0;
+		int s1 = 0;
+		int s2 = 0;
+		int nm = 0;
+		// check strandness of junction
+		for(int k = 0; k < v.size(); k++)
+		{
+			hit &h = bb.hits[v[k]];
+			if(h.xs == '.') s0++;
+			if(h.xs == '+') s1++;
+			if(h.xs == '-') s2++;
+		}
+
+		junction jc(p1, p2, v.size());
+		if(s1 == 0 && s2 == 0) jc.strand = '.';
+		else if(s1 >= 1 && s2 >= 1) jc.strand = '.';
+		else if(s1 > s2) jc.strand = '+';
+		else jc.strand = '-';
+		allelic_junctions.push_back(jc);
+	}
+
+	sort(allelic_junctions.begin(), allelic_junctions.end());
+	if (verbose >= 3)
+	{
+		cout << "bundle build_allelic_junctions DEBUG: \n al_junctions size = " << allelic_junctions.size() << endl; 
+		for (int i = 0; i < allelic_junctions.size(); i++) allelic_junctions[i].print(bb.chrm, i);
+	}
+
 
 	return 0;
 }
@@ -296,7 +366,7 @@ int bundle_bridge::build_regions()
 	{
 		for (const as_pos& p: h.apos)
 		{
-			pair<int, int> p_int {low32(p), high32(p)};
+			pair<int, int> p_int {high32(p), low32(p)};
 			poses_seqs[p_int].insert(p.ale);
 		}
 	}
@@ -309,6 +379,23 @@ int bundle_bridge::build_regions()
 		int32_t r = poses.second;
 		pos_splicetypes[l].insert(ALLELIC_LEFT_SPLICE);
 		pos_splicetypes[r].insert(ALLELIC_RIGHT_SPLICE);
+	}
+
+	if (verbose >= 3)
+	{
+		cout << "bundle_bridge build regions" << endl;
+		for (auto && p: pos_splicetypes)
+		{
+			cout << "pos_splicetypes " << p.first << ": {" ;
+			for (auto && ii : p.second) cout << ", " << ii;
+			cout << "}" << endl;
+		}
+		for(auto && p: poses_seqs)
+		{
+			cout << "poses_seqs [" << p.first.first << ", " << p.first.second << "): {";
+			for (auto && ii: p.second) cout << ii << ", ";
+			cout << "}" << endl;
+		}
 	}
 
 	regions.clear();
@@ -398,7 +485,12 @@ int bundle_bridge::align_hits_transcripts()
 	map<as_pos32, int> m;
 	for(int k = 0; k < regions.size(); k++)
 	{
-		if(k >= 1) assert(regions[k - 1].rpos == regions[k].lpos);
+		if(k >= 1) 
+		{
+			bool _are_continu = regions[k - 1].rpos.samepos(regions[k].lpos);
+			bool _are_same = regions[k - 1].lpos.samepos(regions[k].lpos) && regions[k - 1].rpos.samepos(regions[k].rpos);
+			assert( _are_continu || _are_same );
+		}
 		m.insert(pair<as_pos32, int>(regions[k].lpos, k));
 	}
 

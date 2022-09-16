@@ -22,6 +22,7 @@ vcf_data::vcf_data() {}
 vcf_data::vcf_data(std::string file_name) 
 {
 	read_as_counts(file_name);
+	if (verbose >= 3) print(0);
 }
 
 vcf_data::~vcf_data() {}
