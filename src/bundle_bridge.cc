@@ -33,11 +33,12 @@ int bundle_bridge::build()
 	build_allelic_junctions();
 	extend_junctions();
 	build_regions();
-
 	align_hits_transcripts();
 	index_references();
 
 	build_fragments();		// pair MEPPS
+
+	if (verbose >= 3) print(1);
 
 	bridger bdg(this); 		// bridge
 	bdg.bridge();
@@ -356,7 +357,7 @@ int bundle_bridge::build_regions()
 		}
 	}
 	assert (i2 == poses_seqs.end());
-	while (i1 != pos_splicetypes.end())
+	while (i1 != prev(pos_splicetypes.end()) )
 	{
 		int32_t l1 = i1->first;
 		int32_t r1 = std::next(i1)->first;
@@ -377,63 +378,18 @@ int bundle_bridge::build_regions()
 			regions.push_back(rr);
 		}
 	}
-	sort(regions.begin(), regions.end());
 	return 0;
 }
 
 
 int bundle_bridge::splicetype_set_to_int(set<int>& s)
 {
-	int s = 0;
+	int ss = 0;
 	for (int i: s)
 	{
-		s += i;
+		ss += i;
 	}
-	return s;
-	/*
-	int na_type = -1;
-	int as_type = -1;
-
-	if (s.find(LEFT_SPLICE) != s.end())
-	{
-		if (s.find(RIGHT_SPLICE) != s.end()) na_type = LEFT_RIGHT_SPLICE;
-		else na_type = LEFT_SPLICE;
-	}
-	else if (s.find(RIGHT_SPLICE) != s.end())  na_type = RIGHT_SPLICE;
-	else na_type = -1;
-
-	if (s.find(ALLELIC_LEFT_SPLICE) != s.end())
-	{
-		if (s.find(ALLELIC_RIGHT_SPLICE) != s.end()) as_type = ALLELIC_LEFT_RIGHT_SPLICE;
-		else as_type = ALLELIC_LEFT_SPLICE;
-	}
-	else if (s.find(ALLELIC_RIGHT_SPLICE) != s.end())  as_type = ALLELIC_RIGHT_SPLICE;
-	else as_type = -1;
-
-	assert(as_type != -1 || na_type != -1);
-	
-	if (na_type == -1) return as_type;
-	if (as_type == -1) return na_type;
-
-	if (na_type == LEFT_SPLICE)
-	{
-		if (as_type == ALLELIC_LEFT_SPLICE)  return LEFT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) return LEFT_AL_RIGHT_SPLICE;
-		else return LEFT_AL_LEFT_RIGHT_SPLICE;
-	}
-	else if (na_type == RIGHT_SPLICE)
-	{
-		if (as_type == ALLELIC_LEFT_SPLICE)  return RIGHT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) return RIGHT_AL_RIGHT_SPLICE;
-		else return RIGHT_AL_LEFT_RIGHT_SPLICE;
-	}
-	else  // na_type = LEFT_RIGHT_SPLICE
-	{
-		if (as_type == ALLELIC_LEFT_SPLICE) return LEFT_RIGHT_AL_LEFT_SPLICE;
-		else if (as_type == ALLELIC_RIGHT_SPLICE) return LEFT_RIGHT_AL_RIGHT_SPLICE;
-		else return LEFT_RIGHT_AL_LEFT_RIGHT_SPLICE;
-	}
-	*/
+	return ss;
 }
 
 

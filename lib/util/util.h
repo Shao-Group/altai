@@ -194,4 +194,10 @@ class BundleError					// TODO: tmp DEBUG helper
 	
 };
 
+class DebugBreakPoint: public exception
+{
+    public:
+	char * what () {  return "Break point for debug";   }
+};
+
 #endif

@@ -132,7 +132,7 @@ int region::build_partial_exons()
 		return 0;
 	}
 
-	if(ltype & RIGHT_SPLICE > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
+	if((ltype & RIGHT_SPLICE) > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
 		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY);
 		pe.ave = min_guaranteed_edge_weight;
@@ -151,8 +151,8 @@ int region::build_partial_exons()
 
 		//printf(" subregion [%d, %d), empty = %c\n", p1, p2, b ? 'T' : 'F');
 
-		if(p1 == lpos && ltype & RIGHT_SPLICE > 0) b = false;
-		if(p2 == rpos && rtype & LEFT_SPLICE > 0) b = false;
+		if(p1 == lpos && (ltype & RIGHT_SPLICE) > 0) b = false;
+		if(p2 == rpos && (rtype & LEFT_SPLICE) > 0) b = false;
 
 		// if(b == true) continue;
 
@@ -168,7 +168,7 @@ int region::build_partial_exons()
 		pexons.push_back(pe);
 	}
 
-	if(rtype & LEFT_SPLICE > 0 && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
+	if((rtype & LEFT_SPLICE) > 0 && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
 	{
 		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype);
 		pe.ave = min_guaranteed_edge_weight;
