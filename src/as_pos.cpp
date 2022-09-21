@@ -6,6 +6,7 @@ See LICENSE for licensing.
 
 #include <string>
 #include <iostream>
+#include "util.h"
 #include "as_pos.hpp"
 #include "as_pos32.hpp"
 
@@ -14,6 +15,12 @@ as_pos::as_pos(){}
 as_pos::as_pos(int64_t p, std::string a) 
 {
     p64 = p;
+    ale = a;  // "$" means any string
+}
+
+as_pos::as_pos(int32_t p1, int32_t p2, std::string a) 
+{
+    p64 = pack(p1, p2);
     ale = a;  // "$" means any string
 }
 

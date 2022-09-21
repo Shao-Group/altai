@@ -47,6 +47,8 @@ public:
 	bool operator<(const region &x) const;
 
 private:
+	int assign_as_cov(int _ave, int _dev, int _max);
+
 	int build_join_interval_map();
 	int smooth_join_interval_map();
 	bool empty_subregion(as_pos32 p1, as_pos32 p2);

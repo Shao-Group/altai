@@ -13,7 +13,8 @@ class as_pos
 {
     public:
         as_pos();
-        as_pos(int64_t, std::string);                   
+        as_pos(int64_t, std::string);
+        as_pos(int32_t, int32_t, std::string);                   
         as_pos(const as_pos &a);     
         as_pos& operator=(const as_pos &a);              
 
