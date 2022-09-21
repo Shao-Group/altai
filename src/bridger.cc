@@ -28,7 +28,8 @@ bool entry_compare(const entry &x, const entry &y)
 	else return false;
 }
 
-bridger::bridger(bundle_bridge *b)
+bridger::bridger(bundle_bridge *b, const genotype &g)
+	: gt(g)
 {
 	bd = b;
 	max_pnode_length = 50;
@@ -60,7 +61,9 @@ int bridger::bridge()
 	int n2 = get_paired_fragments();
 
 	// first round of briding hard fragments
-	remove_tiny_boundary();
+	// TODO: handle it later
+	//remove_tiny_boundary();
+
 	bridge_hard_fragments();
 	filter_paths();
 	int n3 = get_paired_fragments();
@@ -277,6 +280,7 @@ int bridger::add_consecutive_path_nodes()
 		}
 	}
 
+	// TODO: assert the path for the desired phase is available
 	for(int i = 0; i < bd->regions.size() - 1; i++)
 	{
 		if(s.find(PI(i, i + 1)) != s.end()) continue;
@@ -315,6 +319,7 @@ int bridger::build_path_nodes(int max_len)
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		// TODO, also check length
+		// TODO: only keep fragments that are not in gt
 		fragment &fr = bd->fragments[i];
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1)
 		{

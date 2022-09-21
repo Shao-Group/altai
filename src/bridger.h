@@ -31,10 +31,11 @@ bool entry_compare(const entry &x, const entry &y);
 class bridger
 {
 public:
-	bridger(bundle_bridge *b);
+	bridger(bundle_bridge *b, const genotype &gt);
 
 public:
 	bundle_bridge *bd;				// parent bundle
+	genotype gt;					// to be bridged phase
 	vector<path> pnodes;			// path nodes 
 	vector< map<int, int> > jsetx;	// junction graph (out) 
 	vector< map<int, int> > jsety;	// junction graph (in)
