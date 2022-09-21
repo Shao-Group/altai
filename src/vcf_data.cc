@@ -22,11 +22,8 @@ vcf_data::vcf_data() {}
 vcf_data::vcf_data(std::string file_name) 
 {
 	read_as_counts(file_name);
-	if (verbose >= 3) print(0);
+	if (verbose >= 10) print(0);
 }
-
-vcf_data::~vcf_data() {}
-
 
 int vcf_data::read_as_counts(const string & name) 
 {
@@ -98,11 +95,6 @@ int vcf_data::increse_it(map <int, vector <std::string> >::iterator &it1, map <i
 	return 0;
 }
 
-
-// TODO: find variant positions between lpos and rpos log (n), returned value is in v
-int vcf_data::find_var_between(string chrm, int lpos, int rpos, vector < map< string, map<int, int> >::iterator > v)
-{ 
-}
 
 int vcf_data::print(int k)
 {

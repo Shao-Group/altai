@@ -155,7 +155,7 @@ int parse_arguments(int argc, const char ** argv)
 			asp = vcf_data(vcf_file);
 			vcf_map = asp.vcf_pos_map;
 			vcf_map_len = asp.vcf_ale_len;
-			if(DEBUG_MODE_ON) asp.print(10000);
+			if(DEBUG_MODE_ON) asp.print(0);
 			i++;
 		}
 		else if (string(argv[i]) == "-G")
@@ -496,7 +496,7 @@ int parse_arguments(int argc, const char ** argv)
 			insertsize_ave = atof(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--DEBUG_MODE")
+		else if(string(argv[i]) == "--DEBUG")
 		{
 			DEBUG_MODE_ON = true;			
 		}

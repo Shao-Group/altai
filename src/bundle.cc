@@ -58,8 +58,6 @@ int bundle::prepare()
 int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
-	// TODO: phasing
-	// TODO: future AS bridge
 
 	if(revise == true) revise_splice_graph(); // TODO: this might result an error for allelic regions
 	build_hyper_set();
@@ -595,7 +593,7 @@ vector<partial_exon> bundle::partition_allelic_partial_exons(const partial_exon&
 	if(al_it == s2.end() || al_it->first.rightsameto(r))
 	{
 		partial_exon al_pe(l, r, ltype, rtype);		
-		evaluate_rectangle(bb.nammap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
+		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
 		al_pe.is_allelic = false;
 		if(al_pe.ave > 0) vpe.push_back(al_pe);
 		return vpe;
@@ -604,7 +602,7 @@ vector<partial_exon> bundle::partition_allelic_partial_exons(const partial_exon&
 	while (al_it != s2.end() && al_it->first.leftto(r))
 	{
 		partial_exon al_pe(l, al_it->first, ltype, al_it->second);		
-		evaluate_rectangle(bb.nammap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
+		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
 		al_pe.is_allelic = false;
 		if(al_pe.ave > 0) vpe.push_back(al_pe);		// filter out non allelic pexons in allelic regions
 		
@@ -619,7 +617,7 @@ vector<partial_exon> bundle::partition_allelic_partial_exons(const partial_exon&
 	if (al_it->first.leftto(r))
 	{
 		partial_exon al_pe(al_it->first, r, al_it->second, rtype);		
-		evaluate_rectangle(bb.nammap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
+		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
 		al_pe.is_allelic = false;
 		if(al_pe.ave > 0) vpe.push_back(al_pe);
 	}

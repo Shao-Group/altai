@@ -20,7 +20,6 @@ class vcf_data
 public:  						
 	vcf_data();								
 	vcf_data(std::string);
-	virtual ~vcf_data();
 
 public:
 	map < string, map <int, vector <string> > > vcf_pos_map; // map <string chrm, map<int pos, vector<string var> > >   map of variant posisions and vector_of_variant_sequences
@@ -30,7 +29,6 @@ public:
 public:  																		
 	static int increse_it(map <int, vector <std::string> >::iterator &it1, map <int, int >::iterator &it2);
 	int read_as_counts(const std::string &);																			// read .asf file, make vcf_map and vcf_pos_map
-	int find_var_between(string chrm, int lpos, int rpos, vector < map< string, map<int, int> >::iterator > v);			// TODO: find variant positions between lpos and rpos log (n), returned value is in v
 	int print(int);
 };
 

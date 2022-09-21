@@ -91,12 +91,10 @@ int bundle_base::buildbase()
 		}
 		*/
 
-		for(int k = 0; k < ht.itvm.size(); k++)
+		for(int k = 0; k < ht.itv_align.size(); k++)
 		{
-			as_pos32 s = high32(ht.itvm[k]);
-			as_pos32 t = low32(ht.itvm[k]);
-			assert(s.ale == "$");
-			assert(t.ale == "$");
+			as_pos32 s (high32(ht.itv_align[k]).p32, "$");
+			as_pos32 t (low32(ht.itv_align[k]).p32, "$");
 			mmap += make_pair(ROI(s, t), 1);
 		}
 
@@ -117,19 +115,6 @@ int bundle_base::buildbase()
 			assert(t.ale == "$");
 			imap += make_pair(ROI(s, t), 1);
 		}
-
-		if (vcf_file == "") 
-			nammap = mmap;
-		else
-		{
-			for(int k = 0; k < ht.itvna.size(); k++)
-			{
-				as_pos32 s = high32(ht.itvna[k]);
-				as_pos32 t = low32(ht.itvna[k]);
-				assert(s.ale == "$" && t.ale == "$");
-				nammap += make_pair(ROI(s, t), 1);
-			}
-		} 
 	}
 	return 0;
 }
@@ -153,7 +138,6 @@ int bundle_base::clear()
 	hits.clear();
 	mmap.clear();
 	imap.clear();
-	nammap.clear();
 	return 0;
 }
 

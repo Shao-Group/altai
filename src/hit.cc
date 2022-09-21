@@ -20,6 +20,7 @@ See LICENSE for licensing.
 #include "util.h"
 #include "config.h"
 #include "as_pos.hpp"
+#include "as_pos32.hpp"
 #include "vcf_data.h"
 
 /*
@@ -55,7 +56,7 @@ hit& hit::operator=(const hit &h)
 	itvi = h.itvi;
 	itvd = h.itvd;
 	apos = h.apos;
-	itvna = h.itvna;
+	itv_align = h.itv_align;
 	chrm = h.chrm;
 	
 	vlist = h.vlist;
@@ -72,6 +73,7 @@ hit& hit::operator=(const hit &h)
 hit::hit(const hit &h)
 	:bam1_core_t(h)
 {
+	hid = h.hid;
 	rpos = h.rpos;
 	qlen = h.qlen;
 	qname = h.qname;
@@ -86,7 +88,7 @@ hit::hit(const hit &h)
 	itvi = h.itvi;
 	itvd = h.itvd;
 	apos = h.apos;
-	itvna = h.itvna;
+	itv_align = h.itv_align;
 	chrm = h.chrm;
 
 	vlist = h.vlist;
@@ -109,6 +111,12 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 	:bam1_core_t(b->core), hid(id)
 {
 	chrm = chrm_name;
+	build_features(b);
+	build_aligned_intervals();
+}
+
+int hit::build_features(bam1_t *b)
+{
 	// fetch query name
 	qname = get_qname(b);
 	qhash = string_hash(qname);
@@ -244,75 +252,90 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 			itvd.push_back(as_pos(pack(s, p), "$"));
 		}
 	}
-
-	// if (has_variant()) make_itvna();
-	// else itvna = itvm;
+	return 0;
 }
 
-
-int hit::make_itvna()
+int hit::build_aligned_intervals()
 {
-	itvna.clear();
+	itv_align.clear();
+
+	vector<pair<int32_t, int32_t> > itvs; 	// aligned interval by spos, may incl indel (itvm does not incl indel)
+	int32_t p1 = pos;
+	for(int k = 0; k < spos.size(); k++)
+	{
+		int32_t p2 = high32(spos[k]);
+		itvs.push_back({p1, p2});
+		p1 = low32(spos[k]);
+	}
+	itvs.push_back({p1, rpos});
+
 	if (!has_variant()) 
 	{
-		itvna = itvm;
+		for (auto&& i : itvs) itv_align.push_back(as_pos(i.first, i.second, "$"));		
 		return 0;
 	}
-	auto it1 = itvm.begin();
-	auto it2 = apos.begin();
-	int32_t l = high32(*it1);
-	int32_t r = low32(*it1);
-	int32_t a = high32(*it2);
-	int32_t b = low32(*it2);
-	while (it2 != apos.end() && it1 != itvm.end())	
+
+	// add splitted_itvs and apos
+	int i = 0;
+	int j = 0;
+	int sl = itvs[i].first;
+	int sr = itvs[i].second;
+	int al = high32(apos[j]).p32;
+	int ar = low32(apos[j]).p32;
+	while (i < itvs.size() && j < apos.size())
 	{
-		if (r <= a) 
+		assert(sl <= al);			
+		if (sr <= al)
 		{
-			if(l < r) itvna.push_back(as_pos(pack(l, r), "$"));
-			++it1;
-			if (it1 != itvm.end()) {l = high32(*it1); r = low32(*it1);}
+			if (sl < sr) itv_align.push_back(as_pos(sl, sr, "$"));
+			i++;
+			if (i < itvs.size())
+			{
+				sl = itvs[i].first;
+				sr = itvs[i].second;
+			}
 		}
-		else if (b <= l)
+		else
 		{
-			++it2;
-			if (it2 != apos.end()) {a = high32(*it2); b = low32(*it2);}
-		} 
-		// now apos intersect itvm (a < r && b > l)
-		else if (a <= l && b <= r)
-		{
-			l = b;
-			++it2;
-			if (it2 != apos.end()) {a = high32(*it2); b = low32(*it2);}
+			if (sl < al) itv_align.push_back(as_pos(sl, al, "$"));
+			itv_align.push_back(apos[j]);
+			sl = ar;
+			j++;
+			if (j < apos.size())
+			{
+				al = high32(apos[j]).p32;
+				ar = low32(apos[j]).p32;
+			}		
+			else
+			{
+				al = sr + 1;
+				ar = sr + 1;
+			}	
 		}
-		else if (a > l && b <= r)
-		{
-			itvna.push_back(as_pos(pack(l, a), "$"));
-			l = b;
-			++it2;
-			if (it2 != apos.end()) {a = high32(*it2); b = low32(*it2);}
-		}
-		else if (a > l && b > r)
-		{
-			itvna.push_back(as_pos(pack(l, a), "$"));
-			++it1;
-			if (it1 != itvm.end()) {l = high32(*it1); r = low32(*it1);}
-		}
-		else if (a <= l && b > r)
-		{
-			if (DEBUG_MODE_ON) printf("a %d, b %d, l %d, r %d", a, b, l, r);
-			++it1;
-			if (it1 != itvm.end()) {l = high32(*it1); r = low32(*it1);}
-		}
-		else assert(0);
+	}
+	assert (j = apos.size());
+	// add remaining (sl,sr) and itvs
+	itv_align.push_back(as_pos(sl, sr, "$"));
+	i++;
+	while (i < itvs.size())
+	{
+		itv_align.push_back(as_pos(itvs[i].first, itvs[i].second, "$"));
+		i++;
 	}
 
-	while (it1 != itvm.end())
+	sort(itv_align.begin(), itv_align.end());
+
+	 //itvna should not overlap
+	if (verbose >= 3)
 	{
-		itvna.push_back(as_pos(pack(l, r), "$"));
-		++it1;
-		if (it1 != itvm.end()) {l = high32(*it1); r = low32(*it1);}
-	}
-	itvna.push_back(as_pos(pack(l, r), "$"));
+		print();
+		for (int i = 0; i < itv_align.size()-1; i++ )
+		{	
+			as_pos32 rpos = low32(itv_align[i]);
+			as_pos32 lpos = high32(itv_align[i+1]);
+			assert(rpos.leftsameto(lpos));
+		}
+	}	
 
 	return 0;
 }
@@ -320,6 +343,8 @@ int hit::make_itvna()
 int hit::get_aligned_intervals(vector<as_pos> &v) const
 {
 	v.clear();
+	v = itv_align;
+	/*
 	int32_t p1 = pos;
 	for(int k = 0; k < spos.size(); k++)
 	{
@@ -328,6 +353,7 @@ int hit::get_aligned_intervals(vector<as_pos> &v) const
 		p1 = low32(as_pos(pack(p1, p2), spos[k].ale));
 	}
 	v.push_back(as_pos(pack(p1, rpos), "$"));
+	*/
 	return 0;
 }
 
@@ -457,25 +483,25 @@ int hit::print() const
 		as_pos p = spos[i];
 		as_pos32 p1 = high32(p);
 		as_pos32 p2 = low32(p);
-		printf(" splice position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
+		printf(" splice position [%d%s - %d%s) \n", p1.p32, p1.ale.c_str(), p2.p32, p2.ale.c_str());
 	}
 	for (auto&& i: apos)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);
-		printf(" apos position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
+		printf(" apos position [%d%s - %d%s) \n", p1.p32, p1.ale.c_str(), p2.p32, p2.ale.c_str());
 	}
 	for (auto&& i: itvm)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);
-		printf(" itvm position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
+		printf(" itvm position [%d%s - %d%s) \n", p1.p32, p1.ale.c_str(), p2.p32, p2.ale.c_str());
 	}
-	for (auto&& i: itvna)
+	for (auto&& i: itv_align)
 	{
 		as_pos32 p1 = high32(i);
 		as_pos32 p2 = low32(i);
-		printf(" itvna position [%d - %d) ale %s \n", p1.p32, p2.p32, p1.ale.c_str());
+		printf(" itv_align position [%d%s - %d%s) \n", p1.p32, p1.ale.c_str(), p2.p32, p2.ale.c_str());
 	}
 	printf(" end position [ - %d)\n", rpos);
 	return 0;

@@ -73,7 +73,7 @@ int assembler::assemble()
 		ht.set_tags(b1t);
 		ht.set_strand();
 		
-		if(verbose >= 3) ht.print();
+		// if(verbose >= 3) ht.print();
 
 		
 		qlen += ht.qlen;
@@ -161,22 +161,14 @@ int assembler::process(int n)
 
 		bundle bd(bb);
 		bd.build(1, true);
-		cout << "bundle build done" << endl;
-		throw DebugBreakPoint();
-		bd.print(index++);
 
-		// // TODO: phase & write phasing profile
-		// ph.build(bd.gr, bd.hs, bd)
-		// ph.phase();
-		// ph.clear();
+		bd.print(index++);
 
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
 		bd.build(2, true);
 		bd.print(index++);
-		
-		throw DebugBreakPoint();
-		
+				
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
 		int sdup = assemble_duplicates / 1 + 1;
@@ -193,8 +185,6 @@ int assembler::process(int n)
 		{
 			if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
 		}
-		
-		throw DebugBreakPoint();
 
 		filter ft1(gv1);
 		ft1.filter_length_coverage();

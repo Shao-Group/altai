@@ -30,7 +30,7 @@ bundle_bridge::~bundle_bridge()
 int bundle_bridge::build()
 {
 	build_junctions();
-	build_allelic_junctions();
+	// build_allelic_junctions(); // not implemented, not used
 	extend_junctions();
 	build_regions();
 	align_hits_transcripts();
@@ -118,7 +118,8 @@ int bundle_bridge::build_junctions()
 
 int bundle_bridge::build_allelic_junctions()
 {
-		allelic_junctions.clear();
+	/*
+	allelic_junctions.clear();
 	vector<as_pos> m;
 	vector<vector<int> > n;
 	map<pair<as_pos32, as_pos32>, vector<int> > consecutive_al_junction;
@@ -143,7 +144,7 @@ int bundle_bridge::build_allelic_junctions()
 				n[it - m.begin()].push_back(i);
 			}
 			// consecutive junctions
-			/*
+			
 			if(k < v.size() -1)
 			{
 				as_pos32 p1 = low32(p);
@@ -164,7 +165,7 @@ int bundle_bridge::build_allelic_junctions()
 					
 				}
 			}
-			*/
+			
 		}
 	}
 
@@ -274,12 +275,12 @@ int bundle_bridge::build_allelic_junctions()
 	sort(allelic_junctions.begin(), allelic_junctions.end());
 	if (verbose >= 3)
 	{
-		cout << "bundle build_allelic_junctions DEBUG: \n al_junctions size = " << allelic_junctions.size() << endl; 
+		cout << "bundle_bridge build_allelic_junctions DEBUG: \n al_junctions size = " << allelic_junctions.size() << endl; 
 		for (int i = 0; i < allelic_junctions.size(); i++) allelic_junctions[i].print(bb.chrm, i);
 	}
-
-
-	return 0;
+	*/
+	throw runtime_error("bundle_bridge::build_allelic_junctions() not implemented as it won't be used.");
+	return 0;	
 }
 
 int bundle_bridge::extend_junctions()  // not used w/o ref
@@ -392,7 +393,7 @@ int bundle_bridge::build_regions()
 		}
 		for(auto && p: poses_seqs)
 		{
-			cout << "poses_seqs [" << p.first.first << ", " << p.first.second << "): {";
+			cout << "poses_seqs (" << p.first.first << ", " << p.first.second << "): {";
 			for (auto && ii: p.second) cout << ii << ", ";
 			cout << "}" << endl;
 		}
@@ -425,7 +426,7 @@ int bundle_bridge::build_regions()
 			evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
 			regions.push_back(rr);
 		}
-		else  // AS region
+		else  // AS region, build all variants at same position
 		{
 			assert (l1 == l2);
 			assert (r1 == r2);
@@ -436,7 +437,9 @@ int bundle_bridge::build_regions()
 				ltype = ALLELIC_LEFT_SPLICE; 
 				rtype = ALLELIC_RIGHT_SPLICE;
 				region rr(l, r, ltype, rtype);
-				evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
+				// evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
+				// FIXME:  
+				// rr.assign_as_cov(); 
 				regions.push_back(rr);
 			}
 			i2 ++;
@@ -444,7 +447,7 @@ int bundle_bridge::build_regions()
 		}
 	}
 	assert (i2 == poses_seqs.end());
-	while (i1 != prev(pos_splicetypes.end()) )
+	while (i1 != prev(pos_splicetypes.end()) )  // remaining non-AS region 
 	{
 		int32_t l1 = i1->first;
 		int32_t r1 = std::next(i1)->first;
@@ -453,18 +456,38 @@ int bundle_bridge::build_regions()
 
 		as_pos32 l, r;
 		int ltype, rtype;
-		// if (l2.rightsameto(r1))
+		
+		l = l1;
+		r = r1;
+		ltype = splicetype_set_to_int(ltypes);
+		rtype = splicetype_set_to_int(rtypes);
+		i1 ++;
+		region rr(l, r, ltype, rtype);
+		evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
+		regions.push_back(rr);
+		
+	}
+	sort(regions.begin(), regions.end());
+
+	// print & assert
+	if (verbose >= 3)
+	{
+		for (auto&& r: regions) r.print(123);
+	}
+	if (DEBUG_MODE_ON)
+	{
+		for(int k = 0; k < regions.size(); k++)
 		{
-			l = l1;
-			r = r1;
-			ltype = splicetype_set_to_int(ltypes);
-			rtype = splicetype_set_to_int(rtypes);
-			i1 ++;
-			region rr(l, r, ltype, rtype);
-			evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
-			regions.push_back(rr);
+			if(k >= 1) 
+			{
+				bool _continuous = regions[k - 1].rpos.samepos(regions[k].lpos);
+				bool _same = regions[k - 1].lpos.samepos(regions[k].lpos) && regions[k - 1].rpos.samepos(regions[k].rpos);
+				assert( _continuous || _same );
+			}
+			
 		}
 	}
+
 	return 0;
 }
 
@@ -482,39 +505,63 @@ int bundle_bridge::splicetype_set_to_int(set<int>& s)
 
 int bundle_bridge::align_hits_transcripts()
 {
-	map<as_pos32, int> m;
+	map<as_pos32, int> m1;
+	map<as_pos32, int> m2;
 	for(int k = 0; k < regions.size(); k++)
 	{
-		if(k >= 1) 
+		m1.insert(pair<as_pos32, int>(regions[k].lpos, k));	
+		m2.insert(pair<as_pos32, int>(regions[k].rpos, k));	
+	}	
+	
+	if (DEBUG_MODE_ON)
+	{
+		for (auto&& i: m1)
 		{
-			bool _are_continu = regions[k - 1].rpos.samepos(regions[k].lpos);
-			bool _are_same = regions[k - 1].lpos.samepos(regions[k].lpos) && regions[k - 1].rpos.samepos(regions[k].rpos);
-			assert( _are_continu || _are_same );
+			as_pos32 pp = i.first;
+			as_pos32 cc = i.second;
+			cout << "bundle_bridge::align_hits_transcripts() m1::(region.lpos, idx) = " << pp.aspos32string() << " " << cc << endl;
 		}
-		m.insert(pair<as_pos32, int>(regions[k].lpos, k));
+		for (auto&& i: m2)
+		{
+			as_pos32 pp = i.first;
+			as_pos32 cc = i.second;
+			cout << "bundle_bridge::align_hits_transcripts() m2::(region.rpos, idx) = " << pp.aspos32string() << " " << cc << endl;
+		}
 	}
 
 	for(int i = 0; i < bb.hits.size(); i++)
 	{
-		align_hit(m, bb.hits[i], bb.hits[i].vlist);
+		align_hit(m1, m2, bb.hits[i], bb.hits[i].vlist);
 		bb.hits[i].vlist = encode_vlist(bb.hits[i].vlist);
 	}
 
 	ref_phase.resize(ref_trsts.size());
 	for(int i = 0; i < ref_trsts.size(); i++)
 	{
-		align_transcript(m, ref_trsts[i], ref_phase[i]);
+		align_transcript(m1, ref_trsts[i], ref_phase[i]);
+	}
+
+	if (verbose >= 3)
+	{
+		for (auto&& h : bb.hits)
+		{
+			h.print();
+			cout << h.qname << " vlist: [";
+			printv(decode_vlist(h.vlist));
+			cout << "]" << endl;
+		}
+		for (auto && r: regions) r.print(123);
 	}
 
 	return 0;
 }
 
-int bundle_bridge::align_hit(const map<as_pos32, int> &m, const hit &h, vector<int> &vv)
+int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &vv)
 {
 	vv.clear();
 	vector<as_pos> v;
 	h.get_aligned_intervals(v);
-	if(v.size() == 0) return 0;
+	if(v.size() == 0 && !h.has_variant() ) return 0;
 
 	vector<PI> sp;
 	sp.resize(v.size());
@@ -522,24 +569,23 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m, const hit &h, vector<i
 	as_pos32 p1 = high32(v.front());
 	as_pos32 p2 = low32(v.back());
 
-	sp[0].first = locate_region(p1);
+	sp[0].first = locate_region_left(m1, p1);
 	for(int k = 1; k < v.size(); k++)
 	{
 		p1 = high32(v[k]);
-
-		auto it = m.find(p1);
-
-		assert(it != m.end());
+		auto it = m1.find(p1);
+		cout << p1.aspos32string() << "124" << endl;
+		assert(it != m1.end());
 		sp[k].first = it->second;
 	}
 
-	sp[sp.size() - 1].second = locate_region(p2 - 1);
+	sp[sp.size() - 1].second = locate_region_right(m2, p2);
 	for(int k = 0; k < v.size() - 1; k++)
 	{
 		p2 = low32(v[k]);
-		auto it = m.find(p2);
-		assert(it != m.end());
-		sp[k].second = it->second - 1; 
+		auto it = m2.find(p2);
+		assert(it != m2.end());
+		sp[k].second = it->second; 
 	}
 
 	for(int k = 0; k < sp.size(); k++)
@@ -548,27 +594,17 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m, const hit &h, vector<i
 		if(k > 0) assert(sp[k - 1].second < sp[k].first);
 		for(int j = sp[k].first; j <= sp[k].second; j++) 
 		{
-			if (! regions[j].is_allelic())	vv.push_back(j);
+			vv.push_back(j);
+			if (regions[j].is_allelic()) assert(sp[k].first == sp[k].second);
 		}
 	}
-
-	// align allelic regions
-	const vector<as_pos>& v2 = h.apos;
-	for(int k = 1; k < v2.size(); k++)
-	{
-		as_pos32 p1a = high32(v2[k]);
-		auto it = m.find(p1);
-		assert(it != m.end());
-		vv.push_back(it->second);
-	}
-
-	sort(vv.begin(), vv.end());
 
 	return 0;
 }
 
 int bundle_bridge::align_transcript(const map<as_pos32, int> &m, const transcript &t, vector<int> &vv)
 {
+	throw runtime_error("bundle_bridge::align_transcript() not used & not implemented");
 	vv.clear();
 	int k1 = -1;
 	int k2 = -1;
@@ -642,39 +678,45 @@ int bundle_bridge::index_references()
 	return 0;
 }
 
-int bundle_bridge::locate_region(as_pos32 x)
+int bundle_bridge::locate_region_left(const map<as_pos32, int> &m, as_pos32 x)
 {
 	if(regions.size() == 0) return -1;
 
+	if (x.ale != "$") 
+	{
+		auto it = m.find(x);
+		assert(it != m.end());
+		return it->second;
+	}
+
+	return locate_region(x);
+}
+
+int bundle_bridge::locate_region_right(const map<as_pos32, int> &m, as_pos32 x)
+{
+	if(regions.size() == 0) return -1;
+
+	if (x.ale != "$") 
+	{
+		auto it = m.find(x);
+		assert(it != m.end());
+		return it->second;
+	}
+
+	return locate_region(x-1);
+}
+
+int bundle_bridge::locate_region(as_pos32 x)
+{
+	if(regions.size() == 0) return -1;
+	assert (x.ale == "$");
 	int k1 = 0;
 	int k2 = regions.size();
 	while(k1 < k2)
 	{
 		int m = (k1 + k2) / 2;
 		region &r = regions[m];
-		if(x.rightsameto(r.lpos) && x.leftsameto(r.rpos)) 
-		{
-			if (r.lpos.ale == "$") return m;
-			else
-			{
-				assert(x.samepos(r.lpos));
-				assert(x.leftto(r.lpos));
-				while (x.rightsameto(r.lpos) && x.leftsameto(r.rpos))  // compare ale string
-				{
-					if (x.ale == r.lpos.ale) return m;
-					else if ((x.ale > r.lpos.ale))
-					{
-						m ++;
-						r = regions[m];
-					}
-					else
-					{
-						m --;
-						r = regions[m];
-					}
-				}
-			}
-		}
+		if(x.rightsameto(r.lpos) && x.leftsameto(r.rpos)) return m;
 		else if(x < r.lpos) k2 = m;
 		else k1 = m;
 	}

@@ -62,6 +62,12 @@ int region::build_join_interval_map()
 	return 0;
 }
 
+int region::assign_as_cov(int _ave, int _dev, int _max)
+{
+	ave = _ave;
+	dev = _dev;
+	max = _max;
+}
 
 int region::smooth_join_interval_map()
 {

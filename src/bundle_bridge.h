@@ -28,7 +28,7 @@ public:
 	set<string> breads;							// bridged reads
 	vector<fragment> fragments;					// to-be-filled fragments
 	vector<junction> junctions;					// splice junctions
-	vector<junction> allelic_junctions;			// allelic pseudo splice junctions
+	// vector<junction> allelic_junctions;			// allelic pseudo splice junctions
 	map<as_pos, vector<int> > allelic_itv; 		// allelic aspos intervals and hits containing them
 	vector<region> regions;						// pexons
 	vector<transcript> ref_trsts;				// overlaped genes in reference						// not used
@@ -57,9 +57,11 @@ public:
 	int build_fragments();
 
 	int align_hits_transcripts();
-	int align_hit(const map<as_pos32, int> &m, const hit &h, vector<int> &v);
+	int align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &v);
 	int align_transcript(const map<as_pos32, int> &m, const transcript &t, vector<int> &v);
 	int index_references();
+	int locate_region_left(const map<as_pos32, int> &m, as_pos32 x);
+	int locate_region_right(const map<as_pos32, int> &m, as_pos32 x);
 	int locate_region(as_pos32 x);
 };
 
