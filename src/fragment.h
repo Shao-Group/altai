@@ -36,6 +36,7 @@ public:
 	bool b2;			// whether right mate can be shorten
 	vector<path> paths;	// possible connecting paths
 
+	genotype gt;
 	int type;		// 0: paird-end, 1: UMI-paird 2: both
 	int next;		// index for next fragments in UMI-linked
 

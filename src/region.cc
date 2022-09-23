@@ -14,16 +14,16 @@ See LICENSE for licensing.
 
 using namespace std;
 
-region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype)
-	:lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype)
+region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt)
+	:lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype), gt(_gt)
 {
 	ave = 0;
 	max = 0;
 	dev = 1;
 }
 
-region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, const split_interval_map *_mmap, const split_interval_map *_imap)
-	:lpos(_lpos), rpos(_rpos), mmap(_mmap), imap(_imap), ltype(_ltype), rtype(_rtype)
+region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt, const split_interval_map *_mmap, const split_interval_map *_imap)
+	:lpos(_lpos), rpos(_rpos), mmap(_mmap), imap(_imap), ltype(_ltype), rtype(_rtype), gt(_gt)
 {
 	ave = 0;
 	max = 0;
@@ -188,8 +188,8 @@ int region::build_partial_exons()
 
 int region::print(int index) const
 {	
-	printf("region %d: length = %d, pexons = %lu, type = (%d, %d), pos = [%d%s, %d%s), cov/dev = (%.2lf, %.2lf)\n", 
-			index, rpos - lpos, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ave, dev);
+	printf("region %d: length = %d, pexons = %lu, type = (%d, %d), pos = [%d%s, %d%s), cov/dev = (%.2lf, %.2lf), gt = %s(%d)\n", 
+			index, rpos - lpos, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ave, dev, gt_str(gt), gt);
 	return 0;
 
 	int32_t lc = compute_overlap(*mmap, as_pos32(lpos));

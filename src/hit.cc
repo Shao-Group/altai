@@ -64,7 +64,7 @@ hit& hit::operator=(const hit &h)
 	bridged = h.bridged;
 	qhash = h.qhash;
 	next = h.next;
-	gt = h.gt;
+	// gt = h.gt;
 
 	umi = h.umi;
 	return *this;
@@ -96,7 +96,7 @@ hit::hit(const hit &h)
 	bridged = h.bridged;
 	qhash = h.qhash;
 	next = h.next;
-	gt = h.gt;
+	// gt = h.gt;
 
 	umi = h.umi;
 }
@@ -117,6 +117,27 @@ hit::hit(bam1_t *b, std::string chrm_name, int id)
 
 int hit::build_features(bam1_t *b)
 {
+	// preparation for var 
+	bool do_apos = true;
+	vector<string> ale_selector {"*", "A", "C", "*", "G", "*", "*", "*", "T"};	// 4-bit int for seq []
+	if (vcf_file == "") do_apos = false;
+	if (vmap_chrm != chrm)
+	{
+		try
+		{
+			vcf_map_it = vcf_map.at(chrm).begin();
+			vcf_map_end = vcf_map.at(chrm).end();
+			vcf_map_len_it =  vcf_map_len.at(chrm).begin();
+			vcf_map_len_end = vcf_map_len.at(chrm).end();
+			vmap_chrm = chrm;
+		}
+		catch (std::out_of_range)
+		{
+			vmap_chrm = "";
+			do_apos = false;
+		}
+	}
+
 	// fetch query name
 	qname = get_qname(b);
 	qhash = string_hash(qname);
@@ -161,29 +182,13 @@ int hit::build_features(bam1_t *b)
 		//build apos
 		else if (bam_cigar_op(cigar[k]) == BAM_CMATCH)
 		{
+			if (!do_apos) continue;
 			int32_t s = p - bam_cigar_oplen(cigar[k]);
 			int32_t itvm_st = s;
 			int32_t itvm_ed = p;
 						
-			if (vcf_file == "") continue;
-			if (vmap_chrm != chrm)
-			{
-				try
-				{
-					vcf_map_it = vcf_map.at(chrm).begin();
-					vcf_map_end = vcf_map.at(chrm).end();
-					vcf_map_len_it =  vcf_map_len.at(chrm).begin();
-					vcf_map_len_end = vcf_map_len.at(chrm).end();
-					vmap_chrm = chrm;
-				}
-				catch (std::out_of_range)
-				{
-					vmap_chrm = "";
-					continue;
-				}
-			}
-
 			// AS related
+			// map<genotype, int> gt_count;
 			auto it = vcf_map_it;
 			auto it_len = vcf_map_len_it;
 			for ( ; it != vcf_map_end && it_len!= vcf_map_len_end; vcf_data::increse_it(it, it_len))					// iterate through vcf
@@ -194,24 +199,18 @@ int hit::build_features(bam1_t *b)
 					if (it->first < pos) { vcf_map_it = it; vcf_map_len_it = it_len;}
 					continue;
 				}
+				if(it_len->second != 1) continue;
+
 				int32_t alelpos = it->first; 									// 0-based ref pos, included
 				int32_t qpos = alelpos - p + q;									// 0-based query pos, included
-
+				
 				string ale = "*";
 				uint8_t *seq_ptr = bam_get_seq (b);
-				for (auto iit = (it->second).begin(); iit != (it->second).end(); iit++) 								// Note: INS also take in here
-				{
-					// iit is the ale sequence
-					for (int i = 0; i < (*iit).size(); ++i)
-					{
-						if (bam_seqi(seq_ptr, qpos + i) ==1 && (*iit)[i] != 'A')  break;
-						if (bam_seqi(seq_ptr, qpos + i) ==2 && (*iit)[i] != 'C')  break;
-						if (bam_seqi(seq_ptr, qpos + i) ==4 && (*iit)[i] != 'G')  break;
-						if (bam_seqi(seq_ptr, qpos + i) ==8 && (*iit)[i] != 'T')  break;
-
-						if (i == (*iit).size() - 1)  ale = string(*iit);
-					}
-				}				
+				int _len = 1; // assuming ale len = 1
+				int _nt_int = bam_seqi(seq_ptr, qpos);
+				string _a = ale_selector[_nt_int];
+				ale = _a;
+				
 				int32_t alerpos = alelpos + it_len->second;						// 0-based query pos, excluded
 				if (alelpos < s)  continue;
 				if (alerpos > p)
@@ -326,16 +325,16 @@ int hit::build_aligned_intervals()
 	sort(itv_align.begin(), itv_align.end());
 
 	 //itvna should not overlap
-	if (verbose >= 3)
-	{
-		print();
-		for (int i = 0; i < itv_align.size()-1; i++ )
-		{	
-			as_pos32 rpos = low32(itv_align[i]);
-			as_pos32 lpos = high32(itv_align[i+1]);
-			assert(rpos.leftsameto(lpos));
-		}
-	}	
+	// if (verbose >= 3)
+	// {
+	// 	print();
+	// 	for (int i = 0; i < itv_align.size()-1; i++ )
+	// 	{	
+	// 		as_pos32 rpos = low32(itv_align[i]);
+	// 		as_pos32 lpos = high32(itv_align[i+1]);
+	// 		assert(rpos.leftsameto(lpos));
+	// 	}
+	// }	
 
 	return 0;
 }
@@ -474,8 +473,8 @@ bool hit::operator<(const hit &h) const
 int hit::print() const
 {
 	// print basic information
-	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, genotype = %d, #var = %d\n", 
-			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', gt, apos.size());
+	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, #var = %d\n", 
+			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', apos.size());
 
 	printf(" start position [%d - )\n", pos);
 	for(int i = 0; i < spos.size(); i++)

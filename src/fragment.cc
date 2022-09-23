@@ -23,12 +23,13 @@ fragment::fragment(hit *x1, hit *x2)
 	lpos = as_pos32(-1);
 	rpos = as_pos32(-1);
 	cnt = 1;
+	gt = UNPHASED;
 }
 
 int fragment::print(int index)
 {
-	printf("fragment %d: name0 = %s, cnt = %d, lpos = %d%s, rpos = %d%s, len = %d, k1l = %d, k1r = %d, k2l = %d, k2r = %d, b1 = %c, b2 = %c, v1 = %lu, v2 = %lu, #paths = %lu\n",
-			index, h1->qname.c_str(), cnt, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), rpos - lpos, k1l, k1r, k2l, k2r, b1 ? 'T' : 'F', b2 ? 'T' : 'F', h1->vlist.size(), h2->vlist.size(), paths.size());
+	printf("fragment %d: name0 = %s, cnt = %d, lpos = %d%s, rpos = %d%s, len = %d, k1l = %d, k1r = %d, k2l = %d, k2r = %d, b1 = %c, b2 = %c, v1 = %lu, v2 = %lu, #paths = %lu, gt = %s\n",
+			index, h1->qname.c_str(), cnt, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), rpos - lpos, k1l, k1r, k2l, k2r, b1 ? 'T' : 'F', b2 ? 'T' : 'F', h1->vlist.size(), h2->vlist.size(), paths.size(), gt_str(gt));
 	h1->print();
 	h2->print();
 
@@ -57,6 +58,7 @@ int fragment::clear()
 	lpos = as_pos32(-1);
 	rpos = as_pos32(-1);
 	cnt = 1;
+	gt = UNPHASED;
 	return 0;
 }
 
@@ -72,6 +74,7 @@ int fragment::append(const fragment &f)
 	h1 = x1;
 	h2 = x2;
 	cnt++;
+	assert(gt == f.gt);
 	return 0;
 }
 

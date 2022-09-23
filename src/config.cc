@@ -113,15 +113,19 @@ string output_file;
 string output_file1;
 
 // AS info
+bool use_phased_var_only = true;
 int min_num_reads_support_variant = 3;
 vcf_data asp;
 string vmap_chrm = "";
-map < std::string, map <int, vector <std::string> > > vcf_map;
-map < std::string, map <int, int > > vcf_map_len;
-map <int, vector <std::string> >::iterator vcf_map_it;
-map <int, int>::iterator vcf_map_len_it;
-map <int, vector <std::string> >::iterator vcf_map_end;
-map <int, int >::iterator vcf_map_len_end;
+map < string, map <int, map <string, genotype> > >     vcf_map;
+map < std::string, map <int, int > >                   vcf_map_len;
+map <int, map <string, genotype> >::iterator           vcf_map_it;
+map <int, int >::iterator                              vcf_map_len_it;
+map <int, map <string, genotype> >::iterator           vcf_map_end;
+map <int, int >::iterator                              vcf_map_len_end;
+double major_gt_threshold = 0.75;
+
+
 
 // for controling
 bool output_tex_files = false;

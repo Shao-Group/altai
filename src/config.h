@@ -66,8 +66,6 @@ using namespace std;
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MAX 3
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_MIN 4
 
-enum genotype {NONSPECIFIC, ALLELE1, ALLELE2, UNPHASED};
-
 // parameters
 // for bam file and reads
 extern int min_flank_length;
@@ -157,15 +155,17 @@ extern string output_file;
 extern string output_file1;
 
 // AS info
+extern bool use_phased_var_only;
 extern int min_num_reads_support_variant;
 extern string vmap_chrm;
 extern vcf_data asp;
-extern map < std::string, map <int, vector <std::string> > >  vcf_map;
+extern map < string, map <int, map <string, genotype> > >     vcf_map;
 extern map < std::string, map <int, int > >                   vcf_map_len;
-extern map <int, vector <std::string> >::iterator             vcf_map_it;
+extern map <int, map <string, genotype> >::iterator           vcf_map_it;
 extern map <int, int >::iterator                              vcf_map_len_it;
-extern map <int, vector <std::string> >::iterator             vcf_map_end;
+extern map <int, map <string, genotype> >::iterator           vcf_map_end;
 extern map <int, int >::iterator                              vcf_map_len_end;
+extern double major_gt_threshold;  // min % for major allele in voting
 
 
 // for controling

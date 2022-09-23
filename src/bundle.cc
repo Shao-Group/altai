@@ -487,7 +487,8 @@ int bundle::build_regions()
 		// if(ltype == ALLELIC_LEFT_RIGHT_SPLICE) ltype = ALLELIC_LEFT_SPLICE;
 		// if(rtype == ALLELIC_LEFT_RIGHT_SPLICE) rtype = ALLELIC_RIGHT_SPLICE;
 		// regions.push_back(region(l, r, ltype, rtype, &nammap, &imap));
-		regions.push_back(region(l, r, ltype, rtype, &fmap, &(bb.imap))); // TODO:
+		throw runtime_error("bundle:regions not implemented with gt");
+		// regions.push_back(region(l, r, ltype, rtype, &fmap, &(bb.imap))); // TODO:
 	}
 
 	if(verbose >= 3) {for(auto it = regions.begin(); it != regions.end(); ++it) {it->print(0);}}

@@ -14,6 +14,7 @@ See LICENSE for licensing.
 #include "interval_map.h"
 #include "partial_exon.h"
 #include "as_pos32.hpp"
+#include "vcf_data.h"
 
 using namespace std;
 
@@ -22,8 +23,8 @@ typedef pair<int, int> PI;
 class region
 {
 public:
-	region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype);
-	region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, const split_interval_map *_mmap, const split_interval_map *_imap);
+	region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt);
+	region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt, const split_interval_map *_mmap, const split_interval_map *_imap);
 	~region();
 
 public:
@@ -34,6 +35,7 @@ public:
 	double ave;						// coverage mean
 	double dev;						// coverage deviation
 	double max;						// coverage max
+	genotype gt;
 	const split_interval_map *mmap;	// pointer to match interval map
 	const split_interval_map *imap;	// pointer to indel interval map
 	join_interval_map jmap;			// subregion intervals
@@ -43,12 +45,10 @@ public:
 public:
 	int print(int index) const;
 	bool is_allelic() const;
-
+	int assign_as_cov(int _ave, int _dev, int _max);
 	bool operator<(const region &x) const;
 
 private:
-	int assign_as_cov(int _ave, int _dev, int _max);
-
 	int build_join_interval_map();
 	int smooth_join_interval_map();
 	bool empty_subregion(as_pos32 p1, as_pos32 p2);

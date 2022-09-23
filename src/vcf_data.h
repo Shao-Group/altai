@@ -13,6 +13,12 @@ See LICENSE for licensing.
 #include <string>
 #include "htslib/vcf.h"
 
+enum genotype {UNPHASED, ALLELE1, ALLELE2, NONSPECIFIC};
+typedef pair<string, genotype> NTGT;
+
+const char* gt_str(genotype gt);
+bool gt_conflict(genotype g1, genotype g2);
+bool gt_explicit_same(genotype g1, genotype g2);
 
 
 class vcf_data
@@ -22,12 +28,11 @@ public:
 	vcf_data(std::string);
 
 public:
-	map < string, map <int, vector <string> > > vcf_pos_map; // map <string chrm, map<int pos, vector<string var> > >   map of variant posisions and vector_of_variant_sequences
-	map < string, map <int, int > > vcf_ale_len;			 // map <string chrm, map<int pos, int length > >		    map of variant positions and lengths_on_reference
-	map < string, map <int, vector <int> > > vcf_pos_phase;	 // map <string chrm, map<int pos, vector<int phase> > >    map of variant positions and 0|1|-1 (on which allele or not present)
+	map < string, map <int, map<string, genotype> > > vcf_pos_map; // map <string chrm, map<int pos, map<string var, genotype> > >   map of variant posisions and vector_of_variant_sequences
+	map < string, map <int, int > > vcf_ale_len;		// map <string chrm, map<int pos, int length > >		    map of variant positions and lengths_on_reference
 
 public:  																		
-	static int increse_it(map <int, vector <std::string> >::iterator &it1, map <int, int >::iterator &it2);
+	static int increse_it(map <int, map <string, genotype> >::iterator &it1, map <int, int >::iterator &it2);
 	int read_as_counts(const std::string &);																			// read .asf file, make vcf_map and vcf_pos_map
 	int print(int);
 };

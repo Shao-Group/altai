@@ -40,8 +40,11 @@ int bundle_bridge::build()
 
 	if (verbose >= 3) print(1);
 
-	bridger bdg(this); 		// bridge
-	bdg.bridge();
+	bridger bdg1(this, ALLELE1); 		// bridge
+	bdg1.bridge();
+
+	bridger bdg2(this, ALLELE2); 		// bridge
+	bdg2.bridge();
 
 	return 0;
 }
@@ -362,13 +365,13 @@ int bundle_bridge::build_regions()
 		pos_splicetypes[r].insert(RIGHT_SPLICE);
 	}
 	
-	map<pair<int, int>, set<string> > poses_seqs;  // < (pos, pos), {allele_seqs} >
+	map<pair<int, int>, map<string, int> > poses_seqs;  // < (pos, pos), (allele_seq, count) >
 	for (const hit& h: bb.hits)
 	{
 		for (const as_pos& p: h.apos)
 		{
 			pair<int, int> p_int {high32(p), low32(p)};
-			poses_seqs[p_int].insert(p.ale);
+			poses_seqs[p_int][p.ale] += 1;
 		}
 	}
 
@@ -394,7 +397,7 @@ int bundle_bridge::build_regions()
 		for(auto && p: poses_seqs)
 		{
 			cout << "poses_seqs (" << p.first.first << ", " << p.first.second << "): {";
-			for (auto && ii: p.second) cout << ii << ", ";
+			for (auto && ii: p.second) cout << ii.first << " count="<< ii.second << ", ";
 			cout << "}" << endl;
 		}
 	}
@@ -422,7 +425,7 @@ int bundle_bridge::build_regions()
 			ltype = splicetype_set_to_int(ltypes);
 			rtype = splicetype_set_to_int(rtypes);
 			i1 ++;
-			region rr(l, r, ltype, rtype);
+			region rr(l, r, ltype, rtype, UNPHASED);
 			evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
 			regions.push_back(rr);
 		}
@@ -430,16 +433,19 @@ int bundle_bridge::build_regions()
 		{
 			assert (l1 == l2);
 			assert (r1 == r2);
-			for (auto&& a: i2->second)
+			for (auto&& aa: i2->second)
 			{
+				string a = aa.first;
+				int c = aa.second;
 				l = as_pos32(l2, a);
 				r = as_pos32(r2, a);
 				ltype = ALLELIC_LEFT_SPLICE; 
 				rtype = ALLELIC_RIGHT_SPLICE;
-				region rr(l, r, ltype, rtype);
-				// evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
-				// FIXME:  
-				// rr.assign_as_cov(); 
+				genotype gt = vcf_map[bb.chrm][l2][a];
+				assert(gt == UNPHASED || gt == NONSPECIFIC || gt == ALLELE1 || gt ==  ALLELE2 );
+				cout << "check here" << gt << endl;
+				region rr(l, r, ltype, rtype, gt);
+				rr.assign_as_cov(c, 0, c); 
 				regions.push_back(rr);
 			}
 			i2 ++;
@@ -462,7 +468,7 @@ int bundle_bridge::build_regions()
 		ltype = splicetype_set_to_int(ltypes);
 		rtype = splicetype_set_to_int(rtypes);
 		i1 ++;
-		region rr(l, r, ltype, rtype);
+		region rr(l, r, ltype, rtype, UNPHASED);
 		evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
 		regions.push_back(rr);
 		
@@ -574,7 +580,6 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 	{
 		p1 = high32(v[k]);
 		auto it = m1.find(p1);
-		cout << p1.aspos32string() << "124" << endl;
 		assert(it != m1.end());
 		sp[k].first = it->second;
 	}
@@ -855,6 +860,20 @@ int bundle_bridge::build_fragments()
 			if(regions[v2.front()].rpos.p32 - fr.h2->pos > max_misalignment2 + fr.h2->nm) fr.b2 = false;
 		}
 
+		// assign GT for fragments
+		set<int> vv(v1.begin(), v1.end());
+		vv.insert(v2.begin(), v2.end());
+		map<genotype, int> mm;
+		for (auto&& _v: vv) mm[regions[_v].gt] += 1;
+		if (mm[ALLELE1] == 0 && mm[ALLELE2] == 0) 
+		{
+			if (mm[UNPHASED] == 0) fr.gt = NONSPECIFIC;
+			else fr.gt = UNPHASED;
+		}
+		else if(mm[ALLELE1] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE1;
+		else if(mm[ALLELE2] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE2;
+		else ft.gt = UNPHASED;
+		// TODO: correct fr.gt if not concordant
 		fragments.push_back(fr);
 
 		bb.hits[i].paired = true;
@@ -864,6 +883,8 @@ int bundle_bridge::build_fragments()
 
 	//printf("total bb.hits = %lu, total fragments = %lu\n", bb.hits.size(), fragments.size());
 	
+
+	return 0; // TODO: ignore UMI for now, need future implement
 
 	// TODO
 	// ===============================================
