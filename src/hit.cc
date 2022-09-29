@@ -22,6 +22,7 @@ See LICENSE for licensing.
 #include "as_pos.hpp"
 #include "as_pos32.hpp"
 #include "vcf_data.h"
+#include <algorithm>
 
 /*
 hit::hit(int32_t p)
