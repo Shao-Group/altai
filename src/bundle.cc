@@ -33,6 +33,7 @@ bundle::bundle(bundle_base &b)
 	: bb(b), br(b)
 {
 	br.build();
+	throw runtime_error("bundle not fixed yet.");
 	prepare();
 }
 
@@ -903,6 +904,7 @@ int bundle::locate_right_partial_exon(as_pos32 x)
 
 vector<int> bundle::align_hit(hit &h)
 {
+	throw runtime_error("bundle::align_hit not implemented yet");
 	bool b = true;
 	vector<int> sp2;
 	vector<as_pos> v;
@@ -1031,6 +1033,10 @@ int bundle::link_partial_exons()
 
 int bundle::build_splice_graph(int mode)
 {
+	//FIXME: break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts
+	throw runtime_error("break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts");
+
+
 	gr.clear();
 	if (verbose >= 3) 
 		cout << "splice graph build for bundle " << bb.chrm << bb.lpos << "-" << bb.rpos << endl;
@@ -2039,11 +2045,12 @@ int bundle::print(int index)
 int bundle::build_hyper_set()
 {
 	map<vector<int>, int> m;
-
+	//FIXME: break phasing paths for nonspecific fragments, check phasing paths no gt conflict
+	throw runtime_error("see fixme");
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
 		fragment &fr = br.fragments[k];
-
+	
 		if(fr.type != 0) continue;	// note by Qimin, skip if not paired-end fragments
 
 		if(fr.h1->paired != true) printf("error type: %d\n", fr.type);

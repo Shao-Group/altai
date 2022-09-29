@@ -391,7 +391,7 @@ int bundle_bridge::build_regions()
 		for (auto && p: pos_splicetypes)
 		{
 			cout << "pos_splicetypes " << p.first << ": {" ;
-			for (auto && ii : p.second) cout << ", " << ii;
+			for (auto && ii : p.second) cout << ii << ", ";
 			cout << "}" << endl;
 		}
 		for(auto && p: poses_seqs)
@@ -735,7 +735,7 @@ int bundle_bridge::build_fragments()
 	int ctu = 0;// count fragments number from UMI
 	int ctb = 0;// count fragments number for both
 
-	// TODO: parameters
+	// TODO parameters
 	int32_t max_misalignment1 = 20;
 	int32_t max_misalignment2 = 10;
 
@@ -872,8 +872,9 @@ int bundle_bridge::build_fragments()
 		}
 		else if(mm[ALLELE1] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE1;
 		else if(mm[ALLELE2] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE2;
-		else ft.gt = UNPHASED;
+		else fr.gt = UNPHASED;
 		// TODO: correct fr.gt if not concordant
+	
 		fragments.push_back(fr);
 
 		bb.hits[i].paired = true;
@@ -884,7 +885,7 @@ int bundle_bridge::build_fragments()
 	//printf("total bb.hits = %lu, total fragments = %lu\n", bb.hits.size(), fragments.size());
 	
 
-	return 0; // TODO: ignore UMI for now, need future implement
+	return 0; // FIXME:TODO: ignore UMI for now, need future implement
 
 	// TODO
 	// ===============================================

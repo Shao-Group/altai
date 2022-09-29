@@ -31,7 +31,7 @@ bool entry_compare(const entry &x, const entry &y);
 class bridger
 {
 public:
-	bridger(bundle_bridge *b, const genotype &gt);
+	bridger(bundle_bridge *b, const genotype &_gt);
 
 public:
 	bundle_bridge *bd;				// parent bundle
@@ -39,12 +39,6 @@ public:
 	vector<path> pnodes;			// path nodes 
 	vector< map<int, int> > jsetx;	// junction graph (out) 
 	vector< map<int, int> > jsety;	// junction graph (in)
-	
-	vector< map<int, int> > jsetx1;	// supplementary junction graph for Allele1 (out) 
-	vector< map<int, int> > jsety1;	// supplementary junction graph for Allele1 (in)
-	vector< map<int, int> > jsetx2;	// supplementary junction graph for Allele2 (out) 
-	vector< map<int, int> > jsety2;	// supplementary junction graph for Allele2 (in)
-
 	vector< map<int, int> > psetx;	// path graph (out)
 	vector< map<int, int> > psety;	// path graph (in)
 	int max_pnode_length;			// kmer size
@@ -58,7 +52,6 @@ public:
 	int print();
 
 public:
-	int build_suppl_graphs();
 	int bridge_overlapped_fragments();
 	int bridge_overlapped_fragment(fragment &fr, int ex1, int ex2);
 

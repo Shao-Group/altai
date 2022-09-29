@@ -73,7 +73,7 @@ int assembler::assemble()
 		ht.set_tags(b1t);
 		ht.set_strand();
 		
-		if(verbose >= 3) {cout << "print hit in assembler 76" << endl; ht.print();}
+		if(verbose >= 3 && DEBUG_MODE_ON) {cout << "print hit in assembler" << endl; ht.print();}
 
 		
 		qlen += ht.qlen;

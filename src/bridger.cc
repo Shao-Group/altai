@@ -37,17 +37,16 @@ bridger::bridger(bundle_bridge *b, const genotype &g)
 
 int bridger::bridge()
 {
-	/*
-	printf("before bridging ... \n");
-	for(int i = 0; i < bd->fragments.size(); i++)
+	if (DEBUG_MODE_ON)
 	{
-		bd->fragments[i].print(i);
+		printf("before bridging ... \n");
+		printf("bridger gt = %s\n", gt_str(gt));
+		for(int i = 0; i < bd->fragments.size(); i++)
+		{
+			bd->fragments[i].print(i);
+		}
+		printf("===\n");
 	}
-	printf("===\n");
-	*/
-
-	// TODO: bridge twice
-
 
 	update_length();
 	int n = bd->fragments.size();
@@ -56,13 +55,10 @@ int bridger::bridge()
 	filter_paths();
 	int n1 = get_paired_fragments();
 
-	//bridge_phased_fragments();
-	//filter_paths();
 	int n2 = get_paired_fragments();
 
 	// first round of briding hard fragments
-	// TODO: handle it later
-	//remove_tiny_boundary();
+	// remove_tiny_boundary();
 
 	bridge_hard_fragments();
 	filter_paths();
@@ -79,35 +75,20 @@ int bridger::bridge()
 	double r4 = n4 * 100.0 / n;
 
 	vector<int> ct = get_bridged_fragments_type();	// ct<ct1, ct2, ct3> paired-end, UMI-linked, both
-	if (verbose >= 3) printf("#fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
-			n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
-
-	/*
-	printf("after bridging ... \n");
-	for(int i = 0; i < bd->fragments.size(); i++)
+	if (verbose >= 3) printf("gt = %s, #fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
+			gt_str(gt), n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
+	if (verbose >= 3)
 	{
-		bd->fragments[i].print(i);
+		printf("after bridging ... \n");
+		printf("bridger gt = %s\n", gt_str(gt));
+		for(int i = 0; i < bd->fragments.size(); i++)
+		{
+			bd->fragments[i].print(i);
+		}
+		printf("===\n");
 	}
-	printf("===\n");
-	*/
 
 	return 0;
-}
-
-int bridger::build_suppl_graphs()
-{
-	double c1, c2;
-	if (bridger_suppl_coefficient1 > 0 || bridger_suppl_coefficient2 > 0)
-	{
-		c1 = bridger_suppl_coefficient1; // default 0.5
-		c2 = bridger_suppl_coefficient2; // default 0.5
-	}
-	else
-	{
-		//TODO: using global ratio of alleles
-	}
-
-	//TODO: make suppl graphs
 }
 
 int bridger::bridge_overlapped_fragments()
@@ -162,26 +143,6 @@ int bridger::bridge_overlapped_fragment(fragment &fr, int ex1, int ex2)
 	fr.paths.push_back(p);
 	return 0;
 }
-
-// int bridger::bridge_phased_fragments()
-// {
-// 	vector<fcluster> fclusters;
-// 	cluster_open_fragments(fclusters);
-
-// 	for(int k = 0; k < fclusters.size(); k++)
-// 	{
-// 		fcluster &fc = fclusters[k];
-
-// 		if(fc.v1.size() <= 0) continue;
-// 		if(fc.v2.size() <= 0) continue;
-
-// 		phase_cluster(fc);
-
-// 		if(fc.phase.size() <= 0) continue;
-// 		bridge_phased_cluster(fc);
-// 	}
-// 	return 0;
-// }
 
 int bridger::cluster_open_fragments(vector<fcluster> &fclusters)
 {
@@ -260,6 +221,11 @@ int bridger::build_junction_graph()
 		int y = v[1];
 		assert(jsetx[x].find(y) == jsetx[x].end());
 		assert(jsety[y].find(x) == jsety[y].end());
+		const region& r1 = bd->regions[x];
+		const region& r2 = bd->regions[y];
+		assert(!gt_conflict(r1.gt, gt));
+		assert(!gt_conflict(gt, r2.gt));
+		// FIXME: non-specific edge weights
 		jsetx[x].insert(PI(y, w));
 		jsety[y].insert(PI(x, w));
 	}
@@ -280,14 +246,16 @@ int bridger::add_consecutive_path_nodes()
 		}
 	}
 
-	// TODO: assert the path for the desired phase is available
+	// correction of fr.gt should be done in bundle_bridge::build_fragments
+	// assert(!gt_conflict(r1.gt, r2.gt))
 	for(int i = 0; i < bd->regions.size() - 1; i++)
 	{
 		if(s.find(PI(i, i + 1)) != s.end()) continue;
 		region &r1 = bd->regions[i + 0];
 		region &r2 = bd->regions[i + 1];
-		if(r1.rpos != r2.lpos) continue;
-
+		if(!r1.rpos.samepos(r2.lpos)) continue;
+		if(gt_conflict(r1.gt, gt)) continue;
+		if(gt_conflict(r2.gt, gt)) continue;
 		path p;
 		p.v.push_back(i + 0);
 		p.v.push_back(i + 1);
@@ -300,6 +268,7 @@ int bridger::add_consecutive_path_nodes()
 
 int bridger::build_path_nodes(int low, int high)
 {
+	throw runtime_error("assume bridger::build_path_nodes not used, need to check");
 	int m = (low + high) / 2;
 	build_path_nodes(m);
 
@@ -312,6 +281,8 @@ int bridger::build_path_nodes(int low, int high)
 	return 0;
 }
 
+// only non-clonflict fr considered
+// non-AS edges also give weights
 int bridger::build_path_nodes(int max_len)
 {
 	max_pnode_length = max_len;
@@ -319,13 +290,16 @@ int bridger::build_path_nodes(int max_len)
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		// TODO, also check length
-		// TODO: only keep fragments that are not in gt
 		fragment &fr = bd->fragments[i];
+
+		if (gt_conflict(fr.gt, gt)) continue;
+		// FIXME: add nonspecific edge weight coeff to balance alleles
+		
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1)
 		{
 			vector<int> v = decode_vlist(fr.paths[0].v);
 			if(v.size() <= 1) continue;
-			build_path_nodes(m, v, fr.cnt);		// TODO: consider cnt of fragments
+			build_path_nodes(m, v, fr.cnt);		// TODO consider cnt of fragments
 		}
 		else
 		{
@@ -350,21 +324,6 @@ int bridger::build_path_nodes(int max_len)
 	return 0;
 }
 
-// int bridger::adjust_path_score(path &p)
-// {
-// 	double m = p.score;
-// 	for(int k = 0; k < p.v.size(); k++)
-// 	{
-// 		region &r = bd->regions[p.v[k]];
-// 		if(r.ave < m) m = r.ave;
-// 		//if(r.ltype != LEFT_SPLICE || r.rtype != RIGHT_SPLICE) continue;
-// 		//if(r.ave - r.dev < m) m = r.ave - r.dev;
-// 	}
-// 	p.score = m * 100;
-// 	//if(p.score < 0) p.score = 0;
-// 	return 0;
-// }
-
 int bridger::build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, int cnt)
 {
 	cnt = 1;
@@ -384,76 +343,10 @@ int bridger::build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, in
 	return 0;
 }
 
-// int bridger::phase_cluster(fcluster &fc)
-// {
-// 	fc.phase.clear();
-// 	map<int, int> xm;
-// 	vector<PI> xp = bd->ref_index[fc.v1.front()];
-// 	for(int j = 0; j < xp.size(); j++)
-// 	{
-// 		int ti = xp[j].first;
-// 		int ki = xp[j].second;
-// 		bool b = true;
-// 		for(int k = 0; k < fc.v1.size(); k++)
-// 		{
-// 			if(ki + k >= bd->ref_phase[ti].size() || fc.v1[k] != bd->ref_phase[ti][ki + k])
-// 			{
-// 				b = false;
-// 				break;
-// 			}
-// 		}
-// 		if(b == false) continue;
-// 		xm.insert(pair<int, int>(ti, ki));
-// 	}
-
-// 	vector<PI> yp = bd->ref_index[fc.v2.front()];
-// 	for(int j = 0; j < yp.size(); j++)
-// 	{
-// 		int ti = yp[j].first;
-// 		int ki = yp[j].second;
-// 		if(xm.find(ti) == xm.end()) continue;
-// 		if(ki < xm[ti] + fc.v1.size()) continue;
-
-// 		bool b = true;
-// 		for(int k = 0; k < fc.v2.size(); k++)
-// 		{
-// 			if(ki + k >= bd->ref_phase[ti].size() || fc.v2[k] != bd->ref_phase[ti][ki + k])
-// 			{
-// 				b = false;
-// 				break;
-// 			}
-// 		}
-// 		if(b == false) continue;
-
-// 		vector<int> vv(bd->ref_phase[ti].begin() + xm[ti], bd->ref_phase[ti].begin() + ki + fc.v2.size());
-// 		fc.add_phase(vv);
-// 	}
-
-// 	return 0;
-// }
-
-// int bridger::bridge_phased_cluster(fcluster &fc)
-// {
-// 	for(int i = 0; i < fc.fset.size(); i++)
-// 	{
-// 		fragment *fr = fc.fset[i];
-// 		for(int k = 0; k < fc.phase.size(); k++)
-// 		{
-// 			path p;
-// 			p.ex1 = p.ex2 = 0;
-// 			p.v = fc.phase[k];
-// 			p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
-// 			p.v = encode_vlist(p.v);
-// 			if(p.length >= length_low && p.length <= length_high) p.type = 1;
-// 			else p.type = 2;
-// 			fr->paths.push_back(p);
-// 		}
-// 	}
-// 	return 0;
-// }
-
 int bridger::remove_tiny_boundary()
 {
+	// tiny boundary is defined as "a tiny boundary by splice-junctions"
+	// a tiny bounary may contain var, due to alignment error
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
@@ -465,36 +358,68 @@ int bridger::remove_tiny_boundary()
 
 		vector<int> v1 = decode_vlist(fr.h1->vlist);
 		int n1 = v1.size();
-		if(n1 >= 2 && v1[n1 - 2] + 1 == v1[n1 - 1])
+
+		// regions[j1 + 1:end] is the real tiny boundary (which may include 1+ regions b/c var)
+		int j1 = n1 - 2;
+		for (; j1 >= 0; j1--)
+		{
+			int idx = v1[j1];
+			int idx2 = v1[j1 + 1];
+			if (bd->regions[idx].rtype & LEFT_SPLICE || bd->regions[idx].rtype & RIGHT_SPLICE) break;
+			else assert(bd->regions[idx].rpos.samepos(bd->regions[idx2].lpos)); // must be as splicing thus same spos
+		}	
+
+		if (n1 >= 2 && j1 >=0 )
 		{
 			int k = v1[n1 - 1];
-			int32_t total = bd->regions[k].rpos - bd->regions[k].lpos;
-			int32_t flank = fr.h1->rpos - bd->regions[k].lpos;
-
-			if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+			int idx = v1[j1];
+			int idx2 = v1[j1 + 1];
+			if(bd->regions[idx].rpos.samepos(bd->regions[idx2].lpos) &&
+			  (bd->regions[idx].rtype & LEFT_SPLICE || bd->regions[idx].rtype & RIGHT_SPLICE))
 			{
-				vector<int> v(v1.begin(), v1.begin() + n1 - 1);
-				assert(v.size() + 1 == v1.size());
-				fr.h1->vlist = encode_vlist(v);
-				fr.h1->rpos = bd->regions[k].lpos;
+				int32_t total = bd->regions[k].rpos - bd->regions[idx].rpos;
+				int32_t flank = fr.h1->rpos - bd->regions[idx].rpos;
+				if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+				{
+					// vector<int> v(v1.begin(), v1.begin() + n1 - 1);
+					vector<int> v(v1.begin(), v1.begin() + j1 + 1);
+					fr.h1->vlist = encode_vlist(v);
+					fr.h1->rpos = bd->regions[idx].rpos;
+				}
 			}
 		}
 
 		vector<int> v2 = decode_vlist(fr.h2->vlist);
 		int n2 = v2.size();
-		if(n2 >= 2 && v2[0] + 1 == v2[1])
+
+		// regions[start: j2] is the real tiny boundary (which may include 1+ regions b/c var)
+		int j2 = 1;
+		for (; j2 <= n2 - 1; j2++)
+		{
+			int idx = v2[j2];
+			int idx2 = v2[j2 - 1];
+			if (bd->regions[idx].ltype & LEFT_SPLICE || bd->regions[idx].ltype & RIGHT_SPLICE) break;
+			else assert(bd->regions[idx].lpos.samepos(bd->regions[idx2].rpos)); // must be as splicing thus same spos
+		}	
+
+		if(n2 >= 2 && j2 <= n2 - 1)
 		{
 			int k = v2[0];
-			int32_t total = bd->regions[k].rpos.p32 - bd->regions[k].lpos;
-			int32_t flank = bd->regions[k].rpos.p32 - fr.h2->pos;
-
-			if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+			int idx = v2[j2];
+			int idx2 = v2[j2 - 1];
+			if (bd->regions[idx].lpos.samepos(bd->regions[idx2].rpos) &&
+				(bd->regions[idx].ltype & LEFT_SPLICE || bd->regions[idx].ltype & RIGHT_SPLICE))
 			{
-				vector<int> v(v2.begin() + 1, v2.end());
-				assert(v.size() + 1 == v2.size());
-				fr.h2->vlist = encode_vlist(v);
-				fr.h2->pos = bd->regions[k].rpos;
-			}
+				int32_t total = bd->regions[idx].lpos.p32 - bd->regions[k].lpos.p32;
+				int32_t flank = bd->regions[idx].lpos.p32 - fr.h2->pos;
+				if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+				{
+					// vector<int> v(v2.begin() + 1, v2.end());
+					vector<int> v(v2.begin() + j2, v2.end());
+					fr.h2->vlist = encode_vlist(v);
+					fr.h2->pos = bd->regions[idx].lpos;
+				}
+			} 			
 		}
 	}
 	return 0;
@@ -518,7 +443,7 @@ int bridger::bridge_hard_fragments()
 {
 	build_junction_graph();
 
-	if(use_overlap_scoring == true)
+	if(use_overlap_scoring == true)  // default: false 
 	{
 		build_path_nodes();
 		build_overlap_index();
@@ -529,17 +454,17 @@ int bridger::bridge_hard_fragments()
 	sort(open.begin(), open.end(), compare_fcluster_v1_v2);
 
 	//print open clusters
-	for(int k = 0; k < open.size(); k++)
+	if (verbose >= 3)
 	{
-		open[k].print(k);
+		for(int k = 0; k < open.size(); k++)
+		{
+			open[k].print(k);
+		}
+		printf("print pnode bridge...\n");
+		for(int k = 0; k < bd->regions.size(); k++) bd->regions[k].print(k);
+		for(int k = 0; k < pnodes.size(); k++) pnodes[k].print_bridge(k);
 	}
-
-	/*
-	printf("print pnode bridge...\n");
-	for(int k = 0; k < bd->regions.size(); k++) bd->regions[k].print(k);
-	for(int k = 0; k < pnodes.size(); k++) pnodes[k].print_bridge(k);
-	*/
-
+		
 	vector< set<int> > affected(bd->regions.size());
 	vector<int> max_needed(bd->regions.size(), -1);
 	for(int k = 0; k < open.size(); k++)
@@ -669,12 +594,8 @@ int bridger::bridge_hard_fragments()
 			}
 
 			// don't do these -- even if no one votes, still keep the path
-			/*
-			if(votes[be] <= 0) continue;
-			if(voted <= 0) continue;
-			*/
-
-
+			//if(votes[be] <= 0) continue;
+			//if(voted <= 0) continue;
 			/*
 			double voting_ratio = 100.0 * voted / fc.fset.size();
 			double best_ratio = 100.0 * votes[be] / voted;
@@ -683,12 +604,8 @@ int bridger::bridge_hard_fragments()
 					fc.fset.size(), voted, be, voting_ratio, best_ratio);
 			printv(votes);
 			printf(")\n");
-			*/
-
 			//if(voting_ratio <= 0.49) continue;
 			//if(best_ratio < 0.8 && be != best_path) continue;
-
-			/*
 			printf("fcluster with %lu fragments, total %lu paths, best = %d, from %d to %d, v1 = (", fc.fset.size(), pb.size(), be, k, j);
 			printv(fc.v1);
 			printf("), v2 = ( ");
@@ -729,128 +646,6 @@ int bridger::bridge_hard_fragments()
 	}
 	return 0;
 }
-
-// int bridger::bridge_tough_fragments()
-// {
-// 	build_path_nodes();
-// 	build_overlap_index();
-
-// 	for(int k = 0; k < pnodes.size(); k++) pnodes[k].print_bridge(k);
-
-// 	//printf("max_pnode_length = %d, nodes = %lu\n", max_pnode_length, pnodes.size());
-
-// 	//build_path_clusters();
-
-// 	vector<fcluster> open;
-// 	cluster_open_fragments(open);
-// 	sort(open.begin(), open.end(), compare_fcluster_v1_v2);
-
-// 	for(int k = 0; k < open.size(); k++)
-// 	{
-// 		open[k].print(k);
-// 	}
-
-// 	vector<PI> open_indices;
-// 	vector< set<int> > affected(pnodes.size());
-// 	for(int k = 0; k < open.size(); k++)
-// 	{
-// 		fcluster &fc = open[k];
-// 		path p1, p2;
-// 		p1.v = get_suffix(fc.v1);
-// 		p2.v = get_prefix(fc.v2);
-// 		vector<path>::const_iterator x1 = lower_bound(pnodes.begin(), pnodes.end(), p1, compare_path_vertices);
-// 		vector<path>::const_iterator x2 = lower_bound(pnodes.begin(), pnodes.end(), p2, compare_path_vertices);
-// 		assert(x1 != pnodes.end());
-// 		assert(x2 != pnodes.end());
-// 		int k1 = x1 - pnodes.begin();
-// 		int k2 = x2 - pnodes.begin();
-
-// 		open_indices.push_back(PI(k1, k2));
-// 		affected[k1].insert(k);
-// 	}
-
-// 	// print pexons
-// 	for(int k = 0; k < bd->regions.size(); k++)
-// 	{
-// 		printf("region %d: [%d%s, %d%s), length = %d\n", 
-// 				k, bd->regions[k].lpos.p32, bd->regions[k].lpos.ale.c_str(), bd->regions[k].rpos.p32, bd->regions[k].rpos.ale.c_str(), bd->regions[k].rpos - bd->regions[k].lpos);
-// 	}
-
-// 	vector<int> max_needed(pnodes.size(), -1);
-// 	for(int k = 0; k < open.size(); k++)
-// 	{
-// 		int k1 = open_indices[k].first;
-// 		int k2 = open_indices[k].second;
-// 		if(max_needed[k1] < k2) max_needed[k1] = k2;
-// 	}
-
-// 	// iteratively bridging open fragments
-// 	vector< vector<int> > table_cov;
-// 	vector<int32_t> table_len;
-// 	vector<int> trace;
-// 	table_cov.resize(pnodes.size());
-// 	table_len.resize(pnodes.size());
-// 	trace.resize(pnodes.size());
-
-// 	for(int i = 0; i < table_cov.size(); i++) table_cov[i].resize(dp_stack_size);
-
-// 	for(int k1 = 0; k1 < pnodes.size(); k1++)
-// 	{
-// 		/*
-// 		printf("RUN: k = %d, max_needed = %d, affected = (", k, max_needed[k]);
-// 		prints(affected[k]);
-// 		printf(")\n");
-// 		*/
-
-// 		if(max_needed[k1] < k1) continue;
-
-// 		dynamic_programming(k1, max_needed[k1], trace, table_cov, table_len);
-
-// 		for(set<int>::iterator si = affected[k1].begin(); si != affected[k1].end(); si++)
-// 		{
-// 			int i = *si;
-// 			fcluster &fc = open[i];
-
-// 			assert(open_indices[i].first == k1);
-// 			int k2 = open_indices[i].second;
-
-// 			double score = (double)(table_cov[k2][0]);
-			
-// 			//fc.print(i);
-// 			printf("#fragments = %lu, score = %.1lf, k1 = %d, k2 = %d, max[k1] = %d, p1 = ( ", fc.fset.size(), score, k1, k2, max_needed[k1]);
-// 			printv(pnodes[k1].v);
-// 			printf("), p2 = ( ");
-// 			printv(pnodes[k2].v);
-// 			printf(")\n");
-
-// 			// TODO, setup minimum score
-// 			if(score <= min_bridging_score) continue;
-
-// 			vector<int> pn = trace_back(k1, k2, trace);
-// 			vector<int> pb = get_bridge(pn, fc.v1, fc.v2);
-
-// 			printf("pn = ( ");
-// 			printv(pn);
-// 			printf("), pb = ( ");
-// 			printv(pb);
-// 			printf(")\n");
-
-// 			for(int j = 0; j < fc.fset.size(); j++)
-// 			{
-// 				fragment *fr = fc.fset[j];
-// 				path p;
-// 				p.ex1 = p.ex2 = 0;
-// 				p.v = pb;
-// 				p.length = bd->compute_aligned_length(fr->k1l, fr->k2r, p.v);
-// 				p.v = encode_vlist(p.v);
-// 				fr->paths.push_back(p);
-// 				//printf(" fragment %d length = %d\n", j, p.length);
-// 			}
-// 		}
-// 	}
-
-// 	return 0;
-// }
 
 int bridger::compare_stack(const vector<int> &x, const vector<int> &y)
 {
@@ -1049,16 +844,6 @@ int bridger::dynamic_programming(int k1, int k2, vector<int> &trace, vector< vec
 	}
 	return 0;
 }
-
-// int32_t bridger::get_extended_length1(int k2, int p1, int p2)
-// {
-// 	path &px = pnodes[p1];
-// 	path &py = pnodes[p2];
-// 	int l = k2 + 1;
-// 	int k1 = py.v.size() - l;
-// 	if(k1 == 0) return 0;
-// 	else return px.acc[k1 - 1];
-// }
 
 int32_t bridger::get_extended_length2(int k1, int p1, int p2)
 {
@@ -1340,7 +1125,7 @@ int bridger::build_overlap_index()
 		psety[i] = m;
 	}
 
-	// TODO: test later
+	// TODO test later
 	//int cnt7 = cnt1;
 	//int cnt8 = cnt1;
 
@@ -1431,21 +1216,6 @@ int bridger::build_overlap_index()
 
 	return 0;
 }
-
-// vector<int> bridger::get_prefix(const vector<int> &v)
-// {
-// 	if(max_pnode_length >= v.size()) return v;
-// 	vector<int> s(v.begin(), v.begin() + max_pnode_length);
-// 	return s;
-// }
-
-// vector<int> bridger::get_suffix(const vector<int> &v)
-// {
-// 	if(max_pnode_length >= v.size()) return v;
-// 	int k = v.size() - max_pnode_length;
-// 	vector<int> s(v.begin() + k, v.end());
-// 	return s;
-// }
 
 bool bridger::determine_identical(const vector<int> &vx, const vector<int> &vy, int x1, int x2, int y1, int y2)
 {
@@ -1566,6 +1336,8 @@ int bridger::update_length()
 	return 0;
 }
 
+// for each fr, resize fr.paths to 1
+// keep the one path which minimize length difference w. length_median
 int bridger::filter_paths()
 {
 	for(int k = 0; k < bd->fragments.size(); k++)
@@ -1573,7 +1345,7 @@ int bridger::filter_paths()
 
 		fragment &fr = bd->fragments[k];
 
-		// TODO: fliter based on fragments type
+		// TODO fliter based on fragments type
 
 		if(fr.paths.size() <= 0) continue;
 		
@@ -1732,59 +1504,8 @@ int bridger::print()
 
 	printf("#fragments = %d, #fixed = %d, #remain = %d, ratio = %.1lf, length = (%d, %d, %d)\n", total, n, remain, ratio, length_low, length_median, length_high);
 
-	//for(int k = 0; k < fclusters.size(); k++) fclusters[k].print(k);
 	return 0;
 }
-
-// bool compare_fragment_v1(fragment *f1, fragment *f2)
-// {
-// 	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
-// 	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
-
-// 	for(int k = 0; k < f1->h1->vlist.size(); k++)
-// 	{
-// 		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
-// 		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
-// 	}
-
-// 	return (f1->lpos < f2->lpos);
-// }
-
-// bool compare_fragment_v2(fragment *f1, fragment *f2)
-// {
-// 	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
-// 	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
-
-// 	for(int k = 0; k < f1->h2->vlist.size(); k++)
-// 	{
-// 		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
-// 		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
-// 	}
-
-// 	return (f1->lpos < f2->lpos);
-// }
-
-// bool compare_fragment_v3(fragment *f1, fragment *f2)
-// {
-// 	if(f1->h1->vlist.size() < f2->h1->vlist.size()) return true;
-// 	if(f1->h1->vlist.size() > f2->h1->vlist.size()) return false;
-// 	if(f1->h2->vlist.size() < f2->h2->vlist.size()) return true;
-// 	if(f1->h2->vlist.size() > f2->h2->vlist.size()) return false;
-
-// 	for(int k = 0; k < f1->h1->vlist.size(); k++)
-// 	{
-// 		if(f1->h1->vlist[k] < f2->h1->vlist[k]) return true;
-// 		if(f1->h1->vlist[k] > f2->h1->vlist[k]) return false;
-// 	}
-
-// 	for(int k = 0; k < f1->h2->vlist.size(); k++)
-// 	{
-// 		if(f1->h2->vlist[k] < f2->h2->vlist[k]) return true;
-// 		if(f1->h2->vlist[k] > f2->h2->vlist[k]) return false;
-// 	}
-
-// 	return (f1->lpos < f2->lpos);
-// }
 
 bool compare_fragment_v3_flank(fragment *f1, fragment *f2)
 {
@@ -1810,67 +1531,3 @@ bool compare_fragment_v3_flank(fragment *f1, fragment *f2)
 
 	return (f1->lpos < f2->lpos);
 }
-
-// bool compare_fragment_path(fragment *f1, fragment *f2)
-// {
-// 	assert(f1->paths.size() >= 1);
-// 	assert(f2->paths.size() >= 1);
-
-// 	int n1 = f1->paths[0].v.size();
-// 	int n2 = f2->paths[0].v.size();
-
-// 	for(int k = 0; k < n1 && k < n2; k++)
-// 	{
-// 		if(f1->paths[0].v[k] < f2->paths[0].v[k]) return true;
-// 		if(f1->paths[0].v[k] > f2->paths[0].v[k]) return false;
-// 	}
-
-// 	if(n1 < n2) return true;
-// 	if(n1 > n2) return false;
-
-// 	return (f1->lpos < f2->lpos);
-// }
-
-// bool check_suffix(const vector<int> &vx, const vector<int> &vy) 
-// {
-// 	if(vx.size() == 0) return true;
-// 	if(vy.size() == 0) return true;
-
-// 	double overlap = 0.4;
-// 	if(vx.size() <= vy.size())
-// 	{
-// 		vector<int>::const_iterator it = lower_bound(vx.begin(), vx.end(), vy[0]);
-// 		if(it == vx.end()) return false;
-// 		if(vx.end() - it < overlap * vx.size()) return false;
-// 		for(int kx = vx.size() - 1, ky = (vx.end() - it) - 1; kx >= 0 && ky >= 0; kx--, ky--)
-// 		{
-// 			if(vx[kx] != vy[ky]) return false;
-// 		}
-// 		/*
-// 		for(int k = 0; it != vx.end(); it++, k++)
-// 		{
-// 			assert(k < vy.size());
-// 			if((*it) != vy[k]) return false;
-// 		}
-// 		*/
-// 	}
-// 	else
-// 	{
-// 		vector<int>::const_iterator it = lower_bound(vy.begin(), vy.end(), vx.back());
-// 		if(it == vy.end()) return false;
-// 		if(it - vy.begin() + 1 < overlap * vy.size()) return false;
-// 		for(int kx = vx.size() - (it - vy.begin()) - 1, ky = 0; kx < vx.size() && ky < vy.size(); kx++, ky++)
-// 		{
-// 			if(vx[kx] != vy[ky]) return false;
-// 		}
-// 		/*
-// 		for(int k = vx.size() - 1; k >= 0; it--, k--)
-// 		{
-// 			if((*it) != vx[k]) return false;
-// 			if(it == vy.begin()) break;
-// 		}
-// 		*/
-// 	}
-// 	return true;
-// }
-

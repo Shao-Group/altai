@@ -28,6 +28,9 @@ const char* gt_str(genotype gt)
 
 bool gt_conflict(genotype g1, genotype g2) 
 {
+	set<genotype> gts {UNPHASED, ALLELE1, ALLELE2, NONSPECIFIC};
+	assert(gts.find(g1) != gts.end());
+	assert(gts.find(g2) != gts.end());
 	if ((g1 == ALLELE1 && g2 == ALLELE2) || (g1 == ALLELE2 && g2 == ALLELE1))
 		return true;
 	else return false;
