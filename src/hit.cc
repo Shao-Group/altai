@@ -315,7 +315,7 @@ int hit::build_aligned_intervals()
 	}
 	assert (j = apos.size());
 	// add remaining (sl,sr) and itvs
-	itv_align.push_back(as_pos(sl, sr, "$"));
+	if (sl < sr) itv_align.push_back(as_pos(sl, sr, "$"));
 	i++;
 	while (i < itvs.size())
 	{
@@ -325,17 +325,17 @@ int hit::build_aligned_intervals()
 
 	sort(itv_align.begin(), itv_align.end());
 
-	 //itvna should not overlap
-	// if (verbose >= 3)
-	// {
-	// 	print();
-	// 	for (int i = 0; i < itv_align.size()-1; i++ )
-	// 	{	
-	// 		as_pos32 rpos = low32(itv_align[i]);
-	// 		as_pos32 lpos = high32(itv_align[i+1]);
-	// 		assert(rpos.leftsameto(lpos));
-	// 	}
-	// }	
+	// itvna should not overlap
+	if (verbose >= 3)
+	{
+		print();
+		for (int i = 0; i < itv_align.size()-1; i++ )
+		{	
+			as_pos32 rpos = low32(itv_align[i]);
+			as_pos32 lpos = high32(itv_align[i+1]);
+			assert(rpos.leftsameto(lpos));
+		}
+	}	
 
 	return 0;
 }
@@ -344,6 +344,21 @@ int hit::get_aligned_intervals(vector<as_pos> &v) const
 {
 	v.clear();
 	v = itv_align;
+	if (DEBUG_MODE_ON)
+	{
+		as_pos32 a = high32(itv_align[0]);
+		as_pos32 b = low32 (itv_align[0]);
+		assert(a.leftto(b));
+		for(int i = 1; i < itv_align.size() - 1 ; i++)
+		{
+			as_pos32 c = high32(itv_align[i]);
+			as_pos32 d = low32(itv_align[i]);
+			assert(c.leftto(d));
+			assert(b.leftsameto(c));
+			a = c;
+			b = d;
+		}
+	}
 	/*
 	int32_t p1 = pos;
 	for(int k = 0; k < spos.size(); k++)
