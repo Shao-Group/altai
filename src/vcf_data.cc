@@ -38,9 +38,19 @@ bool gt_conflict(genotype g1, genotype g2)
 
 bool gt_explicit_same(genotype g1, genotype g2) 
 {
-	if ((g1 == ALLELE1 && g1 == g2) || (g1 == ALLELE2 && g1 == g2))
-		return true;
-	else return false;
+	if (g1 == g2) 
+		if (g1 == ALLELE1 || g1 == ALLELE2 || g1 == NONSPECIFIC) 
+			return true;
+	return false;
+}
+
+bool gt_implicit_same(genotype g1, genotype g2) // true if explicit_same or (UNPHASE, NONSPECIFIC) same. (UNPHASE, ALE1) is false
+{
+	if (gt_explicit_same(g1, g2)) return true;
+	if (g1 == UNPHASED && g2 == UNPHASED) return true;
+	if (g1 == UNPHASED && g2 == NONSPECIFIC) return true;
+	if (g2 == UNPHASED && g1 == NONSPECIFIC) return true;
+	return false;
 }
 
 vcf_data::vcf_data() {}

@@ -19,6 +19,7 @@ typedef pair<string, genotype> NTGT;
 const char* gt_str(genotype gt);
 bool gt_conflict(genotype g1, genotype g2);   // true if (g1,g2) == (ALE1, ALE2) or (ALE2, ALE1)
 bool gt_explicit_same(genotype g1, genotype g2);  // true if g1 == g2 == ALE1 or g1 == g2 == ALE2
+bool gt_implicit_same(genotype g1, genotype g2); // true if explicit_same or (UNPHASE, NONSPECIFIC) same. (UNPHASE, ALE1) is false
 
 
 class vcf_data

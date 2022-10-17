@@ -16,6 +16,7 @@ int fcluster::clear()
 	v2.clear();
 	phase.clear();
 	count.clear();
+	gt = UNPHASED;
 	return 0;
 }
 

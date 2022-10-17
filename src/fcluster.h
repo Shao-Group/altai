@@ -23,6 +23,7 @@ public:
 	vector<int> v2;					// vlist for mate2
 	vector< vector<int> > phase;	// possible phasing w.r.t. reference
 	vector<int> count;				// phase count
+	genotype gt;
 
 public:
 	int clear();
