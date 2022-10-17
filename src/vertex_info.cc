@@ -22,6 +22,7 @@ vertex_info::vertex_info()
 	lstrand = '.';
 	rstrand = '.';
 	regional = false;
+	gt = UNPHASED;
 }
 
 vertex_info::vertex_info(int l)
@@ -37,6 +38,7 @@ vertex_info::vertex_info(int l)
 	lstrand = '.';
 	rstrand = '.';
 	regional = false;
+	gt = UNPHASED;
 }
 
 vertex_info::vertex_info(const vertex_info &vi)
@@ -52,4 +54,5 @@ vertex_info::vertex_info(const vertex_info &vi)
 	lstrand = vi.lstrand;
 	rstrand = vi.rstrand;
 	regional = vi.regional;
+	gt = vi.gt;
 }

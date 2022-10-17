@@ -11,6 +11,7 @@ See LICENSE for licensing.
 
 #include <stdint.h>
 #include "as_pos32.hpp"
+#include "vcf_data.h"
 
 class vertex_info
 {
@@ -31,6 +32,7 @@ public:
 	char lstrand;		// left side strand
 	char rstrand;		// right side strand	
 	bool regional;		// if a vertex is regional
+	genotype gt;
 };
 
 #endif
