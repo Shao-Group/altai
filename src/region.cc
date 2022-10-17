@@ -36,6 +36,15 @@ region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype 
 region::~region()
 {}
 
+int region::rebuild(const split_interval_map *_mmap)
+{
+	mmap = _mmap; 
+	build_join_interval_map();
+	smooth_join_interval_map();
+	build_partial_exons();
+}
+
+
 int region::build_join_interval_map()
 {
 	jmap.clear();
@@ -111,7 +120,7 @@ bool region::empty_subregion(as_pos32 p1, as_pos32 p2)
 	if(it1 == mmap->end() || it2 == mmap->end()) return true;
 
 	int32_t sum = compute_sum_overlap(*mmap, it1, it2);
-	int32_t max = compute_sum_overlap(*mmap, it1, it2);
+	int32_t max = compute_max_overlap(*mmap, it1, it2);
 	double ratio = sum * 1.0 / double(p2 - p1);
 	//printf(" region = [%d, %d), subregion [%d, %d), overlap = %.2lf\n", lpos, rpos, p1, p2, ratio);
 	//if(ratio < min_subregion_overlap + max_intron_contamination_coverage) return true;
@@ -132,7 +141,7 @@ int region::build_partial_exons()
 
 	if(lower(jmap.begin()->first) == lpos && upper(jmap.begin()->first) == rpos)
 	{
-		partial_exon pe(lpos, rpos, ltype, rtype);
+		partial_exon pe(lpos, rpos, ltype, rtype, gt);
 		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
 		pexons.push_back(pe);
 		return 0;
@@ -140,7 +149,7 @@ int region::build_partial_exons()
 
 	if((ltype & RIGHT_SPLICE) > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
-		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY);
+		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY, gt);
 		pe.ave = min_guaranteed_edge_weight;
 		pe.max = min_guaranteed_edge_weight;
 		pe.dev = 1.0;
@@ -165,7 +174,7 @@ int region::build_partial_exons()
 		int lt = (p1 == lpos) ? ltype : START_BOUNDARY;
 		int rt = (p2 == rpos) ? rtype : END_BOUNDARY;
 
-		partial_exon pe(p1, p2, lt, rt);
+		partial_exon pe(p1, p2, lt, rt, gt);
 		// evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev);
 		if(b == true) pe.type = EMPTY_VERTEX;
 		else pe.type = 0;
@@ -176,7 +185,7 @@ int region::build_partial_exons()
 
 	if((rtype & LEFT_SPLICE) > 0 && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
 	{
-		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype);
+		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype, gt);
 		pe.ave = min_guaranteed_edge_weight;
 		pe.max = min_guaranteed_edge_weight;
 		pe.dev = 1.0;

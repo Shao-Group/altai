@@ -43,6 +43,7 @@ public:
 	vector<partial_exon> pexons;	// generated partial exons
 
 public:
+	int rebuild(const split_interval_map *_mmap);
 	int print(int index) const;
 	bool is_allelic() const;
 	int assign_as_cov(int _ave, int _dev, int _max);
