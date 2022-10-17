@@ -37,6 +37,7 @@ bridger::bridger(bundle_bridge *b, const genotype &g)
 
 int bridger::bridge()
 {
+	/*
 	if (DEBUG_MODE_ON)
 	{
 		printf("before bridging ... \n");
@@ -47,6 +48,7 @@ int bridger::bridge()
 		}
 		printf("===\n");
 	}
+	*/
 
 	update_length();
 	int n = bd->fragments.size();
@@ -150,6 +152,7 @@ int bridger::cluster_open_fragments(vector<fcluster> &fclusters)
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 		if(fr.paths.size() >= 1) continue;
 		//if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 		int last1 = fr.h1->vlist[fr.h1->vlist.size() - 2] + fr.h1->vlist.back() - 1;
@@ -219,12 +222,15 @@ int bridger::build_junction_graph()
 		int w = (int)(pnodes[i].score);
 		int x = v[0];
 		int y = v[1];
+
+		if (DEBUG_MODE_ON) printf("jset (x,y,w) = (%d, %d, %d)\n", x, y, w);
 		assert(jsetx[x].find(y) == jsetx[x].end());
 		assert(jsety[y].find(x) == jsety[y].end());
 		const region& r1 = bd->regions[x];
 		const region& r2 = bd->regions[y];
-		assert(!gt_conflict(r1.gt, gt));
-		assert(!gt_conflict(gt, r2.gt));
+		cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
+		if(gt_conflict(r1.gt, gt)) continue;
+		if(gt_conflict(r2.gt, gt)) continue;
 		// FIXME: non-specific edge weights
 		jsetx[x].insert(PI(y, w));
 		jsety[y].insert(PI(x, w));

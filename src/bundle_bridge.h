@@ -44,6 +44,8 @@ public:
 	vector<int32_t> build_accumulate_length(const vector<int> &v);
 	vector<as_pos32> get_aligned_intervals(fragment &fr);
 	vector<as_pos32> get_splices(fragment &fr);
+	vector<int> get_aligned_intervals_region_index(fragment &fr);
+	vector<int> get_splices_region_index(fragment &fr);
 
 private:
 	int splicetype_set_to_int(set<int>&);
