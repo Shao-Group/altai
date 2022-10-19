@@ -6,6 +6,7 @@ See LICENSE for licensing.
 
 #include "path.h"
 #include "util.h"
+#include "hit.h"
 #include <cassert>
 #include <cstdio>
 
