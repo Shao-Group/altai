@@ -53,6 +53,16 @@ bool gt_implicit_same(genotype g1, genotype g2) // true if explicit_same or (UNP
 	return false;
 }
 
+bool gt_as(genotype g)
+{
+	if (g == ALLELE1 || g == ALLELE2) return true;
+	else 
+	{
+		assert( g == NONSPECIFIC || g == UNPHASED);
+		return false;
+	}
+}
+
 vcf_data::vcf_data() {}
 
 vcf_data::vcf_data(std::string file_name) 
