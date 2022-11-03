@@ -289,8 +289,7 @@ int previewer::process_bundle(bundle_base &bb, map<int, int>& m)
 	br.build_fragments();
 	//br.group_fragments();
 
-	throw runtime_error("previewer bridger for insertsize inspeciton not implemented yet");
-	bridger bdg(&br, NONSPECIFIC); //FIXME: which allele to bridge
+	bridger bdg(&br, UNPHASED);
 	bdg.bridge_overlapped_fragments();
 
 	for(int k = 0; k < br.fragments.size(); k++)
