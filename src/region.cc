@@ -220,7 +220,7 @@ bool region::is_allelic() const
 {
 	if (lpos.ale != "$")
 	{
-		assert (rpos.ale != "$");
+		assert (rpos.ale == lpos.ale);
 		return true;
 	}
 	else return false;

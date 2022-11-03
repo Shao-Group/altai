@@ -135,6 +135,8 @@ int assembler::process(int n)
 	if(pool.size() < n) return 0;
 	for(int i = 0; i < pool.size(); i++)
 	{
+		try 
+		{
 		bundle_base &bb = pool[i];
 		bb.buildbase();
 
@@ -195,6 +197,12 @@ int assembler::process(int n)
 		ft2.filter_length_coverage();
 		ft2.remove_nested_transcripts();
 		if(ft2.trs.size() >= 1) non_full_trsts.insert(non_full_trsts.end(), ft2.trs.begin(), ft2.trs.end());
+		}
+		catch (BundleError e)
+		{
+			cerr << "Caught bundle error" << endl;
+			continue;
+		}
 	}
 	pool.clear();
 	return 0;

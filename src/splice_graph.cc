@@ -1080,11 +1080,11 @@ int splice_graph::print_weights()
 		edge_descriptor e = (*it1);
 		int s = e->source();
 		int t = e->target();
-		int32_t p1 = get_vertex_info(s).rpos;
-		int32_t p2 = get_vertex_info(t).lpos;
+		as_pos32 p1 = get_vertex_info(s).rpos;
+		as_pos32 p2 = get_vertex_info(t).lpos;
 		double w1 = get_edge_weight(e);
 		double w2 = get_edge_info(e).weight;
-		printf("edge (%d, %d) pos = %d-%d length = %d weight = (%.2lf, %.2lf)\n", s, t, p1, p2, p2 - p1 + 1, w1, w2);
+		printf("edge (%d, %d) pos = %s-%s length = %d weight = (%.2lf, %.2lf)\n", s, t, p1.aspos32string().c_str(), p2.aspos32string().c_str(), p2 - p1 + 1, w1, w2);
 	}
 	return 0;
 }
