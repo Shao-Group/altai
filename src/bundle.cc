@@ -108,8 +108,8 @@ int bundle::build_intervals()
 		// for(int k = 0; k < ht.itvm.size(); k++)
 		for(int k = 0; k < ht.itv_align.size(); k++)
 		{
-			int32_t s = high32(ht.itvm[k]);
-			int32_t t = low32(ht.itvm[k]);
+			int32_t s = high32(ht.itv_align[k]);
+			int32_t t = low32(ht.itv_align[k]);
 			fmap += make_pair(ROI(s, t), 1);
 		}
 	}
