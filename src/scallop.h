@@ -31,7 +31,6 @@ class scallop
 {
 public:
 	scallop();
-	// scallop(const splice_graph &gr, const hyper_set &hs);
 	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false);
 	virtual ~scallop();
 
@@ -47,7 +46,9 @@ public:
 	vector<int> v2v;					// vertex map
 	hyper_set hs;						// hyper edges
 	int round;							// iteration
-	set<int> nonzeroset;				// vertices with degree >= 1
+
+	set<int> asnonzeroset;			    // vertices with degree >= 1 && !vi.is_ordinary_vertex()
+	set<int> nsnonzeroset;				// vertices with degree >= 1 &&  vi.is_ordinary_vertex()
 	vector<path> paths;					// predicted paths
 	vector<transcript> trsts;			// predicted transcripts
 	vector<transcript> non_full_trsts;		// predicted non full length transcripts
@@ -58,9 +59,9 @@ private:
 	int init_vertex_map();
 	int init_super_edges();
 	int init_inner_weights();
+	int init_vertex_astype();
 	int init_nonzeroset();
-	int add_pseudo_hyper_edges();
-	int refine_splice_graph();
+
 
 	// resolve iteratively
 	bool resolve_trivial_vertex(int type, double jump_ratio);
@@ -99,7 +100,6 @@ private:
 	// stats, print, and draw
 	int print();
 	int stats();
-	int summarize_vertices();
 	int draw_splice_graph(const string &file);
 	vector<int> topological_sort();
 };
