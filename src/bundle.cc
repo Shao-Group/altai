@@ -33,7 +33,6 @@ bundle::bundle(bundle_base &b)
 	: bb(b), br(b)
 {
 	br.build();
-	throw runtime_error("bundle not fixed yet.");
 	prepare();
 }
 
@@ -45,14 +44,9 @@ int bundle::prepare()
 {
 	compute_strand();
 	build_intervals();
-	// FIXME: remove accordingly count of AS pos
-	// remove insufficiently supported as pos
-	build_junctions();
-	build_regions();
 	build_partial_exons();
 
-	build_partial_exon_map();
-	link_partial_exons();
+	pexon_jset(jset);
 	return 0;
 }
 
@@ -60,7 +54,8 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	if(revise == true) revise_splice_graph(); // TODO: this might result an error for allelic regions
+	// if(revise == true) revise_splice_graph(); // FIXME: this might result an error for allelic regions, default true
+	refine_splice_graph();
 	build_hyper_set();
 	return 0;
 }
@@ -92,7 +87,7 @@ int bundle::build_intervals()
 	{
 		fragment &fr = br.fragments[i];
 		if(fr.paths.size() != 1 || fr.paths[0].type != 1) continue;
-		vector<as_pos32> vv = br.get_aligned_intervals(fr);
+		const vector<as_pos32>& vv = br.get_aligned_intervals(fr);
 		if(vv.size() <= 0) continue;
 		assert(vv.size() % 2 == 0);
 
@@ -110,7 +105,8 @@ int bundle::build_intervals()
 		if(ht.bridged == true) continue;
 		if((ht.flag & 0x100) >= 1) continue;
 		if(br.breads.find(ht.qname) != br.breads.end()) continue;
-		for(int k = 0; k < ht.itvm.size(); k++)
+		// for(int k = 0; k < ht.itvm.size(); k++)
+		for(int k = 0; k < ht.itv_align.size(); k++)
 		{
 			int32_t s = high32(ht.itvm[k]);
 			int32_t t = low32(ht.itvm[k]);
@@ -120,583 +116,263 @@ int bundle::build_intervals()
 	return 0;
 }
 
-int bundle::build_junctions()
+int bundle::build_partial_exons()
 {
-	junctions.clear();
+	//TODO: remove insufficiently supported AS exons, break phasing paths of such AS exons
+	pexons.clear();
+	regional.clear();
 
-	map<as_pos, vector<hit*>> m;		// bridged fragments
-	for(int i = 0; i < br.fragments.size(); i++)
+	set<int32_t> m1, m2; // junction site
+	for (auto&& j: br.junctions)
 	{
-		fragment &fr = br.fragments[i];
-		if(fr.paths.size() != 1 || fr.paths[0].type != 1) continue;
-		vector<as_pos32> vv = br.get_splices(fr);
-		if(vv.size() <= 0) continue;
-		assert(vv.size() % 2 == 0);
+		m1.insert(j.lpos.p32);
+		m2.insert(j.rpos.p32);
+	}
 
-		for(int k = 0; k < vv.size() / 2; k++)
+	vector<region>& regions = br.regions;
+	// add non-AS pexons
+	for (int i = 0; i < regions.size(); i++)
+	{
+		region& r =  regions[i];
+		if(!r.is_allelic()) 
 		{
-			as_pos p = as_pos(pack(vv[2 * k + 0], vv[2 * k + 1]), "$" );
-
-			if(m.find(p) == m.end())
+			r.rebuild(&fmap); 
+			for(int k = 0; k < r.pexons.size(); k++)
 			{
-				vector<hit*> hv;
-				hv.push_back(fr.h1);
-				//hv.push_back(fr.h2);
-				m.insert(pair< as_pos, vector<hit*> >(p, hv));
-			}
-			else
-			{
-				m[p].push_back(fr.h1);
-				//m[p].push_back(fr.h2);
+				partial_exon &pe = r.pexons[k];
+				pe.rid = i;
+				pexons.push_back(pe);
 			}
 		}
 	}
 
+	// add AS pexons directly
+	for (int i = 0; i < regions.size(); i++)
+	{
+		region& r =  regions[i];
+		if(r.is_allelic()) 
+		{
+			assert(r.pexons.size() == 0);
+			int ltype = -1, rtype = -1;
 
-	// vector<as_pos> m;
-	// vector<vector<int> > n;
-	// for(int i = 0; i < hits.size(); i++)
-	// {
-	// 	vector<as_pos> v = hits[i].spos;
-	// 	if(v.size() == 0) continue;
+			// left side is not junction, not var, & (empty vertex or no pexon)  => ltype += START_BOUNDARY;
+			if (m1.find(r.lpos.p32) != m1.end()) ltype = r.ltype;
+			else if (i >= 1 && regions[i-1].is_allelic()) ltype = r.ltype;
+			else if (i >= 1 && regions[i-1].pexons.size() == 0) ltype = START_BOUNDARY;
+			else if (i >= 1 && regions[i-1].pexons[regions[i-1].pexons.size() - 1].type != EMPTY_VERTEX) ltype = r.ltype;
+			else ltype = START_BOUNDARY;
 
-	// 	//hits[i].print();
-	// 	for(int k = 0; k < v.size(); k++)
-	// 	{
-	// 		as_pos p = v[k];
-	// 		vector<as_pos>::iterator it = find(m.begin(), m.end(), p);
-	// 		if(it == m.end())
-	// 		{
-	// 			vector<int> hv;
-	// 			hv.push_back(i);
-	// 			m.push_back(p);
-	// 			n.push_back(hv);
-	// 			assert(p.ale == "$");
-	// 		}
-	// 		else
-	// 		{
-	// 			n[it - m.begin()].push_back(i);
-	// 		}
-	// 	}
-	// }
-	// assert(m.size() == n.size());
+			// right side is not junction, not var, & empty => rtype += END_BOUNDARY;
+			if (m2.find(r.rpos.p32) != m2.end()) rtype = r.rtype;
+			else if (i < regions.size() - 1 && regions[i+1].is_allelic()) rtype = r.rtype;
+			else if (i < regions.size() - 1 && regions[i+1].pexons.size() == 0) rtype = END_BOUNDARY;
+			else if (i < regions.size() - 1 && regions[i+1].pexons[0].type != EMPTY_VERTEX) rtype = r.rtype;
+			else rtype = END_BOUNDARY;
 
+			assert(ltype != -1);
+			assert(rtype != -1);
+			assert(r.ave != 0);
+			// cout << "as pexon" << r.lpos.aspos32string() << "-" << r.rpos.aspos32string() <<endl;
+			// assert(r.gt != UNPHASED);  // assuming all var phased //FIXME: not always true, how to handle potential errors
+
+			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
+			pe.assign_as_cov(r.ave, r.max, r.dev);
+			pe.rid = i;
+			pe.type = 0;  // assert not EMPTY_VERTEX
+			r.pexons.push_back(pe);
+			pexons.push_back(pe);
+		}
+	}
+
+	// sort, make pe.pid & regional
+	sort(pexons.begin(), pexons.end());
+	for (int i = 0; i < pexons.size(); i ++)
+	{
+		partial_exon& pe = pexons[i];
+		pe.pid = i;
+		if((pe.lpos != bb.lpos || pe.rpos != bb.rpos) && (pe.ltype & START_BOUNDARY) && (pe.rtype & END_BOUNDARY)) 
+			regional.push_back(true);
+		else regional.push_back(false);		
+	}
+
+	if (DEBUG_MODE_ON)
+	{
+		assert(regional.size() == pexons.size());
+		// assert(pexons.size() >= regions.size()); // not true
+		printf("size of regions %d, size of pexon %d", regions.size(), pexons.size());
+		if (verbose >= 3 ) cout << "print pexons:\n";
+
+		for (int i = 0; i< pexons.size(); i++) 
+		{
+			if(verbose >= 3) 
+			{
+				cout <<"regional?" <<regional[i] << "\t" ; 
+				pexons[i].print(i); 
+			}
+			if (i < pexons.size() - 1) 
+			{
+				bool b0 =  pexons[i].is_allelic() && pexons[i+1].is_allelic();
+				bool b1 =  pexons[i].rpos.leftsameto(pexons[i+1].lpos);
+				bool b2 =  b0 && pexons[i].lpos.samepos(pexons[i+1].lpos) && pexons[i].rpos.samepos(pexons[i+1].rpos);
+				assert(b1 || b2);
+
+				// note: regions are also sorted
+				partial_exon& p1 = pexons[i];
+				partial_exon& p2 = pexons[i + 1];
+				cout << p1.rid << " " << p2.rid << ": " << p1.pid << " " << p2.pid << endl;
+				assert(p2.rid > p1.rid || (p2.rid == p1.rid && p2.pid == p1.pid + 1));
+			}
+		}			
+	}
+
+	return 0;
+}
+
+/*
+**	equivalent to `junctions` and `link_partial_exons`
+**	jset_to_fill := map < (in-idx, out-idx) , count>
+**	computed from fragments' paths/ hits' vlist, which are indices of regions (i.e. jset in bridger)
+**	convert this region index jset to pexon index jset
+ */
+int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
+{	
+	const vector<region>& regions = br.regions;
+	pexon_jset.clear(); 						// to be filled
+
+	// bridged fragments
+	map<pair<int, int>, vector<hit*>> m;
+	for(int i = 0; i < br.fragments.size(); i++)
+	{
+		fragment &fr = br.fragments[i];
+		if(fr.paths.size() != 1 || fr.paths[0].type != 1) continue;
+		const vector<int32_t>& vv = br.get_splices_region_index(fr);
+		if(vv.size() <= 0) continue;
+
+		for(int k = 0; k < vv.size() - 1; k++)
+		{
+			pair<int, int> xy {vv[k], vv[k+1]};
+			if(m.find(xy) == m.end())
+			{
+				vector<hit*> hv;
+				hv.push_back(fr.h1);
+				m.insert({xy, hv});
+			}
+			else
+			{
+				m[xy].push_back(fr.h1);
+			}
+		}
+	}
+
+	// unbridged hits
 	for(int i = 0; i < bb.hits.size(); i++)
 	{
 		if(bb.hits[i].bridged == true) continue;
 		if((bb.hits[i].flag & 0x100) >= 1) continue;
 		if(br.breads.find(bb.hits[i].qname) != br.breads.end()) continue;
 
-		vector<as_pos> v = bb.hits[i].spos;
+		vector<int> v = decode_vlist(bb.hits[i].vlist);
 		if(v.size() == 0) continue;
 
-		for(int k = 0; k < v.size(); k++)
+		for(int k = 0; k < v.size() - 1; k++)
 		{
-			as_pos p = v[k];
-			if(m.find(p) == m.end())
+			pair<int, int> xy {v[k], v[k+1]};
+			if(m.find(xy) == m.end())
 			{
 				vector<hit*> hv;
 				hv.push_back(&(bb.hits[i]));
-				m.insert(pair< as_pos, vector<hit*> >(p, hv));
+				m.insert({xy, hv});
 			}
 			else
 			{
-				m[p].push_back(&(bb.hits[i]));
+				m[xy].push_back(&(bb.hits[i]));
 			}
 		}
 	}
-	
-	// for(int it = 0; it < m.size(); it++)
-	// {
-	// 	vector<int> &v = n[it];
-	// 	if(v.size() < min_splice_boundary_hits) continue;
 
-	// 	int s0 = 0;
-	// 	int s1 = 0;
-	// 	int s2 = 0;
-	// 	int nm = 0;
-	// 	// check strandness of junction
-	// 	for(int k = 0; k < v.size(); k++)
-	// 	{
-	// 		hit &h = hits[v[k]];
-	// 		if(h.xs == '.') s0++;
-	// 		if(h.xs == '+') s1++;
-	// 		if(h.xs == '-') s2++;
-	// 	}
+	// compute strandness & region index to pexon index
+	// map<pair<int, int>, vector<hit*>> m;
+	if (DEBUG_MODE_ON)
+	{
+		for(auto it = m.begin(); it != m.end(); it++)
+		{
+			int rid1 = it->first.first;
+			int rid2 = it->first.second;
+			int c = it->second.size();
+			cout << "jset m: " << rid1 << "--" << rid2 << ", counts = " << c << endl;
+		}
+	}
 
-	// 	// printf("junction: %s:%d%s-%d%s (%d, %d, %d) %d %d\n", chrm.c_str(), p1.p32, p1.ale.c_str(), p2.p32, p2.ale.c_str(), s0, s1, s2, s1 < s2 ? s1 : s2, nm);
+	map<pair<as_pos32, as_pos32>, int> pmap;
+	for(int i = 0; i < pexons.size(); i++)
+	{
+		const partial_exon& pe = pexons[i];
+		assert(pmap.find({pe.lpos, pe.rpos}) == pmap.end());
+		pmap[{pe.lpos, pe.rpos}] = i;
+	}
 
-	// 	junction jc(m[it], v.size());
-
-	// 	if(s1 == 0 && s2 == 0) jc.strand = '.';
-	// 	else if(s1 >= 1 && s2 >= 1) jc.strand = '.';
-	// 	else if(s1 > s2) jc.strand = '+';
-	// 	else jc.strand = '-';
-	// 	junctions.push_back(jc);
-
-	// }
-
-	// map<int64_t, vector<hit*>>::iterator it;
-	for(auto it = m.begin(); it != m.end(); it++)
+	map<pair<int, int>, vector<hit*>>::iterator it;
+	for(it = m.begin(); it != m.end(); it++)
 	{
 		vector<hit*> &v = it->second;
 		if(v.size() < min_splice_boundary_hits) continue;
 
-		as_pos32 p1 = high32(it->first);
-		as_pos32 p2 = low32(it->first);
+		int rid1 = it->first.first;
+		int rid2 = it->first.second;
+		assert(rid1 >= 0 && rid1 < regions.size());
+		assert(rid2 >= 0 && rid2 < regions.size());
+		assert(rid1 < rid2);
 
+		int pid1 = -1;
+		int pid2 = -1;
+		const vector<partial_exon>& pexons1 = regions[rid1].pexons;
+		const vector<partial_exon>& pexons2 = regions[rid2].pexons;
+		
+		// rid to pid
+		// assuming an edge always connect region1's last pexon to region2's first exon
+		if (pexons1.size() >= 1 && pexons2.size() >= 1)
+		{				
+			const partial_exon& pe1 = pexons1[pexons1.size() - 1];
+			const partial_exon& pe2 = pexons2[0];
+			assert(pmap.find({pe1.lpos, pe1.rpos}) != pmap.end());
+			assert(pmap.find({pe2.lpos, pe2.rpos}) != pmap.end());
+			pid1 = pmap[{pe1.lpos, pe1.rpos}];
+			pid2 = pmap[{pe2.lpos, pe2.rpos}];
+
+			assert(pid1 < pid2);
+			if(!pexons[pid1].rpos.samepos(regions[rid1].rpos)) pid1 = -1;
+			if(!pexons[pid2].lpos.samepos(regions[rid2].lpos)) pid2 = -1;
+		}
+		if (pid1 < 0 || pid2 < 0 )	continue;
+
+		// strandness
+		char strand;		
 		int s0 = 0;
 		int s1 = 0;
 		int s2 = 0;
-		int nm = 0;
 		for(int k = 0; k < v.size(); k++)
 		{
-			nm += v[k]->nm;
 			if(v[k]->xs == '.') s0++;
 			if(v[k]->xs == '+') s1++;
 			if(v[k]->xs == '-') s2++;
 		}
+		if(s1 == 0 && s2 == 0) strand = '.';
+		else if(s1 >= 1 && s2 >= 1) strand = '.';
+		else if(s1 > s2) strand = '+';
+		else strand = '-';
 
-		//printf("junction: %s:%d-%d (%d, %d, %d) %d\n", bb.chrm.c_str(), p1, p2, s0, s1, s2, s1 < s2 ? s1 : s2);
-
-		junction jc(it->first, v.size());
-		// jc.nm = nm;
-		if(s1 == 0 && s2 == 0) jc.strand = '.';
-		else if(s1 >= 1 && s2 >= 1) jc.strand = '.';
-		else if(s1 > s2) jc.strand = '+';
-		else jc.strand = '-';
-		junctions.push_back(jc);
-	}
-
-	sort(junctions.begin(), junctions.end());
-
-	if (verbose >= 3)
-	{
-		cout << "bundle build_junction DEBUG: \n junctions size = " << junctions.size() << endl; 
-		for (int i = 0; i < junctions.size(); i ++) junctions[i].print(bb.chrm, i);		
-	}
-	return 0;
-}
-
-
-int bundle::build_allelic_junctions()
-{
-	allelic_junctions.clear();
-	vector<as_pos> m;
-	vector<vector<int> > n;
-	map<pair<as_pos32, as_pos32>, vector<int> > consecutive_al_junction;
-	for(int i = 0; i < bb.hits.size(); i++)
-	{
-		vector<as_pos> v = bb.hits[i].apos;
-		if(v.size() == 0) continue;
-		for(int k = 0; k < v.size(); k++)
-		{
-			as_pos p = v[k];
-			vector<as_pos>::iterator it = find(m.begin(), m.end(), p);
-			if(it == m.end())
-			{
-				vector<int> hv;
-				hv.push_back(i);
-				m.push_back(p);
-				n.push_back(hv);
-				assert(p.ale != "$");  // assert being allele
-			}
-			else
-			{
-				n[it - m.begin()].push_back(i);
-			}
-			// consecutive junctions
-			/*
-			if(k < v.size() -1)
-			{
-				as_pos32 p1 = low32(p);
-				as_pos32 p2 = high32(v[k+1]);
-				if(p1.samepos(p2)) 
-				{
-					pair<as_pos32, as_pos32> con_al_j = make_pair(p1, p2);
-					if (consecutive_al_junction.find(con_al_j) == consecutive_al_junction.end())
-					{
-						vector<int> hv;
-						hv.push_back(i);
-						consecutive_al_junction.insert(make_pair(con_al_j, hv));
-					}
-					else
-					{
-						consecutive_al_junction.find(con_al_j)->second.push_back(i);
-					}
-					
-				}
-			}
-			*/
-		}
-	}
-
-	assert(m.size() == n.size());
-	allelic_itv.clear();
-	for (int i = 0; i < m.size(); i ++) allelic_itv.insert(make_pair(m[i], n[i]));
-
-	// sort m, n
-	vector<pair< as_pos, vector<int> > > mn (allelic_itv.begin(), allelic_itv.end());
-	sort(mn.begin(), mn.end());
-	m.clear();
-	n.clear();
-	for(int i = 0; i < mn.size(); i++) {m.push_back(mn[i].first); n.push_back(mn[i].second);}
-
-	if (verbose >= 3) 
-	{
-		printf("bundle al junctions m.size() = %lu, n.size() = %lu\n", m.size(), n.size());
-		for (auto&& i: m) cout << "\tapos vector " << high32(i).p32 << high32(i).ale << "-" << low32(i).p32 << low32(i).ale << endl;
-		cout << "printf apos finished\n";
-	}
-
-	for(int it = 0; it < m.size(); it++)
-	{
-		vector<int> &v = n[it];
-		if(v.size() < min_allele_overlap) continue;
-
-		as_pos32 p1 = high32(m[it]);
-		as_pos32 p2 = low32(m[it]);
-
-		int s0 = 0;
-		int s1 = 0;
-		int s2 = 0;
-		int nm = 0;
-		// check strandness of junction
-		for(int k = 0; k < v.size(); k++)
-		{
-			hit &h = bb.hits[v[k]];
-			if(h.xs == '.') s0++;
-			if(h.xs == '+') s1++;
-			if(h.xs == '-') s2++;
-		}
-
-		as_pos32 p1_prev(p1.p32, "$");
-		as_pos32 p2_next(p2.p32, "$");
-
-		// Add left al junction 
-		// not beginning bundle & not consecutive al site
-		int itt = it - 1;
-		while(itt >= 0 && m[itt].sameasitv(m[it])) --itt;  //m[itt] = previous allele
-		if((it == 0 && p1.p32 > bb.lpos) || (itt <= 0 && it >= 1 && p1.p32 > bb.lpos) 
-			|| (it >= 1 && itt >= 0 && low32(m[itt]).leftto(p1)))
-		{
-			junction jc1(p1_prev, p1, v.size());
-			if(s1 == 0 && s2 == 0) jc1.strand = '.';
-			else if(s1 >= 1 && s2 >= 1) jc1.strand = '.';
-			else if(s1 > s2) jc1.strand = '+';
-			else jc1.strand = '-';
-			allelic_junctions.push_back(jc1);
-		}
-		
-		// Add right al junction
-		// Not end of bundle
-		itt = it + 1;
-		while(itt < m.size() && m[itt].sameasitv(m[it])) ++itt;  //m[itt] = next allele
-		if (((it == m.size() - 1 && p2.p32 < bb.rpos) || (it < m.size() - 1))
-			&& !(it < m.size() - 1 && itt < m.size() && high32(m[itt]).samepos(p2))) 
-		{
-			junction jc2(p2, p2_next, v.size());
-			if(s1 == 0 && s2 == 0) jc2.strand = '.';
-			else if(s1 >= 1 && s2 >= 1) jc2.strand = '.';
-			else if(s1 > s2) jc2.strand = '+';
-			else jc2.strand = '-';
-			allelic_junctions.push_back(jc2);
-		}
-	}
-
-	// add consecutive junctions
-	for(auto it = consecutive_al_junction.begin(); it != consecutive_al_junction.end(); ++it)
-	{
-		vector<int> &v = it->second;
-		if(v.size() < min_allele_overlap) continue;
-
-		as_pos32 p1 = it->first.first;
-		as_pos32 p2 = it->first.second;
-
-		int s0 = 0;
-		int s1 = 0;
-		int s2 = 0;
-		int nm = 0;
-		// check strandness of junction
-		for(int k = 0; k < v.size(); k++)
-		{
-			hit &h = bb.hits[v[k]];
-			if(h.xs == '.') s0++;
-			if(h.xs == '+') s1++;
-			if(h.xs == '-') s2++;
-		}
-
-		junction jc(p1, p2, v.size());
-		if(s1 == 0 && s2 == 0) jc.strand = '.';
-		else if(s1 >= 1 && s2 >= 1) jc.strand = '.';
-		else if(s1 > s2) jc.strand = '+';
-		else jc.strand = '-';
-		allelic_junctions.push_back(jc);
-	}
-
-	sort(allelic_junctions.begin(), allelic_junctions.end());
-	if (verbose >= 3)
-	{
-		cout << "bundle build_allelic_junctions DEBUG: \n al_junctions size = " << allelic_junctions.size() << endl; 
-		for (int i = 0; i < allelic_junctions.size(); i++) allelic_junctions[i].print(bb.chrm, i);
+		assert(pexon_jset.find(pair<int, int>{pid1, pid2}) == pexon_jset.end());
+		pexon_jset[{pid1, pid2}] = pair<int, char> {v.size(), strand};
 	}
 
 	return 0;
 }
 
-int bundle::build_regions()
-{
-	// TODO: Fix splice types in vector as bundle_bridge::regions
-	MPI s1;
-	s1.insert(PI(as_pos32(bb.lpos, "$"), START_BOUNDARY));
-	s1.insert(PI(as_pos32(bb.rpos, "$"), END_BOUNDARY));
-	for(int i = 0; i < junctions.size(); i++)
-	{
-		junction &jc = junctions[i];
-
-		double ave, dev, max;
-		evaluate_rectangle(fmap, jc.lpos, jc.rpos, ave, dev, max);
-		
-		as_pos32 l = jc.lpos;
-		as_pos32 r = jc.rpos;
-		assert(l.ale == "$");
-		assert(r.ale == "$");
-		if(s1.find(l) == s1.end()) s1.insert(make_pair(l, LEFT_SPLICE));
-		// else if(s1[l] == RIGHT_SPLICE) s1[l] = LEFT_RIGHT_SPLICE; // TODO: Fix splice types in vector as bundle_bridge::regions
-
-		if(s1.find(r) == s1.end()) s1.insert(make_pair(r, RIGHT_SPLICE));
-		// else if(s1[r] == LEFT_SPLICE) s1[r] = LEFT_RIGHT_SPLICE;
-	}
-
-	vector<PPI> v(s1.begin(), s1.end());
-	sort(v.begin(), v.end());
-
-	regions.clear();
-	// add non allelic regions
-	// those regions may overlap w/ allelic pexons
-	
-	for(int k = 0; k < v.size() - 1; k++)
-	{
-		as_pos32 l = v[k].first;
-		as_pos32 r = v[k + 1].first;
-		assert(l.ale == "$");
-		assert(r.ale == "$");
-		int ltype = v[k].second; 
-		int rtype = v[k + 1].second;
-		// if(ltype == LEFT_RIGHT_SPLICE) ltype = RIGHT_SPLICE; // TODO: Fix splice types in vector as bundle_bridge::regions
-		// if(rtype == LEFT_RIGHT_SPLICE) rtype = LEFT_SPLICE;
-		// if(ltype == ALLELIC_LEFT_RIGHT_SPLICE) ltype = ALLELIC_LEFT_SPLICE;
-		// if(rtype == ALLELIC_LEFT_RIGHT_SPLICE) rtype = ALLELIC_RIGHT_SPLICE;
-		// regions.push_back(region(l, r, ltype, rtype, &nammap, &imap));
-		throw runtime_error("bundle:regions not implemented with gt");
-		// regions.push_back(region(l, r, ltype, rtype, &fmap, &(bb.imap))); // TODO:
-	}
-
-	if(verbose >= 3) {for(auto it = regions.begin(); it != regions.end(); ++it) {it->print(0);}}
-	return 0;
-}
-
-int bundle::build_partial_exons()
-{
-	pexons.clear();
-	regional.clear();
-	// add non allelic pexons from region
-	for(int i = 0; i < regions.size(); i++)
-	{
-		region &r = regions[i];
-		for(int k = 0; k < r.pexons.size(); k++)
-		{
-			partial_exon &pe = r.pexons[k];
-			pe.rid = i;
-			pe.pid = pexons.size();
-			vector<partial_exon> pev = partition_allelic_partial_exons(pe);
-			for(auto& partitioned_pe: pev)
-			{
-				// if((partitioned_pe.lpos != lpos || partitioned_pe.rpos != rpos) && partitioned_pe.ltype == START_BOUNDARY && partitioned_pe.rtype == END_BOUNDARY) regional.push_back(true);
-				if((partitioned_pe.lpos != bb.lpos || partitioned_pe.rpos != bb.rpos) && partitioned_pe.ltype == START_BOUNDARY && partitioned_pe.rtype == END_BOUNDARY) regional.push_back(true);
-				else regional.push_back(false);
-			}
-			pexons.insert(pexons.end(), pev.begin(), pev.end());
-			if(verbose >= 3) printf("regional = %s, ", regional.back() ? "TRUE" : "FALSE"); pe.print(k);
-		}
-	}
-
-	// add allelic pexons directly
-	for (auto it = allelic_itv.begin(); it != allelic_itv.end(); ++it)
-	{
-		as_pos32 l = high32(it->first);
-		as_pos32 r = low32(it->first);
-		int ltype, rtype;
-		if (l.p32 > bb.lpos) ltype = ALLELIC_LEFT_SPLICE; 
-		else if (l.p32 == bb.lpos) ltype = START_BOUNDARY;
-		else assert(0 && "Allelic sites out of left boundary to bundle");
-
-		if (r.p32 < bb.rpos) rtype = ALLELIC_RIGHT_SPLICE;
-		else if (r.p32 == bb.rpos) rtype = END_BOUNDARY;
-		else assert(0 && "Allelic sites out of right boundary of bundle");
-
-		partial_exon pe(l, r, ltype, rtype);
-		pe.is_allelic = true;
-		assert(it->second.size() > 0);
-		pe.ave = double(it->second.size()) / double(it->first.ale.length());
-		pe.dev = 0.0;
-		if (pe.ave < min_allele_overlap) continue;
-		pexons.push_back(pe);  													//TODO: allelic regions can only be intact currently
-		regional.push_back(false);
-	}
-
-	assert(regional.size() == pexons.size());
-	
-	// sort
-	vector<pair<partial_exon, bool> > tmp;
-	for(int i = 0; i < pexons.size(); ++i) tmp.push_back(make_pair(pexons[i], regional[i]));
-	sort(tmp.begin(), tmp.end());
-	pexons.clear();
-	regional.clear();
-	for(int i = 0; i < tmp.size(); ++i) {pexons.push_back(tmp[i].first); regional.push_back(tmp[i].second);}
-	
-	if (verbose >= 3) 
-	{
-		cout << "print pexons:\n";
-		for (int i = 0; i< pexons.size(); i++) {cout <<"regional?" <<regional[i] << "\t"; pexons[i].print(i); }
-	}
-	return 0;
-}
-
-vector<partial_exon> bundle::partition_allelic_partial_exons(const partial_exon& pe)
-{
-	MPI s2;  // only positions of al branching sites w/o seq
-	for(int i = 0; i < allelic_junctions.size(); i++)
-	{
-		junction &jc = allelic_junctions[i];
-		as_pos32 l = jc.lpos;
-		as_pos32 r = jc.rpos;
-		assert(l.ale != "$" || r.ale!= "$");
-		if (l.ale == "$")
-		{
-			if(s2.find(l) == s2.end()) s2.insert(make_pair(l, ALLELIC_LEFT_SPLICE));
-			// else if(s2[l] == ALLELIC_RIGHT_SPLICE) s2[l] = ALLELIC_LEFT_RIGHT_SPLICE;  // TODO: Fix splice types in vector as bundle_bridge::regions
-		}
-		if(r.ale == "$")
-		{
-			if(s2.find(r) == s2.end()) s2.insert(make_pair(r, ALLELIC_RIGHT_SPLICE));
-			// else if(s2[r] == ALLELIC_LEFT_SPLICE) s2[r] = ALLELIC_LEFT_RIGHT_SPLICE;  // TODO: Fix splice types in vector as bundle_bridge::regions
-		}
-	}
-
-	vector<partial_exon> vpe;
-	as_pos32 l = pe.lpos;
-	as_pos32 r = pe.rpos;
-	int ltype = pe.ltype;
-	int rtype = pe.rtype;
-
-	MPI::iterator al_it = s2.upper_bound(l);
-
-	if(al_it == s2.end() || al_it->first.rightsameto(r))
-	{
-		partial_exon al_pe(l, r, ltype, rtype);		
-		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
-		al_pe.is_allelic = false;
-		if(al_pe.ave > 0) vpe.push_back(al_pe);
-		return vpe;
-	}
-
-	while (al_it != s2.end() && al_it->first.leftto(r))
-	{
-		partial_exon al_pe(l, al_it->first, ltype, al_it->second);		
-		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
-		al_pe.is_allelic = false;
-		if(al_pe.ave > 0) vpe.push_back(al_pe);		// filter out non allelic pexons in allelic regions
-		
-		l = al_it->first;
-		ltype = al_it->second;
-		al_it = s2.upper_bound(l);
-	}
-	
-	assert(al_it != s2.begin());
-	al_it = --al_it;
-	assert(al_it->first.leftto(r));
-	if (al_it->first.leftto(r))
-	{
-		partial_exon al_pe(al_it->first, r, al_it->second, rtype);		
-		evaluate_rectangle(bb.mmap, al_pe.lpos, al_pe.rpos, al_pe.ave, al_pe.dev, al_pe.max);
-		al_pe.is_allelic = false;
-		if(al_pe.ave > 0) vpe.push_back(al_pe);
-	}
-
-	return vpe;
-}
-
-int bundle::build_partial_exon_map()
-{
-	pmap.clear();
-	pmap_na.clear();
-	pmap_a.clear();
-	for(int i = 0; i < pexons.size(); i++)
-	{
-		partial_exon &p = pexons[i];
-		pair<as_pos32, as_pos32> a = make_pair(p.lpos, p.rpos);
-
-		assert(pmap.find(a) == pmap.end());
-		pmap.insert(make_pair(a, i + 1));
-
-		if (p.lpos.ale == "$" && p.rpos.ale == "$")
-		{
-			assert(pmap_na.find(a) == pmap_na.end());
-			pmap_na.insert(make_pair(a, i + 1));
-		}
-		else
-		{
-			assert(pmap_a.find(a) == pmap_a.end());
-			pmap_a.insert(make_pair(a, i + 1));
-		}
-	}
-
-	// pmap_na and pmap_a is not overlapped 
-	as_pos32 a(0);
-	for(auto it = pmap_na.begin(); it != pmap_na.end(); ++it)
-	{
-		as_pos32 l = it->first.first;
-		as_pos32 r = it->first.second;
-		assert(a.leftsameto(l));
-		assert(l.leftto(r));
-		a = r;
-	}
-
-	// print pmap
-	if(verbose >=3)
-	{
-		cout << "Print pexons map (all, non-allelic, allelic)\n";
-		printf("pexons.size()=%lu, pmap.size()=%lu, pmap_na.size()=%lu, pmap_a.size()=%lu\n", pexons.size(), pmap.size(), pmap_na.size(), pmap_a.size());
-		
-		cout << "Print pmap\n";
-		for(auto it = pmap.begin(); it != pmap.end(); ++it)
-		{
-			as_pos32 l = it->first.first;
-			as_pos32 r = it->first.second;
-			printf("pexon %d%s-%d%s :%d\n", l.p32, l.ale.c_str(), r.p32, r.ale.c_str(), it->second);
-		}
-		cout << "\nPrint pmap_na\n";
-		for(auto it = pmap_na.begin(); it != pmap_na.end(); ++it)
-		{
-			as_pos32 l = it->first.first;
-			as_pos32 r = it->first.second;
-			printf("pexon %d%s-%d%s :%d\n", l.p32, l.ale.c_str(), r.p32, r.ale.c_str(), it->second);
-		}
-		cout << "\nPrint pmap_a\n";
-		for(auto it = pmap_a.begin(); it != pmap_a.end(); ++it)
-		{
-			as_pos32 l = it->first.first;
-			as_pos32 r = it->first.second;
-			printf("pexon %d%s-%d%s :%d\n", l.p32, l.ale.c_str(), r.p32, r.ale.c_str(), it->second);
-		}
-	}
-
-	return 0;
-}
 
 int bundle::locate_left_partial_exon(as_pos32 x)
 {
+	throw runtime_error("don't use locate left");
+	/*
 	assert(x.ale == "$");
 	auto it = pmap_na.upper_bound(make_pair(x,x)); // p1>x or p1=x p2>x
 	
@@ -717,12 +393,15 @@ int bundle::locate_left_partial_exon(as_pos32 x)
 	assert(p2.rightto(x));
 	assert(p1.leftsameto(x));
 
-	// if(x - p1.p32 > min_flank_length && p2.p32 - x < min_flank_length) k++; //TODO: min_flank_length in pmap
+	// if(x - p1.p32 > min_flank_length && p2.p32 - x < min_flank_length) k++;
 	return k;
+	*/
 }
 
 int bundle::locate_right_partial_exon(as_pos32 x)
 {
+	throw runtime_error("don't use locate right");
+	/*
 	assert(x.ale == "$");
 	auto it = pmap_na.upper_bound(make_pair(x,x));
 	if (it == pmap_na.begin()) return -1;
@@ -740,189 +419,29 @@ int bundle::locate_right_partial_exon(as_pos32 x)
 
 	// if(x - p1.p32 > min_flank_length && p2.p32 - x < min_flank_length) k++; //TODO: min_flank_length in pmap
 	return k;
+	*/
 }
-
-// int bundle::build_hyper_edges2()
-// {
-// 	if(verbose >= 3) cout<< "Build hyper edges\n";
-	
-// 	sort(hits.begin(), hits.end());
-
-// 	/*
-// 	printf("----------------------\n");
-// 	for(int k = 9; k < hits.size(); k++) hits[k].print();
-// 	printf("======================\n");
-// 	*/
-
-// 	hs.clear();
-
-// 	string qname;
-// 	int hi = -2;
-// 	vector<int> sp1;
-// 	for(int i = 0; i < hits.size(); i++)
-// 	{
-// 		hit &h = hits[i];
-		
-// 		/*
-// 		printf("sp1 = ( ");
-// 		printv(sp1);
-// 		printf(")\n");
-// 		h.print();
-// 		*/
-
-// 		if(h.qname != qname || h.hi != hi)
-// 		{
-// 			set<int> s(sp1.begin(), sp1.end());
-// 			if(s.size() >= 2) hs.add_node_list(s);
-// 			sp1.clear();
-// 		}
-
-// 		qname = h.qname;
-// 		hi = h.hi;
-
-// 		if((h.flag & 0x4) >= 1) continue;
-
-// 		vector<int> sp2;
-// 		for(int k = 0; k < h.itvna.size(); ++k)   // find interval match in pexon 
-// 		{
-// 			as_pos32 p1 = high32(h.itvna[k]);
-// 			as_pos32 p2 = low32(h.itvna[k]);
-
-// 			int k1 = locate_left_partial_exon(p1); 
-// 			int k2 = locate_right_partial_exon(p2);
-// 			if(k1 < 0 || k2 < 0) continue;
-				
-// 			for(int j = k1; j <= k2; j++) sp2.push_back(j); // b/c each region in itvna is contiguous
-// 		}
-// 		for(int k = 0; k < h.apos.size(); ++k)
-// 		{
-// 			as_pos32 p1 = high32(h.apos[k]);
-// 			as_pos32 p2 = low32(h.apos[k]);
-// 			auto it = pmap_a.find(make_pair(p1, p2));
-			
-// 			// assert(it != pmap_a.end()); //FIXME: should be right
-// 			if(it == pmap_a.end()) continue; //FIXME:
-
-// 			sp2.push_back(it->second - 1);
-// 		}
-// 		sort(sp2.begin(), sp2.end());
-		
-// 		if(sp1.size() <= 0 || sp2.size() <= 0)
-// 		{
-// 			sp1.insert(sp1.end(), sp2.begin(), sp2.end());
-// 			continue;
-// 		}
-
-// 		int x1 = -1, x2 = -1;
-// 		if(h.isize < 0) 
-// 		{
-// 			x1 = sp1[max_element(sp1)];
-// 			x2 = sp2[min_element(sp2)];
-// 		}
-// 		else
-// 		{
-// 			x1 = sp2[max_element(sp2)];
-// 			x2 = sp1[min_element(sp1)];
-// 		}
-
-// 		vector<int> sp3;
-// 		bool c = bridge_read(x1, x2, sp3);
-
-// 		//printf("=========\n");
-
-// 		if(c == false)
-// 		{
-// 			set<int> s(sp1.begin(), sp1.end());
-// 			if(s.size() >= 2) hs.add_node_list(s);
-// 			sp1 = sp2;
-// 		}
-// 		else
-// 		{
-// 			sp1.insert(sp1.end(), sp2.begin(), sp2.end());
-// 			sp1.insert(sp1.end(), sp3.begin(), sp3.end());
-// 		}
-// 	}
-
-// 	return 0;
-// }
-
-// bool bundle::bridge_read(int x, int y, vector<int> &v)
-// {
-// 	v.clear();
-// 	if(x >= y) return true;
-
-// 	PEB e = gr.edge(x + 1, y + 1);
-// 	if(e.second == true) return true;
-// 	//else return false;
-
-// 	if(y - x >= 6) return false;
-
-// 	long max = 9999999999;
-// 	vector<long> table;
-// 	vector<int> trace;
-// 	int n = y - x + 1;
-// 	table.resize(n, 0);
-// 	trace.resize(n, -1);
-// 	table[0] = 1;
-// 	trace[0] = -1;
-// 	for(int i = x + 1; i <= y; i++)
-// 	{
-// 		edge_iterator it1, it2;
-// 		PEEI pei;
-// 		for(pei = gr.in_edges(i + 1), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-// 		{
-// 			int s = (*it1)->source() - 1;
-// 			int t = (*it1)->target() - 1;
-// 			assert(t == i);
-// 			if(s < x) continue;
-// 			if(table[s - x] <= 0) continue;
-// 			table[t - x] += table[s - x];
-// 			trace[t - x] = s - x;
-// 			if(table[t - x] >= max) return false;
-// 		}
-// 	}
-
-// 	//printf("x = %d, y = %d, num-paths = %ld\n", x, y, table[n - 1]);
-// 	if(table[n - 1] != 1) return false;
-
-// 	//printf("path = ");
-
-// 	v.clear();
-// 	int p = n - 1;
-// 	while(p >= 0)
-// 	{
-// 		p = trace[p];
-// 		if(p <= 0) break;
-// 		v.push_back(p + x);
-// 		//printf("%d ", p + x);
-// 	}
-// 	//printf("\n");
-// 	//assert(v.size() >= 1);
-
-// 	return true;
-// }
 
 vector<int> bundle::align_hit(hit &h)
 {
-	throw runtime_error("bundle::align_hit not implemented yet");
 	bool b = true;
 	vector<int> sp2;
-	vector<as_pos> v;
-	h.get_aligned_intervals(v);
+	vector<int> v = decode_vlist(h.vlist);
+
 	if(v.size() == 0) return sp2;
 
 	for(int k = 0; k < v.size(); k++)
 	{
-		as_pos32 p1 = high32(v[k]);
-		as_pos32 p2 = low32(v[k]);
-
-		int k1 = locate_left_partial_exon(p1);
-		int k2 = locate_right_partial_exon(p2);
-		if(k1 < 0 || k2 < 0) b = false;
-		if(b == false) break;
-
-		for(int j = k1; j <= k2; j++) sp2.push_back(j);
+		region& r = br.regions[v[k]];
+		if(r.pexons.size() == 0) 
+		{
+			b = false;
+			break;
+		}
+		for(const partial_exon pe: r.pexons) sp2.push_back(pe.pid);
 	}
+
+	//TODO: min_flank_length filter
 
 	vector<int> e;
 	if(b == false) return e;
@@ -933,118 +452,46 @@ vector<int> bundle::align_fragment(fragment &fr)
 {
 	bool b = true;
 	vector<int> sp2;
-	//if(fr.paths.size() != 1 || fr.paths[0].type != 1) return sp2;
-	vector<as_pos32> v = br.get_aligned_intervals(fr);
-	assert(v.size() % 2 == 0);
+	vector<int> v = br.get_splices_region_index(fr);
+
 	if(v.size() == 0) return sp2;
 
-	for(int k = 0; k < v.size() / 2; k++)
+	for(int k = 0; k < v.size(); k++)
 	{
-		as_pos32 p1 = v[2 * k + 0];
-		as_pos32 p2 = v[2 * k + 1];
-		int k1 = locate_left_partial_exon(p1);
-		int k2 = locate_right_partial_exon(p2);
-		if(k1 < 0 || k2 < 0) b = false;
-		if(b == false) break;
-		for(int j = k1; j <= k2; j++) sp2.push_back(j);
+		region& r = br.regions[v[k]];
+		if(r.pexons.size() == 0) 
+		{
+			b = false;
+			break;
+		}
+		for(const partial_exon pe: r.pexons) sp2.push_back(pe.pid);
 	}
+
+	//TODO: min_flank_length filter
 
 	vector<int> e;
 	if(b == false) return e;
 	else return sp2;
 }
 
-
-int bundle::link_partial_exons()
-{
-	if(pexons.size() == 0) return 0;
-
-	MPI lm;
-	MPI rm;
-	for(int i = 0; i < pexons.size(); i++)
-	{
-		as_pos32 l = pexons[i].lpos;
-		as_pos32 r = pexons[i].rpos;
-
-		// assert(lm.find(l) == lm.end()); FIXME: 
-		// assert(rm.find(r) == rm.end());
-		if(lm.find(l) != lm.end() || rm.find(r) != rm.end()) continue; // FIXME: clean
-		
-		lm.insert(PPI(l, i));
-		rm.insert(PPI(r, i));
-	}
-
-	// junctions connect pexons
-	for(int i = 0; i < junctions.size(); i++)
-	{
-		junction &b = junctions[i];
-		MPI::iterator li;
-		MPI::iterator ri;
-		li = rm.find(b.lpos);
-		ri = lm.find(b.rpos);
-		// assert(li != rm.end());//FIXME: 
-		// assert(ri != lm.end());
-
-		if(li != rm.end() && ri != lm.end())
-		{
-			b.lexon = li->second;
-			b.rexon = ri->second;
-		}
-		else //FIXME: 
-		{
-			b.lexon = b.rexon = -1;
-		}
-	}
-
-	// allelic junctions connect allelic pexons
-	for(int i = 0; i < allelic_junctions.size(); i++)
-	{
-		junction &b = allelic_junctions[i];
-		MPI::iterator li;
-		MPI::iterator ri;
-		li = rm.find(b.lpos);
-		ri = lm.find(b.rpos);
-		// assert(li != rm.end());
-		// assert(ri != lm.end()); // FIXME:
-
-		if(li != rm.end() && ri != lm.end())
-		{
-			b.lexon = li->second;
-			b.rexon = ri->second;
-		}
-		else //FIXME: 
-		{
-			b.lexon = -1;
-			b.rexon = -1;
-		}
-	}
-
-	if (verbose >= 3) 
-	{
-		cout << "link_exons_junction DEBUG print: real junctions:\n"; 
-		for (int i = 0; i < junctions.size(); ++i) junctions[i].print(bb.chrm, i); 
-		cout << "link_exons_junction DEBUG print: allelic junctions:\n";
-		for (int i = 0; i < allelic_junctions.size(); ++i) allelic_junctions[i].print(bb.chrm, i); 
-		cout << "link_exons_junction DEBUG print finished. \n";
-	}
-	
-	return 0;
-}
-
 int bundle::build_splice_graph(int mode)
 {
-	//FIXME: break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts
-	throw runtime_error("break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts");
-
-
+	//FIXME: break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts -- is it necessary? Since AS nodes are decomposited last, it may be ok for now
+	//TODO:  "store original NS phasing paths and connect its ends after decomposing NS nodes, no assuming allele of such paths. 
+	//					 Should be solvable with linear programming?
+	//					 previous AS phasing paths should also help when assigning edges");
+	//FIXME: only two as vertices at the same sites. no "*" no "N", must be in reference, at most two.
+	
+	// build graph
 	gr.clear();
 	if (verbose >= 3) 
-		cout << "splice graph build for bundle " << bb.chrm << bb.lpos << "-" << bb.rpos << endl;
+		cout << "splice graph build for bundle " << bb.chrm << ":" << bb.lpos << "-" << bb.rpos << " " <<bb.strand << " strand" << endl;
 	// vertices: start, each region, end
 	gr.add_vertex();
 	vertex_info vi0;
 	vi0.lpos = bb.lpos;
 	vi0.rpos = bb.lpos;
+	vi0.as_type = START_OR_SINK;
 	gr.set_vertex_weight(0, 0);
 	gr.set_vertex_info(0, vi0);
 	for(int i = 0; i < pexons.size(); i++) // vertices for each (partial) exon
@@ -1053,13 +500,21 @@ int bundle::build_splice_graph(int mode)
 		int length = r.rpos.p32 - r.lpos.p32;
 		assert(length >= 1);
 		gr.add_vertex();
-		// gr.set_vertex_weight(i + 1, r.ave < 1.0 ? 1.0 : r.ave);
 		if(mode == 1) gr.set_vertex_weight(i + 1, r.max < min_guaranteed_edge_weight ? min_guaranteed_edge_weight : r.max);
 		if(mode == 2) gr.set_vertex_weight(i + 1, r.ave < min_guaranteed_edge_weight ? min_guaranteed_edge_weight : r.ave);
 		vertex_info vi;
 		vi.lpos = r.lpos;
 		vi.rpos = r.rpos;
 		vi.length = length;
+		
+		// FIXME: not complete enumeration
+		// UHPHASED_MONOVAR vs NS_NONVAR
+		if (gt_as(r.gt))
+		{
+			vi.as_type = AS_DIPLOIDVAR;
+		} 
+		else vi.as_type = NS_NONVAR;
+
 		vi.stddev = r.dev;// < 1.0 ? 1.0 : r.dev;
 		vi.regional = regional[i];
 		vi.type = pexons[i].type;
@@ -1070,29 +525,36 @@ int bundle::build_splice_graph(int mode)
 	vertex_info vin;
 	vin.lpos = bb.rpos;
 	vin.rpos = bb.rpos;
+	vin.as_type = START_OR_SINK;
 	gr.set_vertex_weight(pexons.size() + 1, 0);
 	gr.set_vertex_info(pexons.size() + 1, vin);
+
+
 	if(verbose >= 3) cout << "splice graph build junction edges\n";
+
 	// edges: each junction => and e2w
 	set<pair<int, int> > edge_set;
-	for(int i = 0; i < junctions.size(); i++)
+	for(const auto& jset_item: jset)
 	{
-		const junction &b = junctions[i];
+		int  lpid   = jset_item.first.first;
+		int  rpid   = jset_item.first.second;
+		int  c      = jset_item.second.first;
+		char strand = jset_item.second.second;
 
-		if(b.lexon < 0 || b.rexon < 0) continue;
+		if(lpid< 0 || rpid < 0) continue;
 
-		const partial_exon &x = pexons[b.lexon];
-		const partial_exon &y = pexons[b.rexon];
+		const partial_exon &x = pexons[lpid];
+		const partial_exon &y = pexons[rpid];
 
-		edge_descriptor p = gr.add_edge(b.lexon + 1, b.rexon + 1);
-		edge_set.insert(make_pair(b.lexon + 1, b.rexon + 1));
+		edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
+		edge_set.insert(make_pair(lpid + 1, rpid + 1));
 
-		assert(b.count >= 1);
+		assert(c >= 1);
 		edge_info ei;
-		ei.weight = b.count;
-		ei.strand = b.strand;
+		ei.weight = c;
+		ei.strand = strand;
 		gr.set_edge_info(p, ei);
-		gr.set_edge_weight(p, b.count);
+		gr.set_edge_weight(p, c);
 	}
 
 	// edges: connecting start/end and pexons
@@ -1140,7 +602,9 @@ int bundle::build_splice_graph(int mode)
 		}
 	}
 
-	// edges: connecting adjacent pexons => e2w
+	// FIXME: given edges are build from bridged paths/aligned_itv all adjacent pexons should already have such edges. Need check
+	// edges: connecting adjacent pexons => e2w 
+	/*
 	for(int i = 0; i < (int)(pexons.size()) - 1; i++)
 	{
 		const partial_exon &x = pexons[i];
@@ -1181,13 +645,16 @@ int bundle::build_splice_graph(int mode)
 			k++;
 		}
 	}
-
-	//assert //TODO: all vertices should have s and t, connecting to sink or tail
+	*/
 
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
 
-	if(DEBUG_MODE_ON) {cout << "splice graph built\n"; gr.draw("./debug.example.gr.tex");}
+	/* if(DEBUG_MODE_ON) 
+	{
+		cout << "splice graph built & drawing\n"; 
+		gr.draw("./debug.example.gr.tex");
+	} */
 
 	return 0;
 }
@@ -1920,84 +1387,6 @@ bool bundle::tackle_false_boundaries()
 	return b;
 }
 
-// int bundle::find_contamination_chain()
-// {
-// 	int min_vertices = 5;
-// 	double max_coverage = 4.0;
-// 	int32_t max_distance = 2000;
-
-// 	vector<int> chain;
-// 	vector<string> types;
-// 	for(int i = 1; i < pexons.size() - 1; i++)
-// 	{
-// 		string type = "";
-// 		partial_exon &pe = pexons[i];
-// 		if(pe.max > max_coverage) continue;
-
-// 		if(pe.ltype == START_BOUNDARY && pe.rtype == END_BOUNDARY) type = "island";
-// 		if(pe.ltype == START_BOUNDARY && pe.rtype == RIGHT_SPLICE) type = "start";
-// 		if(pe.ltype == LEFT_SPLICE && pe.rtype == RIGHT_SPLICE && gr.edge(i - 1, i + 1).second == true) type = "intron";
-// 		if(pe.ltype == LEFT_SPLICE && pe.rtype == END_BOUNDARY) type = "end";
-
-// 		if(type == "") continue;
-
-// 		chain.push_back(i);
-// 		types.push_back(type);
-// 	}
-
-// 	if(chain.size() == 0) return 0;
-
-// 	int32_t pre = 0;
-// 	for(int k = 0; k < chain.size(); k++)
-// 	{
-// 		partial_exon &pe = pexons[chain[k]];
-// 		printf("chain %d, pexon = %d, type = %s, pos = %d%s-%d%s, len = %d, cov = %.2lf, dist = %d\n", k, chain[k], types[k].c_str(), pe.lpos.p32, pe.lpos.ale.c_str(), pe.rpos.p32, pe.rpos.ale.c_str(), pe.rpos - pe.lpos, pe.max, pe.lpos - pre);
-// 		pre = pe.rpos;
-// 	}
-
-// 	int k1 = -1;
-// 	pre = 0 - max_distance - 1;
-// 	for(int k = 0; k < chain.size(); k++)
-// 	{
-// 		partial_exon &pe = pexons[chain[k]];
-// 		int32_t dist = pe.lpos - pre;
-// 		if(dist > max_distance)
-// 		{
-// 			if(k - k1 > min_vertices)
-// 			{
-// 				printf("delete chain: %d-%d\n", k1 + 1, k - 1);
-// 				for(int i = k1 + 1; i < k; i++)
-// 				{
-// 					gr.clear_vertex(chain[k] + 1);
-// 				}
-// 			}
-// 			k1 = k - 1;
-// 		}
-// 		pre = pe.rpos;
-// 	}
-
-// 	if((int)(chain.size()) > min_vertices + k1)
-// 	{
-// 		printf("delete chain: %d-%d\n", k1 + 1, (int)(chain.size()) - 1);
-// 		for(int i = k1 + 1; i < chain.size(); i++)
-// 		{
-// 			gr.clear_vertex(chain[i] + 1);
-// 		}
-// 	}
-// 	return 0;
-// }
-
-
-// int bundle::count_junctions() const
-// {
-// 	int x = 0;
-// 	for(int i = 0; i < junctions.size(); i++)
-// 	{
-// 		x += junctions[i].count;
-// 	}
-// 	return x;
-// }
-
 int bundle::print(int index)
 {
 	printf("Bundle %d: ", index);
@@ -2020,21 +1409,26 @@ int bundle::print(int index)
 	for(int i = 0; i < bb.hits.size(); i++) bb.hits[i].print();
 
 	// print regions
+	const vector<region>& regions = br.regions;
 	for(int i = 0; i < regions.size(); i++)
 	{
 		regions[i].print(i);
-	}
-
-	// print junctions 
-	for(int i = 0; i < junctions.size(); i++)
-	{
-		junctions[i].print(bb.chrm, i);
 	}
 
 	// print partial exons
 	for(int i = 0; i < pexons.size(); i++)
 	{
 		pexons[i].print(i);
+	}
+
+	// print jset 
+	for(auto i: jset)
+	{
+		int pid1 = i.first.first;
+		int pid2 = i.first.second;
+		int c = i.second.first;
+		char s = i.second.first;
+		cout << "jset: " << pid1 << "-" << pid2 << " " << s << " strand, counts = " << c << endl;
 	}
 
 	printf("\n");
@@ -2046,7 +1440,7 @@ int bundle::build_hyper_set()
 {
 	map<vector<int>, int> m;
 	//FIXME: break phasing paths for nonspecific fragments, check phasing paths no gt conflict
-	throw runtime_error("see fixme");
+
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
 		fragment &fr = br.fragments[k];
