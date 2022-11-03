@@ -1009,7 +1009,7 @@ int splice_graph::draw(const string &file)
 		vertex_info vi = get_vertex_info(i);
 		int ll = vi.lpos % 100000;
 		int rr = vi.rpos % 100000;
-		sprintf(buf, "%.1lf:%d-%d", w, ll, rr);
+		sprintf(buf, "%.1lf:%d%s-%d%s", w, ll, vi.lpos.ale.c_str(), rr, vi.rpos.ale.c_str());
 		mis.insert(PIS(i, buf));
 	}
 
