@@ -13,6 +13,15 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include "vcf_data.h"
 
+#define NS_NONVAR 0
+#define	NS_MONOVAR 1
+#define AS_DIPLOIDVAR 2
+#define AS_MONOPLOIDVAR 3
+#define	UHPHASED_MONOVAR 4
+#define AJ_NSMONOVAR 5
+#define AJ_NONVAR 6
+#define START_OR_SINK 7
+
 class vertex_info
 {
 public:
@@ -33,6 +42,28 @@ public:
 	char rstrand;		// right side strand	
 	bool regional;		// if a vertex is regional
 	genotype gt;
+
+	/*  
+		3 bits type :	
+		0-NS non-var	
+		1-NS monoploid var
+		2-AS diploid var 
+		3-AS monoploid  var 
+		4-UHPHASED monoploid var (assert no when assuming all phased)
+		5-AJ NS monoploid var adjacent to AS var
+		6-AJ Non-var adjacent to AS var		
+		7-start/sink
+	*/
+	unsigned int as_type: 3;
+
+public:
+	bool is_as_vertex();
+	bool is_adjacent_to_as_vertex();
+	bool is_ordinary_vertex();
+	
+	static bool is_as_vertex(vertex_info vi);
+	static bool is_adjacent_to_as_vertex(vertex_info vi);
+	static bool is_ordinary_vertex(vertex_info vi);
 };
 
 #endif
