@@ -63,7 +63,7 @@ int scallop::assemble(bool is_allelic)
 		assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices());
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
-			gr.draw("./test/" + gr.gid + "gr.undecomposed.tex");
+			gr.draw(gr.gid + "gr.undecomposed.tex");
 		}		
 	}
 
@@ -125,7 +125,7 @@ int scallop::assemble(bool is_allelic)
 	{
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
-			gr.draw("./test/" + gr.gid + "gr.nsdecomposed.tex");
+			gr.draw(gr.gid + "gr.nsdecomposed.tex");
 		}
 	}
 
