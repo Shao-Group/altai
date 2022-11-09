@@ -63,7 +63,7 @@ int scallop::assemble(bool is_allelic)
 		assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices());
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
-			gr.draw(gr.gid + "gr.undecomposed.tex");
+			gr.draw("./test/" + gr.gid + "gr.undecomposed.tex");
 		}		
 	}
 
@@ -125,7 +125,7 @@ int scallop::assemble(bool is_allelic)
 	{
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
-			gr.draw(gr.gid + "gr.nsdecomposed.tex");
+			gr.draw("./test/" + gr.gid + "gr.nsdecomposed.tex");
 		}
 	}
 
@@ -732,7 +732,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 
 		// double w = gr.get_edge_weight(e);
 		// gr.set_vertex_info(k, gr.get_vertex_info(root));
-		gr.set_vertex_info(k, vertex_info());
+		gr.set_vertex_info(k, vertex_info());//FIXME: copy as type of e.source
 		gr.set_vertex_weight(k, 0);
 		v2v[k] = -2; //v2v[root];
 

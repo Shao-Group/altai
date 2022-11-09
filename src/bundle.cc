@@ -674,14 +674,14 @@ int bundle::revise_splice_graph()
 		b = remove_inner_boundaries();
 		if(b == true) continue;
 
-		b = remove_small_exons();
+		b = remove_small_exons();//FIXME:
 		// if(b == true) refine_splice_graph();
 		if(b == true) continue;
 
 		b = remove_intron_contamination();
 		if(b == true) continue;
 
-		b = remove_small_junctions();
+		b = remove_small_junctions();//FIXME:
 		if(b == true) refine_splice_graph();
 		if(b == true) continue;
 
@@ -878,7 +878,7 @@ VE bundle::compute_maximal_edges()
 	return x;
 }
 
-bool bundle::keep_surviving_edges()
+bool bundle::keep_surviving_edges() //FIXME:
 {
 	set<int> sv1;
 	set<int> sv2;
