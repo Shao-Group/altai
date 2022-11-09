@@ -529,10 +529,10 @@ int bundle::build_splice_graph(int mode)
 	gr.set_vertex_weight(pexons.size() + 1, 0);
 	gr.set_vertex_info(pexons.size() + 1, vin);
 
-
 	if(verbose >= 3) cout << "splice graph build junction edges\n";
 
 	// edges: each junction => and e2w
+	// vertics: assign as_type
 	set<pair<int, int> > edge_set;
 	for(const auto& jset_item: jset)
 	{
@@ -555,6 +555,20 @@ int bundle::build_splice_graph(int mode)
 		ei.strand = strand;
 		gr.set_edge_info(p, ei);
 		gr.set_edge_weight(p, c);
+
+		// assign as_type
+		// FIXME: not complete enumeration
+		// UHPHASED_MONOVAR vs NS_NONVAR
+		vertex_info& vx = gr.vinf[lpid+1];
+		vertex_info& vy = gr.vinf[rpid+1];
+		if(vx.is_as_vertex())
+		{
+			if (!vy.is_as_vertex()) vy.as_type = AJ_NONVAR;
+		}
+		else if (vy.is_as_vertex())
+		{
+			if (!vx.is_as_vertex()) vx.as_type = AJ_NONVAR;
+		}
 	}
 
 	// edges: connecting start/end and pexons
