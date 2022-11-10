@@ -559,15 +559,18 @@ int bundle::build_splice_graph(int mode)
 		// assign as_type
 		// FIXME: not complete enumeration
 		// UHPHASED_MONOVAR vs NS_NONVAR
-		vertex_info& vx = gr.vinf[lpid+1];
-		vertex_info& vy = gr.vinf[rpid+1];
-		if(vx.is_as_vertex())
+		if (!decompose_as_neighor)  // internal explore only, default false
 		{
-			if (!vy.is_as_vertex()) vy.as_type = AJ_NONVAR;
-		}
-		else if (vy.is_as_vertex())
-		{
-			if (!vx.is_as_vertex()) vx.as_type = AJ_NONVAR;
+			vertex_info& vx = gr.vinf[lpid+1];
+			vertex_info& vy = gr.vinf[rpid+1];
+			if(vx.is_as_vertex())
+			{
+				if (!vy.is_as_vertex()) vy.as_type = AJ_NONVAR;
+			}
+			else if (vy.is_as_vertex())
+			{
+				if (!vx.is_as_vertex()) vx.as_type = AJ_NONVAR;
+			}
 		}
 	}
 

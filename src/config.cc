@@ -125,8 +125,6 @@ map <int, map <string, genotype> >::iterator           vcf_map_end;
 map <int, int >::iterator                              vcf_map_len_end;
 double major_gt_threshold = 0.75;
 
-
-
 // for controling
 bool output_tex_files = false;
 string fixed_gene_name = "";
@@ -137,6 +135,7 @@ string version = "v0.0.1";
 bool DEBUG_MODE_ON = false;
 bool FILTER_BY_COV = false;
 bool phasing_profile_only = false;
+bool decompose_as_neighor = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -516,6 +515,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--phasing_profile_only")
 		{
 			phasing_profile_only = true;
+		}
+		else if(string(argv[i]) == "--decompose_as_neighor")
+		{
+			decompose_as_neighor = true;
 		}
 		else
 		{

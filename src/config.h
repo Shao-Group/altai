@@ -181,6 +181,7 @@ extern string version;
 extern bool DEBUG_MODE_ON;
 extern bool FILTER_BY_COV;
 extern bool phasing_profile_only;
+extern bool decompose_as_neighor;
 
 // parse arguments
 int print_command_line(int argc, const char ** argv);
