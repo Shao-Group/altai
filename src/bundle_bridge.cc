@@ -450,10 +450,18 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 		{
 			vv.push_back(j);
 			// cout << sp[k].first << " " << sp[k].second << endl;
-			if (regions[j].is_allelic()) assert(sp[k].first == sp[k].second);
+			if (regions[j].is_allelic()) 
+			{
+				//assert(sp[k].first == sp[k].second);
+				//FIXME: otherwise the read is problematic, most likely having an indel at the var site
+				if (sp[k].first != sp[k].second) 
+				{
+					vv.clear();
+					return 0;
+				}
+			}
 		}
 	}
-
 	return 0;
 }
 
