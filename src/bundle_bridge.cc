@@ -452,22 +452,12 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 			// cout << sp[k].first << " " << sp[k].second << endl;
 			if (regions[j].is_allelic()) 
 			{
-<<<<<<< HEAD
-				//assert(sp[k].first == sp[k].second);
-				//FIXME: otherwise the read is problematic, most likely having an indel at the var site
-				if (sp[k].first != sp[k].second) 
-				{
-					vv.clear();
-					return 0;
-				}
-=======
 				// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly
 				// FIXME: after fix, make align_hit() const hit
 				// assert(sp[k].first == sp[k].second); 
 				vv.clear();
 				h.itv_align.clear();
 				return 0;
->>>>>>> 188b08c (temporary skip of hits with indel at consecutive var sites)
 			}
 		}
 	}
