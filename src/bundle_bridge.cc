@@ -410,6 +410,8 @@ int bundle_bridge::align_hits_transcripts()
 
 int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, hit &h, vector<int> &vv)
 {
+	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly
+	// FIXME: after fix, make align_hit() const hit
 	vv.clear();
 	vector<as_pos> v;
 	h.get_aligned_intervals(v);
@@ -427,7 +429,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 	{
 		p1 = high32(v[k]);
 		auto it = m1.find(p1);
-		assert(it != m1.end());
+		// assert(it != m1.end()); //FIXME: see above
 		sp[k].first = it->second;
 	}
 
@@ -436,7 +438,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 	{
 		p2 = low32(v[k]);
 		auto it = m2.find(p2);
-		assert(it != m2.end());
+		// assert(it != m2.end()); //FIXME: see above
 		sp[k].second = it->second; 
 	}
 
@@ -444,7 +446,13 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 
 	for(int k = 0; k < sp.size(); k++)
 	{
-		assert(sp[k].first <= sp[k].second);
+		// assert(sp[k].first <= sp[k].second); //FIXME: see above
+		if (!(sp[k].first <= sp[k].second))
+		{
+			vv.clear();
+			h.itv_align.clear();
+			return 0;
+		}
 		if(k > 0) assert(sp[k - 1].second < sp[k].first);
 		for(int j = sp[k].first; j <= sp[k].second; j++) 
 		{
@@ -452,8 +460,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 			// cout << sp[k].first << " " << sp[k].second << endl;
 			if (regions[j].is_allelic()) 
 			{
-				// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly
-				// FIXME: after fix, make align_hit() const hit
+				
 				// assert(sp[k].first == sp[k].second); 
 				vv.clear();
 				h.itv_align.clear();
