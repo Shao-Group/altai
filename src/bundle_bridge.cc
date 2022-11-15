@@ -283,7 +283,7 @@ int bundle_bridge::build_regions()
 				r = as_pos32(r2, a);
 				ltype = ALLELIC_LEFT_SPLICE; 
 				rtype = ALLELIC_RIGHT_SPLICE;
-				genotype gt = vcf_map[bb.chrm][l2][a];
+				genotype gt = vcf_map[bb.chrm][l2][a]; //FIXME: var may not exist
 				region rr(l, r, ltype, rtype, gt);
 				rr.assign_as_cov(c, 0, c); 
 				regions.push_back(rr);
@@ -408,7 +408,7 @@ int bundle_bridge::align_hits_transcripts()
 	return 0;
 }
 
-int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &vv)
+int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, hit &h, vector<int> &vv)
 {
 	vv.clear();
 	vector<as_pos> v;
@@ -452,6 +452,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 			// cout << sp[k].first << " " << sp[k].second << endl;
 			if (regions[j].is_allelic()) 
 			{
+<<<<<<< HEAD
 				//assert(sp[k].first == sp[k].second);
 				//FIXME: otherwise the read is problematic, most likely having an indel at the var site
 				if (sp[k].first != sp[k].second) 
@@ -459,6 +460,14 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 					vv.clear();
 					return 0;
 				}
+=======
+				// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly
+				// FIXME: after fix, make align_hit() const hit
+				// assert(sp[k].first == sp[k].second); 
+				vv.clear();
+				h.itv_align.clear();
+				return 0;
+>>>>>>> 188b08c (temporary skip of hits with indel at consecutive var sites)
 			}
 		}
 	}

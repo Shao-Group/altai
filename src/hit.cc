@@ -120,7 +120,7 @@ int hit::build_features(bam1_t *b)
 {
 	// preparation for var 
 	bool do_apos = true;
-	vector<string> ale_selector {"*", "A", "C", "*", "G", "*", "*", "*", "T"};	// 4-bit int for seq []
+	// vector<string> ale_selector {"*", "A", "C", "*", "G", "*", "*", "*", "T"};	// 4-bit int for seq [], error: did not catch ambiguous nt
 	if (vcf_file == "") do_apos = false;
 	if (vmap_chrm != chrm)
 	{
@@ -208,8 +208,9 @@ int hit::build_features(bam1_t *b)
 				string ale = "*";
 				uint8_t *seq_ptr = bam_get_seq (b);
 				int _len = 1; // assuming ale len = 1
-				int _nt_int = bam_seqi(seq_ptr, qpos);
-				string _a = ale_selector[_nt_int];
+				// int _nt_int = bam_seqi(seq_ptr, qpos);
+				// string _a = ale_selector[_nt_int];
+				char _a = seq_nt16_str[bam_seqi(seq_ptr, qpos)];
 				ale = _a;
 				
 				int32_t alerpos = alelpos + it_len->second;						// 0-based query pos, excluded
@@ -359,16 +360,6 @@ int hit::get_aligned_intervals(vector<as_pos> &v) const
 			b = d;
 		}
 	}
-	/*
-	int32_t p1 = pos;
-	for(int k = 0; k < spos.size(); k++)
-	{
-		int32_t p2 = high32(spos[k]);
-		v.push_back(as_pos(pack(p1, p2), spos[k].ale));
-		p1 = low32(as_pos(pack(p1, p2), spos[k].ale));
-	}
-	v.push_back(as_pos(pack(p1, rpos), "$"));
-	*/
 	return 0;
 }
 
