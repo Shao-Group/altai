@@ -217,6 +217,13 @@ int bundle_bridge::build_regions()
 		}
 	}
 
+	// TODO: for splice graph phasing explore
+	if (DEBUG_MODE_ON) 
+	{
+		if(poses_seqs.size() <= 1) throw BundleError();
+	}
+
+
 	// add allelic pos (int) to pos_splicetypes
 	for (auto&& a: poses_seqs)
 	{
