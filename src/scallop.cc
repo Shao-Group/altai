@@ -666,6 +666,13 @@ int scallop::init_nonzeroset()
 			asnonzeroset.insert(i);
 		}
 	}
+
+	if (DEBUG_MODE_ON && asnonzeroset.size() <= 4) // sink + source + 2+ AS nodes
+	{
+		throw BundleError();
+	}
+
+
 	return 0;
 }
 
