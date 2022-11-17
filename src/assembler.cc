@@ -168,6 +168,8 @@ int assembler::process(int n)
 
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
+		if (DEBUG_MODE_ON) continue;
+
 		bd.build(2, true);
 		bd.print(index++);
 				
@@ -215,38 +217,43 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 
 	for(int k = 0; k < sg.subs.size(); k++)
 	{
-		// if(verbose >= 2 && (k == 0 || fixed_gene_name != "")) sg.print();
-
 		splice_graph &gr = sg.subs[k];
 		hyper_set &hs = sg.hss[k];
 
 		if(determine_regional_graph(gr) == true) continue;
 		if(gr.num_edges() <= 0) continue;
 
-		for(int r = 0; r < assemble_duplicates; r++)
+		try 
 		{
-			string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
-
-			gr.gid = gid;
-			// scallop sc(gr, hs);
-			scallop sc(gr, hs, r == 0 ? false : true);
-			sc.assemble(is_allelic);
-			if(verbose >=3) for(auto& i: sc.paths) i.print(index);
-
-			if(verbose >= 2)
+			for(int r = 0; r < assemble_duplicates; r++)
 			{
-				printf("assembly with r = %d, total %lu transcripts:\n", r, sc.trsts.size());
-				for(int i = 0; i < sc.trsts.size(); i++) sc.trsts[i].write(cout);
-			}
+				string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
 
-			for(int i = 0; i < sc.trsts.size(); i++)
-			{
-				ts1.add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				gr.gid = gid;
+				// scallop sc(gr, hs);
+				scallop sc(gr, hs, r == 0 ? false : true);
+				sc.assemble(is_allelic);
+				if(verbose >=3) for(auto& i: sc.paths) i.print(index);
+
+				if(verbose >= 2)
+				{
+					printf("assembly with r = %d, total %lu transcripts:\n", r, sc.trsts.size());
+					for(int i = 0; i < sc.trsts.size(); i++) sc.trsts[i].write(cout);
+				}
+
+				for(int i = 0; i < sc.trsts.size(); i++)
+				{
+					ts1.add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
+				for(int i = 0; i < sc.non_full_trsts.size(); i++)
+				{
+					ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
 			}
-			for(int i = 0; i < sc.non_full_trsts.size(); i++)
-			{
-				ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-			}
+		}
+		catch (BundleError e)
+		{
+			cerr << "BundleError in scallop subgraph" << endl;
 		}
 	}
 	return 0;
