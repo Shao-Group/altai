@@ -494,6 +494,9 @@ int bundle::build_splice_graph(int mode)
 	vi0.as_type = START_OR_SINK;
 	gr.set_vertex_weight(0, 0);
 	gr.set_vertex_info(0, vi0);
+
+	int n_as = 0;
+
 	for(int i = 0; i < pexons.size(); i++) // vertices for each (partial) exon
 	{
 		const partial_exon &r = pexons[i];
@@ -512,6 +515,7 @@ int bundle::build_splice_graph(int mode)
 		if (gt_as(r.gt))
 		{
 			vi.as_type = AS_DIPLOIDVAR;
+			n_as += 1;
 		} 
 		else vi.as_type = NS_NONVAR;
 
@@ -519,6 +523,11 @@ int bundle::build_splice_graph(int mode)
 		vi.regional = regional[i];
 		vi.type = pexons[i].type;
 		gr.set_vertex_info(i + 1, vi);
+	}
+
+	if (n_as <= 1) 
+	{ 
+		throw BundleError();
 	}
 
 	gr.add_vertex();
