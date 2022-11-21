@@ -63,7 +63,8 @@ int scallop::assemble(bool is_allelic)
 		assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices());
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
-			gr.draw(gr.gid + "gr.undecomposed.tex");
+			string loc = gr.chrm + ":" + to_string(gr.vinf[0].lpos.p32) + "-" + to_string(gr.vinf[gr.vinf.size() - 1].rpos.p32);
+			gr.draw(gr.gid + "." + loc + "." + "gr.undecomposed.tex");
 		}		
 	}
 
@@ -667,10 +668,12 @@ int scallop::init_nonzeroset()
 		}
 	}
 
-	if (DEBUG_MODE_ON && asnonzeroset.size() <= 4) // sink + source + 2+ AS nodes
+	if (DEBUG_MODE_ON ) 
 	{
-		throw BundleError();
+		if (decompose_as_neighor && asnonzeroset.size() <= 2) throw BundleError();
+		if (!decompose_as_neighor && asnonzeroset.size() <= 4) throw BundleError();
 	}
+	
 
 
 	return 0;

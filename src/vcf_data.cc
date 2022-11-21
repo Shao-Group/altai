@@ -113,7 +113,7 @@ int vcf_data::read_as_counts(const string & name)
 			map<string, genotype> ng;
 			string gt_fields = lf[9];  // = "1|0:555:97,59:31,24:548:0/1:.:PATMAT"
 
-			if (use_phased_var_only && gt_fields[1] != '|') continue;
+			// if (use_phased_var_only && gt_fields[1] != '|') continue;
 
 			int i1 = gt_fields[0] - '0'; // allele in gt1
 			int i2 = gt_fields[2] - '0'; // allele in gt2
@@ -136,20 +136,6 @@ int vcf_data::read_as_counts(const string & name)
 
 			vcf_pos_map[chrm][pos] = ng;
 			vcf_ale_len[chrm][pos] = alleles[0].size();
-			// if (vcf_pos_map.find(chrm) == vcf_pos_map.end())
-			// {
-			// 	map <int, std::vector <std::string> > _m_al;
-			// 	_m_al.insert(pair<int, std::vector <std::string> > (pos, alleles));
-			// 	vcf_pos_map.insert(pair<std::string, map <int, std::vector <std::string> > > (chrm, _m_al));
-			// 	map <int, int> _m_al_len;
-			// 	_m_al_len.insert(pair<int, int> (pos, lf[3].size()));
-			// 	vcf_ale_len.insert(pair<std::string, map <int, int> > (chrm, _m_al_len));
-			// }
-			// else 
-			// {
-			// 	vcf_pos_map[chrm].insert(pair<int, std::vector <std::string> > (pos, alleles));
-			// 	vcf_ale_len[chrm].insert(pair<int, int> (pos, lf[3].size()) );
-			// }
 		}
 		vcf_count_file.close();
 	}

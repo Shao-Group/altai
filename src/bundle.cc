@@ -512,11 +512,16 @@ int bundle::build_splice_graph(int mode)
 		
 		// FIXME: not complete enumeration
 		// UHPHASED_MONOVAR vs NS_NONVAR
-		if (gt_as(r.gt))
+		if (gt_as(r.gt))// FIXME: keep all var
 		{
 			vi.as_type = AS_DIPLOIDVAR;
 			n_as += 1;
 		} 
+		else if (r.is_allelic() && r.gt == UNPHASED)
+		{
+			vi.as_type = AS_DIPLOIDVAR;
+			n_as += 1;
+		}
 		else vi.as_type = NS_NONVAR;
 
 		vi.stddev = r.dev;// < 1.0 ? 1.0 : r.dev;
@@ -675,12 +680,6 @@ int bundle::build_splice_graph(int mode)
 
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
-
-	/* if(DEBUG_MODE_ON) 
-	{
-		cout << "splice graph built & drawing\n"; 
-		gr.draw("./debug.example.gr.tex");
-	} */
 
 	return 0;
 }
@@ -945,7 +944,6 @@ bool bundle::keep_surviving_edges() //FIXME:
 			{
 				edge_descriptor ee = gr.max_in_edge(s);
 				assert(ee != null_edge);
-				// if (ee == null_edge) throw BundleError(); 
 				assert(se.find(ee) == se.end());
 				se.insert(ee);
 				sv1.insert(s);
@@ -956,7 +954,6 @@ bool bundle::keep_surviving_edges() //FIXME:
 			{
 				edge_descriptor ee = gr.max_out_edge(t);
 				assert(ee != null_edge);
-				// if (ee == null_edge) throw BundleError(); 
 				assert(se.find(ee) == se.end());
 				se.insert(ee);
 				sv1.insert(ee->target());
