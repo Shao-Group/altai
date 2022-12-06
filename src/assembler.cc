@@ -82,12 +82,12 @@ int assembler::assemble()
 		// truncate
 		if(ht.tid != bb1.tid || ht.pos > bb1.rpos + min_bundle_gap)
 		{
-			pool.push_back(bb1);
+			if (bb1.hits.size() >= 1) pool.push_back(bb1);
 			bb1.clear();
 		}
 		if(ht.tid != bb2.tid || ht.pos > bb2.rpos + min_bundle_gap)
 		{
-			pool.push_back(bb2);
+			if(bb2.hits.size() >= 1) pool.push_back(bb2);
 			bb2.clear();
 		}
 
