@@ -410,8 +410,7 @@ int bundle_bridge::align_hits_transcripts()
 
 int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, hit &h, vector<int> &vv)
 {
-	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly
-	// FIXME: after fix, make align_hit() const hit
+	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly. after fix, make align_hit() const hit
 	vv.clear();
 	vector<as_pos> v;
 	h.get_aligned_intervals(v);
@@ -621,12 +620,6 @@ int bundle_bridge::build_fragments()
 
 		// do not use hi; as long as qname, pos and isize are identical
 		int k = (h.qhash % max_index + h.pos % max_index + (0 - h.isize) % max_index) % max_index;
-		/*
-		SI si(h.qname, h.hi);
-		MSI &m = vv[k];
-		assert(m.find(si) == m.end());
-		m.insert(PSI(si, i));
-		*/
 		vv[k].push_back(i);
 	}
 
@@ -662,15 +655,6 @@ int bundle_bridge::build_fragments()
 			x = vv[k][j];
 			break;
 		}
-
-		/*
-		SI si(h.qname, h.hi);
-		MSI::iterator it = vv[k].find(si);
-		if(it == vv[k].end()) continue;
-		int x = it->second;
-		*/
-
-		//printf("HIT: i = %d, x = %d, bb.hits[i].vlist = %lu | ", i, x, bb.hits[i].vlist.size(), bb.hits[i].qname.c_str()); bb.hits[i].print();
 
 		if(x == -1) continue;
 		if(bb.hits[x].vlist.size() == 0) continue;

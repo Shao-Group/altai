@@ -8,20 +8,6 @@ See LICENSE for licensing.
 #include <cstring>
 #include "util.h"
 
-// vector<int> get_random_permutation(int n)
-// {
-// 	vector<int> v;
-// 	for(int i = 0; i < n; i++) v.push_back(i);
-// 	for(int i = 0; i < n; i++)
-// 	{
-// 		int k = rand() % (n - i);
-// 		int x = v[k];
-// 		v[k] = v[n - i - 1];
-// 		v[n - i - 1] = x;
-// 	}
-// 	return v;
-// }
-
 size_t string_hash(const std::string& str)
 {
 	size_t hash = 1315423911;
@@ -46,18 +32,78 @@ size_t string_hash(const std::string& str)
 size_t vector_hash(const vector<as_pos32> & vec)
 {
 	size_t seed = vec.size();
+	string s = "";
 	for(int i = 0; i < vec.size(); i++)
 	{
-		int ale_v = 0;
-		int n = vec[i].ale.length();
-		char astr[n];
-		std::strcpy(astr, vec[i].ale.c_str());
-		for (int j = 0; j < n; j++)
-		{
-			ale_v += (int)astr[j] * 100 * j;
-		}
-		seed ^= (size_t)(vec[i].p32 + ale_v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= (size_t)(vec[i].p32) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		s += vec[i].ale;
 	}
-	return (seed & 0x7FFFFFFF);
+	return (seed & 0x7FFFFFFF + string_hash(s));
 }
 
+/*
+** reverse-complement DNA sequence w. IUPAC symbols
+*/
+int reverse_complement_DNA(string &rc, const string s)
+{
+	char c;
+	for(int i = s.length() - 1; i >= 0; --i)
+	{
+		switch (toupper(s[i]))
+		{
+		case 'A':
+			c = 'T';
+			break;
+		case 'T':
+			c = 'A';
+			break;
+		case 'C':
+			c = 'G';
+			break;
+		case 'G':
+			c = 'C';		
+			break;
+		case 'U':
+			c = 'A';
+			break;
+		case 'N':
+			c = 'N';
+			break;
+		case 'W':
+			c = 'W';
+			break;
+		case 'S':
+			c = 'S';
+			break;
+		case 'M':
+			c = 'K';
+			break;
+		case 'K':
+			c = 'M';
+			break;
+		case 'R':
+			c = 'Y';
+			break;
+		case 'B':
+			c = 'V';
+			break;
+		case 'D':
+			c = 'H';
+			break;
+		case 'H':
+			c = 'D';
+			break;
+		case 'V':
+			c = 'B';
+			break;
+		case '-':
+			c = '-';
+			break;
+		default:
+			c = 'N';
+			break;
+		}
+		rc += c;
+	}
+	return 0;
+}

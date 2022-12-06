@@ -184,10 +184,10 @@ vector<K> get_keys(const map<K, V> &m)
 	return v;
 }
 
-// vector<int> get_random_permutation(int n);
 size_t string_hash(const std::string& str);
 // size_t vector_hash(const vector<int32_t> &str);
 size_t vector_hash(const vector<as_pos32> &str);
+int reverse_complement_DNA(string &rc, const string s);
 
 class BundleError					// TODO: tmp DEBUG helper
 {

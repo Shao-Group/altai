@@ -166,8 +166,8 @@ int region::build_partial_exons()
 
 		//printf(" subregion [%d, %d), empty = %c\n", p1, p2, b ? 'T' : 'F');
 
-		if(p1 == lpos && (ltype & RIGHT_SPLICE) > 0) b = false;
-		if(p2 == rpos && (rtype & LEFT_SPLICE) > 0) b = false;
+		if(p1 == lpos && (ltype & RIGHT_SPLICE || ltype & ALLELIC_RIGHT_SPLICE) > 0) b = false;
+		if(p2 == rpos && (rtype & LEFT_SPLICE  || rtype & ALLELIC_LEFT_SPLICE) > 0) b = false;
 
 		// if(b == true) continue;
 
