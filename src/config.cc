@@ -128,7 +128,7 @@ double major_gt_threshold = 0.75;
 // for controling
 bool output_tex_files = false;
 string fixed_gene_name = "";
-int batch_bundle_size = 100;
+int batch_bundle_size = 10;
 int verbose = 1;
 int assemble_duplicates = 10;
 string version = "v0.0.1";
