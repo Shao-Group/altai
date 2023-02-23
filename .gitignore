@@ -35,3 +35,8 @@ bin/
 INSTALL
 log/
 test*
+
+
+#tmp files
+ex/
+RELEASE
