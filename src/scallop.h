@@ -32,6 +32,9 @@ class scallop
 public:
 	scallop();
 	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false);
+	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false);
+	// scallop(const scallop &sc, const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false);
+
 	virtual ~scallop();
 
 public:
@@ -46,6 +49,7 @@ public:
 	vector<int> v2v;					// vertex map
 	hyper_set hs;						// hyper edges
 	int round;							// iteration
+	bool keep_as_nodes;					// true: decompose ns nodes only, false: decompose all nodes
 
 	set<int> asnonzeroset;			    // vertices with degree >= 1 && !vi.is_ordinary_vertex()
 	set<int> nsnonzeroset;				// vertices with degree >= 1 &&  vi.is_ordinary_vertex()
@@ -60,7 +64,7 @@ private:
 	int init_super_edges();
 	int init_inner_weights();
 	int init_vertex_astype();
-	int init_nonzeroset();
+	int init_nonzeroset(bool keep_as_nodes);
 
 
 	// resolve iteratively
@@ -102,6 +106,7 @@ private:
 	int stats();
 	int draw_splice_graph(const string &file);
 	vector<int> topological_sort();
+	int clear();
 };
 
 #endif

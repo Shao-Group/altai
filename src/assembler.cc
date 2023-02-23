@@ -25,6 +25,7 @@ See LICENSE for licensing.
 #include "super_graph.h"
 #include "filter.h"
 #include "vcf_data.h"
+#include "phaser.h"
 #include "util.h"
 
 assembler::assembler()
@@ -37,9 +38,7 @@ assembler::assembler()
 	terminate = false;
 	qlen = 0;
 	qcnt = 0;
-
-	// reset vcf pointers
-	vmap_chrm = "";
+	vmap_chrm = "";  // reset vcf pointers from previewer
 }
 
 assembler::~assembler()
@@ -72,9 +71,6 @@ int assembler::assemble()
 		hit ht(b1t, string(buf), hid++);
 		ht.set_tags(b1t);
 		ht.set_strand();
-		
-		if(verbose >= 3 && DEBUG_MODE_ON) {cout << "print hit in assembler" << endl; ht.print();}
-
 		
 		qlen += ht.qlen;
 		qcnt += 1;
@@ -137,68 +133,72 @@ int assembler::process(int n)
 	{
 		try 
 		{
-		bundle_base &bb = pool[i];
-		bb.buildbase();
+			bundle_base &bb = pool[i];
+			bb.buildbase();
 
-		if(verbose >= 3) printf("bundle %d has %lu reads\n", i, bb.hits.size());
+			if(verbose >= 3) printf("bundle %d has %lu reads\n", index, bb.hits.size());
 
-		int cnt1 = 0;
-		int cnt2 = 0;
-		for(int k = 0; k < bb.hits.size(); k++)
-		{
-			//counts += (1 + bb.hits[k].spos.size());
-			if(bb.hits[k].spos.size() >= 1) cnt1 ++;
-			else cnt2++;
-		}
-		if(cnt1 + cnt2 < min_num_hits_in_bundle) continue;
+			int cnt1 = 0;
+			int cnt2 = 0;
+			for(int k = 0; k < bb.hits.size(); k++)
+			{
+				//counts += (1 + bb.hits[k].spos.size());
+				if(bb.hits[k].spos.size() >= 1) cnt1 ++;
+				else cnt2++;
+			}
+			if(cnt1 + cnt2 < min_num_hits_in_bundle) continue;
 
-		if(bb.tid < 0) continue;
+			if(bb.tid < 0) continue;
 
-		char buf[1024];
-		strcpy(buf, hdr->target_name[bb.tid]);
-		bb.chrm = string(buf);
+			char buf[1024];
+			strcpy(buf, hdr->target_name[bb.tid]);
+			bb.chrm = string(buf);
 
-		transcript_set ts1(bb.chrm, 0.9);		// full-length set
-		transcript_set ts2(bb.chrm, 0.9);		// non-full-length set
+			transcript_set ts1(bb.chrm, 0.9);		// full-length set
+			transcript_set ts2(bb.chrm, 0.9);		// non-full-length set
 
-		bundle bd(bb);
-		bd.build(1, true);
+			bundle bd(bb);
+			bd.build(1, true);
 
-		bd.print(index++);
+			bd.print(index++);
 
-		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
+			assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
-		if (DEBUG_MODE_ON) continue;
+			if (DEBUG_MODE_ON) continue;
 
-		bd.build(2, true);
-		bd.print(index++);
-				
-		assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
+			bd.build(2, true);
+			bd.print(index++);
+					
+			assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
-		int sdup = assemble_duplicates / 1 + 1;
-		int mdup = assemble_duplicates / 2 + 0;
+			int sdup = assemble_duplicates / 1 + 1;
+			int mdup = assemble_duplicates / 2 + 0;
 
-		vector<transcript> gv1 = ts1.get_transcripts(sdup, mdup);
-		vector<transcript> gv2 = ts2.get_transcripts(sdup, mdup);
+			vector<transcript> gv1 = ts1.get_transcripts(sdup, mdup);
+			vector<transcript> gv2 = ts2.get_transcripts(sdup, mdup);
 
-		for(int k = 0; k < gv1.size(); k++)
-		{
-			if(gv1[k].exons.size() >= 2) gv1[k].coverage /= (1.0 * assemble_duplicates);
-		}
-		for(int k = 0; k < gv2.size(); k++) 
-		{
-			if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
-		}
+			for(int k = 0; k < gv1.size(); k++)
+			{
+				if(gv1[k].exons.size() >= 2) gv1[k].coverage /= (1.0 * assemble_duplicates);
+			}
+			for(int k = 0; k < gv2.size(); k++) 
+			{
+				if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
+			}
 
-		filter ft1(gv1);
-		ft1.filter_length_coverage();
-		ft1.remove_nested_transcripts();
-		if(ft1.trs.size() >= 1) trsts.insert(trsts.end(), ft1.trs.begin(), ft1.trs.end());
+			//TODO: modify filters.
+			//FIXME: for now, did not use filter.
+			continue;
+			
+			filter ft1(gv1);
+			ft1.filter_length_coverage();
+			ft1.remove_nested_transcripts();
+			if(ft1.trs.size() >= 1) trsts.insert(trsts.end(), ft1.trs.begin(), ft1.trs.end());
 
-		filter ft2(gv2);
-		ft2.filter_length_coverage();
-		ft2.remove_nested_transcripts();
-		if(ft2.trs.size() >= 1) non_full_trsts.insert(non_full_trsts.end(), ft2.trs.begin(), ft2.trs.end());
+			filter ft2(gv2);
+			ft2.filter_length_coverage();
+			ft2.remove_nested_transcripts();
+			if(ft2.trs.size() >= 1) non_full_trsts.insert(non_full_trsts.end(), ft2.trs.begin(), ft2.trs.end());
 		}
 		catch (BundleError e)
 		{
@@ -230,24 +230,43 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
 
 				gr.gid = gid;
-				// scallop sc(gr, hs);
-				scallop sc(gr, hs, r == 0 ? false : true);
-				sc.assemble(is_allelic);
-				if(verbose >=3) for(auto& i: sc.paths) i.print(index);
 
+				// partial decomp of non-AS nodes
+				scallop sc(gr, hs, r == 0 ? false : true, true);
+				sc.assemble(is_allelic);  
+				if(verbose >=3) for(auto& i: sc.paths) i.print(index);
+				
+				
+				// split graph
+				if(sc.asnonzeroset.size() == 0) throw runtime_error("does not have AS nodes"); //FIXME:
+				splice_graph gr1, gr2;
+				hyper_set hs1, hs2;
+				phaser ph(sc, &gr1, &hs1, &gr2, &hs2);
+
+				// assemble alleles in seperate splice graphs/ scallops
+				scallop sc1(gr1, hs1, r == 0 ? false : true, false);
+				sc1.assemble(is_allelic);  
+				scallop sc2(gr2, hs2, r == 0 ? false : true, false);
+				sc2.assemble(is_allelic);  
+
+				// collect transcripts
 				if(verbose >= 2)
 				{
-					printf("assembly with r = %d, total %lu transcripts:\n", r, sc.trsts.size());
-					for(int i = 0; i < sc.trsts.size(); i++) sc.trsts[i].write(cout);
+					printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());
+					for(int i = 0; i < sc1.trsts.size(); i++) sc1.trsts[i].write(cout);
+					printf("assembly with r = %d, total %lu transcripts:\n", r, sc2.trsts.size());
+					for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
 				}
 
 				for(int i = 0; i < sc.trsts.size(); i++)
 				{
-					ts1.add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts1.add(sc1.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts1.add(sc2.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 				}
 				for(int i = 0; i < sc.non_full_trsts.size(); i++)
 				{
-					ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts2.add(sc1.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts2.add(sc2.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 				}
 			}
 		}

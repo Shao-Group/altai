@@ -20,8 +20,8 @@ See LICENSE for licensing.
 scallop::scallop()
 {}
 
-scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
-	: gr(g), hs(h), random_ordering(r)
+scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
+	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
 	// TODO: traverse and assign node phasing info if it is determined -- in init stage
 
@@ -33,7 +33,21 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
 	init_super_edges();
 	init_vertex_map();
 	init_inner_weights();
-	init_nonzeroset();
+	init_nonzeroset(keep_as_nodes);
+}
+
+scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
+	: gr(g), hs(h), random_ordering(r), keep_as_nodes(false)
+{
+	round = 0;
+	if(output_tex_files == true) gr.draw(gr.gid + "." + tostring(round++) + ".tex");
+
+	gr.get_edge_indices(i2e, e2i);
+	hs.build(gr, e2i);
+	init_super_edges();
+	init_vertex_map();
+	init_inner_weights();
+	init_nonzeroset(keep_as_nodes);
 }
 
 scallop::~scallop()
@@ -130,19 +144,14 @@ int scallop::assemble(bool is_allelic)
 		}
 	}
 
-	throw BundleError();
+	if (keep_as_nodes) return 0;	
 
 	collect_existing_st_paths();
 	greedy_decompose();
 
 	trsts.clear();
-	// gr.output_transcripts(trsts, paths);
-	
 	non_full_trsts.clear();
 	gr.output_transcripts1(trsts, non_full_trsts, paths);
-	//printf("in scallop.cc: trsts.size = %d, non full length trsts.size = %d\n", trsts.size(), non_full_trsts.size());
-
-
 
 	if(verbose >= 2) 
 	{
@@ -624,58 +633,38 @@ int scallop::init_vertex_map()
 	return 0;
 }
 
+// set gt vertex type in bundle::bundle splice graph
 int scallop::init_vertex_astype()
 {
-	// set gt vertex type in bundle::bundle splice graph
-	// throw runtime_error("vertex astype not implemented yet");
-	
-	// for(int i = 1; i < gr.num_vertices() - 1; i++)
-	// {
-	// 	const vertex_info& vi  = gr.get_vertex_info(i);
-	// 	if (gt_as(vi.gt))
-	// 	{
-	// 		//
-	// 		// get as vertex
-	// 		// get all neighbots of as vertex
-	// 		// set neighbots type
-	// 	}
-	// 	else
-	// 	{
-	// 		vi.as_type =
-	// 	}
-	// 	// set this vertex type others set ordinary 
-
-
-	// }
-
+	throw runtime_error("vertex astype not implemented yet");
 	return 0;
 }
 
-int scallop::init_nonzeroset()
+// if keep_as_nodes, separate ns/asnonzeroset, else use only nsnonzeroset
+int scallop::init_nonzeroset(bool keep_as)
 {
 	nsnonzeroset.clear();
 	asnonzeroset.clear();
 	for(int i = 1; i < gr.num_vertices() - 1; i++)
 	{
 		if(gr.degree(i) <= 0) continue;
-		if (gr.get_vertex_info(i).is_ordinary_vertex()) 
+		if (keep_as)
 		{
-			nsnonzeroset.insert(i);
+			if (gr.get_vertex_info(i).is_ordinary_vertex()) nsnonzeroset.insert(i);
+			else asnonzeroset.insert(i);
 		}
 		else 
 		{
-			asnonzeroset.insert(i);
+			nsnonzeroset.insert(i);
 		}
 	}
 
 	if (DEBUG_MODE_ON ) 
 	{
-		if (decompose_as_neighor && asnonzeroset.size() <= 2) throw BundleError();
-		if (!decompose_as_neighor && asnonzeroset.size() <= 4) throw BundleError();
+		if (decompose_as_neighor && asnonzeroset.size() <= 2) throw runtime_error("scallop::init_nonzeroset 1");
+		if (!decompose_as_neighor && asnonzeroset.size() <= 4) throw runtime_error("scallop::init_nonzeroset 2");
 	}
 	
-
-
 	return 0;
 }
 
