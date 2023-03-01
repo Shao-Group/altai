@@ -40,3 +40,9 @@ test*
 #tmp files
 ex/
 RELEASE
+test/
+.history
+configure~
+.vscode/
+gene.*.tex
+*.dot

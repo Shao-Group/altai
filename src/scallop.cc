@@ -26,7 +26,8 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	// TODO: traverse and assign node phasing info if it is determined -- in init stage
 
 	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + "." + tostring(round++) + ".tex");
+	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
+	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
 
 	gr.get_edge_indices(i2e, e2i);
 	hs.build(gr, e2i);
@@ -40,7 +41,8 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(false)
 {
 	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + "." + tostring(round++) + ".tex");
+	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
+	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
 
 	gr.get_edge_indices(i2e, e2i);
 	hs.build(gr, e2i);
@@ -79,6 +81,8 @@ int scallop::assemble(bool is_allelic)
 		{
 			string loc = gr.chrm + ":" + to_string(gr.vinf[0].lpos.p32) + "-" + to_string(gr.vinf[gr.vinf.size() - 1].rpos.p32);
 			gr.draw(gr.gid + "." + loc + "." + "gr.undecomposed.tex");
+			if(output_tex_files == true) gr.draw(gr.gid + ".post.tex");
+			if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
 		}		
 	}
 
