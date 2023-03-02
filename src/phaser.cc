@@ -11,7 +11,7 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include <limits.h>
 
-phaser::phaser(const scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* _gr2, hyper_set* _hs2)
+phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* _gr2, hyper_set* _hs2)
 	: sc(_sc), gr(_sc.gr), pgr1(_gr1), pgr2(_gr2), phs1(_hs1), phs2(_hs2)
 {
 	assert(sc.asnonzeroset.size() != 0); // throw runtime_error("does not have AS nodes");
@@ -123,6 +123,8 @@ int phaser::assign_gt()
 		set<int> dcnodes; 								// := splitted nodes
 		set<int> nsnodes_with_last_degree{asnodes};		// := start from as nodes neighbors, deg 1
 
+		int flag = 0; // debug print
+
 		while(nsnodes.size() >= 1 && !is_traversed && as_neighbor_degree <= 3)
 		{
 			set<int> nsnodes_with_this_degree;
@@ -131,8 +133,20 @@ int phaser::assign_gt()
 			{	
 				const PEEI in = gr.in_edges(i);
 				const PEEI out = gr.out_edges(i);
-				for (auto e = in.first; e!= in.second; e++)	nsnodes_with_this_degree.insert(e->source());
-				for (auto e = out.first; e!= out.second; e++)	nsnodes_with_this_degree.insert(e->target());
+				for (auto e = in.first; e!= in.second; e++)	nsnodes_with_this_degree.insert((*e)->source());
+				for (auto e = out.first; e!= out.second; e++)	nsnodes_with_this_degree.insert((*e)->target());
+			}
+
+			if (flag == 0 && DEBUG_MODE_ON)
+			{
+				cout << "flag" << flag << endl;
+				cout << "nsnodes_with_this_degree" ;
+				for (int k : nsnodes_with_this_degree) cout << k << " ";
+				cout << endl;
+				cout << "nsnodes_with_this_degree ";
+				for (int k : nsnodes_with_this_degree) cout << k << " ";
+				cout << endl;
+				flag ++;
 			}
 
 			// remove ns node w. current deg and highest decomposed rate of neighbors
@@ -152,8 +166,8 @@ int phaser::assign_gt()
 					const PEEI in = gr.in_edges(i);
 					const PEEI out = gr.out_edges(i);
 					set<int> neighbors;
-					for (auto e = in.first; e!= in.second; e++)	neighbors.insert(e->source());
-					for (auto e = out.first; e!= out.second; e++)	neighbors.insert(e->target());
+					for (auto e = in.first; e!= in.second; e++)	neighbors.insert((*e)->source());
+					for (auto e = out.first; e!= out.second; e++)	neighbors.insert((*e)->target());
 					int a = 0;
 					int b = 0;
 					for (int j: neighbors)
@@ -234,8 +248,8 @@ int phaser::split_local(int i)
 		if(ewrt2[*e] > 0)	local2 += ewrt2[*e]; 
 	}
 
-	ratio1 = normalize_epsilon(local1, local2);
-	ratio2 = 1 - ratio1;
+	double ratio1 = normalize_epsilon(local1, local2);
+	double ratio2 = 1 - ratio1;
 	
 	if (strategy == "split_by_ratio")
 	{
@@ -286,7 +300,7 @@ int phaser::split_global(int i)
 
 //	split edges of vertex v, by ratio.
 //  directly modify ewrt1, ewrt2, if ewrt1[e] or ewrt2[e] <= -1 (not assigned)
-int split_by_ratio(int v, const PEEI itr_in_edges, const PEEI itr_out_edges, double ratio_allele1)
+int phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio_allele1)
 {
 	assert(ratio_allele1 > 0); // ratio normalized, won't equal
 	assert(ratio_allele1 < 1);
@@ -321,13 +335,13 @@ int split_by_ratio(int v, const PEEI itr_in_edges, const PEEI itr_out_edges, dou
 }
 
 // split edges of vertex v, by phasing path
-int phaser::split_by_phasing(int v, PEEI& in, PEEI& out, double r1)
+int phaser::split_by_phasing(int v, const PEEI& in, const PEEI& out, double r1)
 {
 	throw runtime_error("split_by_phasing not implemented yet");
 	return 0;
 }
 
-int phaser::split_by_min_parsimony(int v, const PEEI itr_in_edges, const PEEI itr_out_edges, double ratio_allele1)
+int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& itr_out_edges, double ratio_allele1)
 {
 	throw runtime_error("split_by_parsimony not defined yet");
 	return -1;
@@ -367,7 +381,7 @@ int phaser::refine_allelic_graphs()
 		for (auto ew: pgr->get_edge_weights())
 		{	
 			edge_descriptor e = ew.first;
-			double w = eww.second;
+			double w = ew.second;
 			if (w < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
 
@@ -390,6 +404,7 @@ int phaser::refine_allelic_graphs()
 
 int phaser::split_hs_by_rebuild()
 {
+	//FIXME: some AS hs should have been cut off 
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
 	vector<hyper_set*> hs_pointers{phs1, phs2};
 	for (int i = 0; i < gr_pointers.size(); i++)
@@ -403,7 +418,7 @@ int phaser::split_hs_by_rebuild()
 		{	
 			edge_descriptor e = ew.first;
 			double w = ew.second;
-			stewrt.insert({{e.s, e.t}, w});
+			stewrt.insert({{e->source(), e->target()}, w});
 		}
 
 		// phs->add_node_list iff every edge in hs has weight > 0 in allele
@@ -430,7 +445,7 @@ int phaser::split_hs_by_rebuild()
 			}
 			if (!is_removed && int(bottleneck) > 0)
 			{
-				phs->add_node_list(nodes, int(bottleneck))
+				phs->add_node_list(nodelist, int(bottleneck));
 			}
 		}
 	}

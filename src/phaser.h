@@ -19,11 +19,11 @@ See LICENSE for licensing.
 class phaser
 {
 public:
-	phaser(const scallop& sc, splice_graph* gr1, hyper_set* hs1, splice_graph* gr2, hyper_set* hs2);
+	phaser(scallop& sc, splice_graph* gr1, hyper_set* hs1, splice_graph* gr2, hyper_set* hs2);
 
 private:
     const scallop& sc;
-    const splice_graph& gr;
+    splice_graph& gr;
     MED ewrt1;              // edge weight in allele1
     MED ewrt2;              // edge weight in allele2
     vector<double> vwrt1;   // vertex weight in allele1
@@ -55,9 +55,9 @@ private:
 private:
     int split_local(int i);
     int split_global(int i);
-    int split_by_ratio(int v, PEEI& in, PEEI& out, double r1);                  // split edges of vertex v, by ratio 
-    int split_by_phasing(int v, PEEI& in, PEEI& out, double r1);                // split edges of vertex v, by phasing path
-    int split_by_min_parsimony(int v, PEEI& in, PEEI& out, double r1);          // split edges of vertex v, by parsimony
+    int split_by_ratio(int v, const PEEI& in, const PEEI& out, double r1);                  // split edges of vertex v, by ratio 
+    int split_by_phasing(int v, const PEEI& in, const PEEI& out, double r1);                // split edges of vertex v, by phasing path
+    int split_by_min_parsimony(int v, const PEEI& in, const PEEI& out, double r1);          // split edges of vertex v, by parsimony
     double normalize_epsilon(double x, double y);                               // adjustment to allele ratio. new_r1 = (r1+eps) / (r1+r2+2*eps)
 
 };
