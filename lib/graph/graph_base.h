@@ -17,7 +17,6 @@ See LICENSE for licensing.
 using namespace std;
 
 typedef map<int, string> MIS;
-typedef map<int, genotype> MII;
 typedef pair<int, string> PIS;
 typedef map<edge_descriptor, string> MES;
 typedef pair<edge_descriptor, string> PES;

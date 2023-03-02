@@ -9,7 +9,6 @@ See LICENSE for licensing.
 
 #include <vector>
 #include <map>
-
 #include "graph_base.h"
 
 using namespace std;
@@ -61,8 +60,8 @@ public:
 	// draw
 	int draw(const string &file, const MIS &mis, const MES &mes, double len, string label = "");
 	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &topo, string label = "");
-	int graphviz(const string &file, const MIS &mis, const MII &mii, const MES &mes, double len, string label = "");
-	int graphviz(const string &file, const MIS &mis, const MII &mii , const MES &mes, double len, const vector<int> &topo, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii , const MES &mes, double len, const vector<int> &topo, string label = "");
 };
 
 #endif

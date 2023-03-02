@@ -46,3 +46,4 @@ configure~
 .vscode/
 gene.*.tex
 *.dot
+*.tmp

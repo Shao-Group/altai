@@ -44,14 +44,3 @@ int graphviz_footer(ofstream & fout)
 	fout << "}\n";
 	return 0;
 }
-
-string graphviz_gt_color(genotype gt)
-{
-	if (gt == ALLELE1) return "red";
-	else if (gt == ALLELE2) return "green4";
-	else if (gt == NONSPECIFIC) return "gray";
-	else if (gt == UNPHASED) return "black";
-	else throw runtime_error("graphviz_gt_color: gt not existing");
-
-	throw runtime_error("graphviz_gt_color: gt not existing");
-}

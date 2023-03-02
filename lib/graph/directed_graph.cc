@@ -804,14 +804,14 @@ int directed_graph::draw(const string &file, const MIS &mis, const MES &mes, dou
 	return 0;
 }
 
-int directed_graph::graphviz(const string &file, const MIS &mis, const MII &mii, const MES &mes, double len, string label)
+int directed_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label)
 {
 	vector<int> tp;
 	for(int i = 0; i < num_vertices(); i++) tp.push_back(i);
 	return graphviz(file, mis, mii, mes, len, tp, label);
 }
 
-int directed_graph::graphviz(const string &file, const MIS &mis, const MII &mii, const MES &mes, double len, const vector<int> &tp, string label)
+int directed_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, const vector<int> &tp, string label)
 {
 	ofstream fout(file.c_str());
 	if(fout.fail())
@@ -845,8 +845,8 @@ int directed_graph::graphviz(const string &file, const MIS &mis, const MII &mii,
 		string color = "black";
 		MIS::const_iterator it = mis.find(i);
 		if(it != mis.end()) s = it->second;
-		MII::const_iterator it2 = mii.find(i);
-		if(it2 != mii.end()) color = graphviz_gt_color(it2->second);
+		MIS::const_iterator it2 = mii.find(i);
+		if(it2 != mii.end()) color = it2->second;
 		
 		fout.precision(0);
 		fout<<fixed;

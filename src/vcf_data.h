@@ -35,6 +35,7 @@ public:
 public:  																		
 	static int increse_it(map <int, map <string, genotype> >::iterator &it1, map <int, int >::iterator &it2);
 	int read_as_counts(const std::string &);																			// read .asf file, make vcf_map and vcf_pos_map
+	static string graphviz_gt_color(genotype gt);
 	int print(int);
 };
 

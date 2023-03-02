@@ -22,6 +22,7 @@ See LICENSE for licensing.
 
 using namespace std;
 
+typedef map<int, genotype> MII;
 typedef map<edge_descriptor, edge_info> MEIF;
 typedef pair<edge_descriptor, edge_info> PEIF;
 
@@ -113,8 +114,8 @@ public:
 	int draw(const string &file, const MIS &mis, const MES &mes, double len, string label = "");
 	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp, string label = "");
 	int graphviz(const string &file, string label = "");
-	int graphviz(const string &file, const MIS &mis, const MII &mii, const MES &mes, double len, string label = "");
-	int graphviz(const string &file, const MIS &mis, const MII &mii, const MES &mes, double len, const vector<int> &tp, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, const vector<int> &tp, string label = "");
 	int print_nontrivial_vertices();
 	int print_weights();
 	int print();

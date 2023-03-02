@@ -12,6 +12,7 @@ See LICENSE for licensing.
 #include "util.h"
 #include "config.h"
 #include "interval_map.h"
+#include "draw.h"
 #include <sstream>
 #include <fstream>
 #include <cfloat>
@@ -1028,12 +1029,12 @@ int splice_graph::draw(const string &file, string label)
 	return 0;
 }
 
-int splice_graph::graphviz(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp, string label)
+int splice_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, const vector<int> &tp, string label)
 {
 	return directed_graph::graphviz(file, mis, mii, mes, len, tp, label);
 }
 
-int splice_graph::graphviz(const string &file, const MIS &mis, const MES &mes, double len, string label)
+int splice_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label)
 {
 	return directed_graph::graphviz(file, mis, mii, mes, len, label);
 }
@@ -1041,7 +1042,7 @@ int splice_graph::graphviz(const string &file, const MIS &mis, const MES &mes, d
 int splice_graph::graphviz(const string &file, string label)
 {
 	MIS mis;
-	MII mii;
+	MIS mii;
 	char buf[10240];
 
 	string gene_start_end = chrm + ":"  + to_string(get_vertex_info(0).lpos) + "-" + to_string(get_vertex_info(num_vertices() - 1).rpos);
@@ -1055,7 +1056,7 @@ int splice_graph::graphviz(const string &file, string label)
 		int rr = vi.rpos % 100000;
 		sprintf(buf, "%.1lf:%d-%d", w, ll, rr);
 		mis.insert(PIS(i, buf));
-		mii.insert({i, vi.gt});
+		mii.insert({i, vcf_data::graphviz_gt_color(vi.gt)});
 	}
 
 	MES mes;
