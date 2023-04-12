@@ -11,6 +11,7 @@ See LICENSE for licensing.
 #include <string>
 #include <algorithm> 
 #include <cstdlib>
+#include <cctype>
 #include <boost/algorithm/string.hpp>
 #include "config.h"
 #include "vcf_data.h"
@@ -100,16 +101,19 @@ int vcf_data::read_as_counts(const string & name)
 
 			// get alleles
 			vector<string> alleles;
-			alleles.push_back(lf[3]);	// reference allele
-			string lfa = lf[4];	// alt alleles with comma-seperation
+			string a = toupperstring(lf[3]);
+			alleles.push_back(toupperstring(lf[3]));	// reference allele
+			string lfa = lf[4];					// alt alleles with comma-seperation
 			while((delim_pos = lfa.find(",")) != string::npos) 
 			{
-				alleles.push_back(lfa.substr(0, delim_pos));
+				alleles.push_back(toupperstring(lfa.substr(0, delim_pos)));
 				lfa.erase(0, delim_pos + 1);
 			}
-			alleles.push_back(lfa);
+			alleles.push_back(toupperstring(lfa));
 
 			// get gt
+			// the first filed must always be "GT"
+			assert (lf[8].substr(0,2) == "GT");
 			map<string, genotype> ng;
 			string gt_fields = lf[9];  // = "1|0:555:97,59:31,24:548:0/1:.:PATMAT"
 
@@ -117,6 +121,8 @@ int vcf_data::read_as_counts(const string & name)
 
 			int i1 = gt_fields[0] - '0'; // allele in gt1
 			int i2 = gt_fields[2] - '0'; // allele in gt2
+			assert (alleles.size() >= 1);
+			assert (alleles[i1].length() >= 1);
 			if (i1 == i2)
 			{
 				ng.insert({alleles[i1], NONSPECIFIC});
@@ -157,15 +163,14 @@ int vcf_data::increse_it(map <int, map <string, genotype> >::iterator &it1, map 
 }
 
 
-int vcf_data::print(int k)
+int vcf_data::print()
 {
 	cout << "alleles should be in laxico order. 0-based cord" << endl;
 	for (auto it = vcf_pos_map.begin(); it != vcf_pos_map.end(); it ++)
 	{
-		cout << "chrm " << it->first << endl;
 		for (auto it2 = (it->second).begin(); it2 != (it->second).end(); it2 ++)
 		{
-			cout << it2->first << "  ";
+			cout << it->first << ":" << it2->first << "  ";
 			auto ii = it2->second;
 			for(auto&& aa: ii) cout << aa.first << "-" << gt_str(aa.second) << "  ";
 			cout << endl;
@@ -174,12 +179,10 @@ int vcf_data::print(int k)
 	}
 	for (auto it = vcf_ale_len.begin(); it != vcf_ale_len.end(); it ++)
 	{
-		cout << "chrm " << it->first << endl;
 		for (auto it2 = (it->second).begin(); it2 != (it->second).end(); it2 ++)
 		{
-			cout << it2->first << "  " << it2->second << endl;
+			cout << it->first << ":" << it2->first << "  " << it2->second << endl;
 		}
-
 	}
 	return 0;
 }
@@ -191,6 +194,5 @@ string vcf_data::graphviz_gt_color(genotype gt)
 	else if (gt == NONSPECIFIC) return "gray";
 	else if (gt == UNPHASED) return "black";
 	else throw runtime_error("graphviz_gt_color: gt not existing");
-
 	throw runtime_error("graphviz_gt_color: gt not existing");
 }

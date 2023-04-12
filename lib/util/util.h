@@ -184,6 +184,8 @@ vector<K> get_keys(const map<K, V> &m)
 	return v;
 }
 
+string toupperstring(const string s);
+vector<string> split(const string s, const string sep);
 size_t string_hash(const std::string& str);
 // size_t vector_hash(const vector<int32_t> &str);
 size_t vector_hash(const vector<as_pos32> &str);

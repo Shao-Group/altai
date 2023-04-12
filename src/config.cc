@@ -12,12 +12,14 @@ See LICENSE for licensing.
 
 #include "config.h"
 #include "vcf_data.h"
+#include "util.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <string>
 
 using namespace std;
 
@@ -111,6 +113,8 @@ string ref_file2;
 string vcf_file;
 string output_file;
 string output_file1;
+string chr_exclude;
+set<string> chrex;
 
 // AS info
 bool use_phased_var_only = true;
@@ -133,10 +137,14 @@ int batch_bundle_size = 10;
 int verbose = 1;
 int assemble_duplicates = 10;
 string version = "v0.0.1";
-bool DEBUG_MODE_ON = false;
 bool FILTER_BY_COV = false;
 bool phasing_profile_only = false;
 bool decompose_as_neighor = false;
+
+// for debugging
+bool DEBUG_MODE_ON = false;
+bool print_vcf = false;
+bool print_hit = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -156,10 +164,6 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "-j")
 		{
 			vcf_file = string(argv[i + 1]);
-			asp = vcf_data(vcf_file);
-			vcf_map = asp.vcf_pos_map;
-			vcf_map_len = asp.vcf_ale_len;
-			if(DEBUG_MODE_ON) asp.print(0);
 			i++;
 		}
 		else if (string(argv[i]) == "-G")
@@ -504,10 +508,6 @@ int parse_arguments(int argc, const char ** argv)
 			insertsize_ave = atof(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--DEBUG")
-		{
-			DEBUG_MODE_ON = true;			
-		}
 		else if(string(argv[i]) == "--filter_AS_transcript_by_coverage")
 		{
 			FILTER_BY_COV = true;			
@@ -515,6 +515,11 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--min_num_reads_support_variant")
 		{
 			min_num_reads_support_variant  = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--chr_exclude")
+		{
+			chr_exclude = string(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--phasing_profile_only")
@@ -525,6 +530,19 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			decompose_as_neighor = true;
 		}
+		// for debug
+		else if(string(argv[i]) == "--DEBUG")
+		{
+			DEBUG_MODE_ON = true;			
+		}
+		else if(string(argv[i]) == "--print_vcf")
+		{
+			print_vcf = true;			
+		}
+		else if(string(argv[i]) == "--print_hit")
+		{
+			print_hit = true;			
+		}
 		else
 		{
 			cerr << "Unkown arugment received: " << string(argv[i]) << endl;
@@ -533,17 +551,50 @@ int parse_arguments(int argc, const char ** argv)
 		}
 	}
 
+	// process arguments
 	if(min_surviving_edge_weight < 0.1 + min_transcript_coverage) 
 	{
 		min_surviving_edge_weight = 0.1 + min_transcript_coverage;
 		if(min_surviving_edge_weight > 10.0) min_surviving_edge_weight = 10.0;
 	}
+	
+	if(chr_exclude != "")
+	{
+		// split --chr_exclude by ','
+		assert(chrex.size() == 0);
+		size_t delim_pos = 0;
+		while((delim_pos = chr_exclude.find(",")) != string::npos) 
+		{
+			chrex.insert(chr_exclude.substr(0, delim_pos));
+			chr_exclude.erase(0, delim_pos + 1);
+		}
+		chrex.insert(chr_exclude);			
+	}
 
-	// verify arguments
+	// verify + process arguments
 	if(input_file == "")
 	{
 		printf("error: input-file is missing.\n");
 		exit(0);
+	}
+
+	if(vcf_file == "" && preview_only == false)
+	{
+		printf("error: vcf-file is missing.\n");
+		printf("Are you performing allele-specific transcriptome assembly or allele-specific alternative splicing analysis?");
+		exit(0);
+	}
+	else
+	{
+		asp = vcf_data(vcf_file);
+		vcf_map = asp.vcf_pos_map;
+		vcf_map_len = asp.vcf_ale_len;
+		if(DEBUG_MODE_ON && print_vcf) 
+		{
+			asp.print();
+			cout << "print vcf only, exit program" << endl;
+			exit(0);
+		}
 	}
 
 	if(output_file == "" && preview_only == false)
@@ -655,7 +706,19 @@ int print_logo()
 int print_help()
 {
 	printf("\n");
-	printf("Usage: altai -i <bam-file> -j <vcf-file> [-G <genome-fasta-file>] -o <output-name-base> [options]\n");
+	printf("Usage: altai -i <bam-file> -j <vcf-file> [--chr_exclude <comma,seperated,list,chr>] [-G <genome-fasta-file>] -o <output-name-base> [options]\n");
+	
+	printf("\n");
+	printf("Required: \n");
+	printf(" -i <bam-file>\n");
+	printf(" -j <vcf-file>\n");
+	printf(" -o <output-name-base>\n");
+	
+	printf("\n");
+	printf("Recommended:\n");
+	printf(" %-42s  %s\n", "--chr_exclude <comma,seperated,list,chr>",  "a list of chromosomes (comma seperated w/o space) excluded from assembly, e.g. --chr_exclude X,Y");
+	printf(" %-42s  %s\n", "-G <genome-fasta-file>",  "if want to output allele transcript sequences");
+	
 	printf("\n");
 	printf("Options:\n");
 	printf(" %-42s  %s\n", "--help",  "print usage of Altai and exit");

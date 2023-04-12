@@ -8,6 +8,30 @@ See LICENSE for licensing.
 #include <cstring>
 #include "util.h"
 
+string toupperstring(const string s)
+{
+	string s2 = "";
+	for (int i = 0; i < s.length(); i++)
+	{
+		s2 = s2 + char(toupper(s[i]));
+	}
+	return s2;
+}
+
+// mimic python string.split() 
+vector<string> split(const string s, const string sep)
+{
+	vector<string> v;
+	string s2 = s;
+	int delim_pos = 0;
+	while((delim_pos = s2.find(sep)) != string::npos) 
+	{
+		v.push_back(s2.substr(0, delim_pos));
+		s2.erase(0, delim_pos + sep.length()); //also remove sep
+	}
+	v.push_back(s);
+}
+
 size_t string_hash(const std::string& str)
 {
 	size_t hash = 1315423911;
@@ -41,9 +65,8 @@ size_t vector_hash(const vector<as_pos32> & vec)
 	return (seed & 0x7FFFFFFF + string_hash(s));
 }
 
-/*
-** reverse-complement DNA sequence w. IUPAC symbols
-*/
+
+// reverse-complement DNA sequence w. IUPAC symbols
 int reverse_complement_DNA(string &rc, const string s)
 {
 	char c;

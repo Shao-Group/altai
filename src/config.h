@@ -153,6 +153,7 @@ extern string ref_file2;
 extern string vcf_file;
 extern string output_file;
 extern string output_file1;
+extern set<string> chrofinterest;
 
 // AS info
 extern bool use_phased_var_only;
@@ -179,10 +180,14 @@ extern int batch_bundle_size;
 extern int verbose;
 extern int assemble_duplicates;
 extern string version;
-extern bool DEBUG_MODE_ON;
 extern bool FILTER_BY_COV;
 extern bool phasing_profile_only;
 extern bool decompose_as_neighor;
+
+// for debugging
+extern bool DEBUG_MODE_ON;
+extern bool print_vcf;
+extern bool print_hit;
 
 // parse arguments
 int print_command_line(int argc, const char ** argv);

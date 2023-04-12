@@ -479,6 +479,8 @@ bool hit::operator<(const hit &h) const
 
 int hit::print() const
 {
+	if (!print_hit) return 0;
+	
 	// print basic information
 	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, #var = %d\n", 
 			qname.c_str(), hid, chrm.c_str(), pos, rpos, mpos, flag, qual, strand, xs, ts, isize, qlen, hi, nh, umi.c_str(), bridged ? 'T' : 'F', apos.size());
