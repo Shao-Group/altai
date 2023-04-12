@@ -166,6 +166,8 @@ int vcf_data::increse_it(map <int, map <string, genotype> >::iterator &it1, map 
 int vcf_data::print()
 {
 	cout << "alleles should be in laxico order. 0-based cord" << endl;
+	
+	// variants and gt
 	for (auto it = vcf_pos_map.begin(); it != vcf_pos_map.end(); it ++)
 	{
 		for (auto it2 = (it->second).begin(); it2 != (it->second).end(); it2 ++)
@@ -177,6 +179,9 @@ int vcf_data::print()
 		}
 
 	}
+
+	// ref variant length
+	/*
 	for (auto it = vcf_ale_len.begin(); it != vcf_ale_len.end(); it ++)
 	{
 		for (auto it2 = (it->second).begin(); it2 != (it->second).end(); it2 ++)
@@ -184,6 +189,7 @@ int vcf_data::print()
 			cout << it->first << ":" << it2->first << "  " << it2->second << endl;
 		}
 	}
+	*/
 	return 0;
 }
 
