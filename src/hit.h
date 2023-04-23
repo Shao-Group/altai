@@ -78,10 +78,9 @@ public:
 	vector<as_pos> spos;					// splice positions (regardless of allele sites)
 	vector<as_pos> apos;					// alleilic positions
 	vector<as_pos> itvm;					// matched interval
-	// vector<as_pos> itvna;				// non-allelic interval (matched interval - allelic interval)
 	vector<as_pos> itvi;					// insert interval
 	vector<as_pos> itvd;					// delete interval
-	vector<as_pos> itv_align;   // aligned interval (= itvm w. apos), [left-inl, right-exl)
+	vector<as_pos> itv_align;   			// aligned interval (= itvm w. apos), [left-inl, right-exl)
 			
 	hit *next;								// next hit that is equivalent with current one
 	// genotype gt;

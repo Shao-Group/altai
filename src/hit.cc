@@ -107,7 +107,6 @@ hit::hit(const hit &h)
 // }
 
 
-// hit::hit(bam1_t *b, std::string chrm_name)
 hit::hit(bam1_t *b, std::string chrm_name, int id) 
 	:bam1_core_t(b->core), hid(id)
 {
@@ -327,9 +326,10 @@ int hit::build_aligned_intervals()
 	sort(itv_align.begin(), itv_align.end());
 
 	// itvna should not overlap
-	if (verbose >= 3)
+	if (DEBUG_MODE_ON)
 	{
 		print();
+		assert(itv_align.size() >= 1);
 		for (int i = 0; i < itv_align.size()-1; i++ )
 		{	
 			as_pos32 rpos = low32(itv_align[i]);
