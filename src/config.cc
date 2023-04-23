@@ -145,6 +145,7 @@ bool decompose_as_neighor = false;
 bool DEBUG_MODE_ON = false;
 bool print_vcf = false;
 bool print_hit = false;
+bool print_region_detail = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -543,6 +544,10 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			print_hit = true;			
 		}
+		else if(string(argv[i]) == "--print_region_detail")
+		{
+			print_region_detail = true;			
+		}
 		else
 		{
 			cerr << "Unkown arugment received: " << string(argv[i]) << endl;
@@ -706,13 +711,14 @@ int print_logo()
 int print_help()
 {
 	printf("\n");
-	printf("Usage: altai -i <bam-file> -j <vcf-file> [--chr_exclude <comma,seperated,list,chr>] [-G <genome-fasta-file>] -o <output-name-base> [options]\n");
+	printf("Usage: altai -i <bam-file> -j <vcf-file> [--chr_exclude <comma,seperated,list,chr>] [-G <genome-fasta-file>] -o <output-prefix> [options]\n");
 	
 	printf("\n");
 	printf("Required: \n");
-	printf(" -i <bam-file>\n");
-	printf(" -j <vcf-file>\n");
-	printf(" -o <output-name-base>\n");
+	printf(" %-42s  %s\n", "-i <bam-file>",  "sorted bam alignment");
+	printf(" %-42s  %s\n", "-j <vcf-file>",  "sorted vcf file of personalized and phased variants");
+	printf(" %-42s  %s\n", "-o <output-prefix>",  "");
+	printf(" \n");
 	
 	printf("\n");
 	printf("Recommended:\n");
@@ -727,9 +733,9 @@ int print_help()
 	printf(" %-42s  %s\n", "--verbose <0, 1, 2>",  "0: quiet; 1: one line for each graph; 2: with details, default: 1");
 	printf(" %-42s  %s\n", "-f/--transcript_fragments <filename>",  "file to which the assembled non-full-length transcripts will be written to");
 	printf(" %-42s  %s\n", "--library_type <first, second, unstranded>",  "library type of the sample, default: unstranded");
-	// printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
 	printf(" %-42s  %s\n", "--assemble_duplicates <integer>",  "the number of consensus runs of the decomposition, default: 10");
 	printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.5");
+//  printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
 	printf(" %-42s  %s\n", "--min_single_exon_coverage <float>",  "minimum coverage required for a single-exon transcript, default: 20");
 	printf(" %-42s  %s\n", "--min_transcript_length_increase <integer>",  "default: 50");
 	printf(" %-42s  %s\n", "--min_transcript_length_base <integer>",  "default: 150, minimum length of a transcript would be");
@@ -752,12 +758,7 @@ int print_copyright()
 
 int print_caution_message()
 {
-	printf("\033[1;31m\n");
-	printf("Altai-%s ONLY outputs allele-specific transcripts.\n", version.c_str());	
-	printf("If you want to have a complete allele-specific transcriptome ");
-	printf("with both allele-specific transcripts (two alleles different) and ");
-	printf("non-allele-specific transcripts (both alleles same), ");
-	printf("read README for detailed instruction.\n");
-	printf("\033[0m\n");
+	// printf("\033[1;31m\n");
+	// printf("\033[0m\n");
 	return 0;
 }

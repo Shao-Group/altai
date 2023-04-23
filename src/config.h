@@ -188,6 +188,7 @@ extern bool decompose_as_neighor;
 extern bool DEBUG_MODE_ON;
 extern bool print_vcf;
 extern bool print_hit;
+extern bool print_region_detail;
 
 // parse arguments
 int print_command_line(int argc, const char ** argv);
