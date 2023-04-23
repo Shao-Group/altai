@@ -59,7 +59,7 @@ public:
 	int build_fragments();
 
 	int align_hits_transcripts();
-	int align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, hit &h, vector<int> &v);
+	int align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &v);
 	int align_transcript(const map<as_pos32, int> &m, const transcript &t, vector<int> &v);
 	int index_references();
 	int locate_region_left(const map<as_pos32, int> &m, as_pos32 x);

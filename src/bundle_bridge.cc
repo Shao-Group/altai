@@ -364,7 +364,7 @@ int bundle_bridge::align_hits_transcripts()
 		assert(m1.size() == m2.size());
 		auto it1 = m1.begin();
 		auto it2 = m2.begin();
-		cout << "bundle_bridge::align_hits_transcripts() m1/m2 size = " << m1.size() << endl;
+		if (verbose >= 3) cout << "bundle_bridge::align_hits_transcripts() m1/m2 size = " << m1.size() << endl;
 		for (int a = 0; a < m1.size(); a++)
 		{
 			auto i = *it1;
@@ -373,8 +373,11 @@ int bundle_bridge::align_hits_transcripts()
 			as_pos32 cc = i.second;
 			as_pos32 qq = j.first;
 			as_pos32 dd = j.second;
-			cout << "bundle_bridge::align_hits_transcripts() m1/m2(region.l/rpos, idx) = " << pp.aspos32string() << " " ;
-			cout << qq.aspos32string() << " " << cc << endl;	
+			if (verbose >= 3)  
+			{
+				cout << "bundle_bridge::align_hits_transcripts() m1/m2(region.l/rpos, idx) = " << pp.aspos32string() << " " ;
+				cout << qq.aspos32string() << " " << cc << endl;	
+			}
 			assert(cc == dd);
 			it1 = next(it1, 1);
 			it2 = next(it2, 1);	
@@ -408,9 +411,10 @@ int bundle_bridge::align_hits_transcripts()
 	return 0;
 }
 
-int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, hit &h, vector<int> &vv)
+int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &vv)
 {
-	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- align_itv cannot align to regions correctly. after fix, make align_hit() const hit
+	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- 
+	// align_itv cannot align to regions correctly. after fix, make align_hit() const hi
 	vv.clear();
 	vector<as_pos> v;
 	h.get_aligned_intervals(v);
@@ -428,7 +432,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 	{
 		p1 = high32(v[k]);
 		auto it = m1.find(p1);
-		// assert(it != m1.end()); //FIXME: see above
+		assert(it != m1.end());
 		sp[k].first = it->second;
 	}
 
@@ -437,33 +441,22 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 	{
 		p2 = low32(v[k]);
 		auto it = m2.find(p2);
-		// assert(it != m2.end()); //FIXME: see above
+		assert(it != m2.end());
 		sp[k].second = it->second; 
 	}
 
-	if(DEBUG_MODE_ON) h.print();
+	// if(DEBUG_MODE_ON && print_hit) h.print();
 
 	for(int k = 0; k < sp.size(); k++)
 	{
-		// assert(sp[k].first <= sp[k].second); //FIXME: see above
-		if (!(sp[k].first <= sp[k].second))
-		{
-			vv.clear();
-			h.itv_align.clear();
-			return 0;
-		}
+		assert(sp[k].first <= sp[k].second);
 		if(k > 0) assert(sp[k - 1].second < sp[k].first);
 		for(int j = sp[k].first; j <= sp[k].second; j++) 
 		{
 			vv.push_back(j);
-			// cout << sp[k].first << " " << sp[k].second << endl;
 			if (regions[j].is_allelic()) 
 			{
-				
-				// assert(sp[k].first == sp[k].second); 
-				vv.clear();
-				h.itv_align.clear();
-				return 0;
+				assert(sp[k].first == sp[k].second);
 			}
 		}
 	}
@@ -574,6 +567,7 @@ int bundle_bridge::locate_region_right(const map<as_pos32, int> &m, as_pos32 x)
 	return locate_region(x-1);
 }
 
+// find region of pos (non-splice/as pos)
 int bundle_bridge::locate_region(as_pos32 x)
 {
 	if(regions.size() == 0) return -1;
