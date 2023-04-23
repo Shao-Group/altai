@@ -71,12 +71,16 @@ vcf_data::vcf_data(std::string file_name)
 	read_as_counts(file_name);
 }
 
+/*
+** map < str chrm, map <int pos, map <str nt, genotype> vcf_pos_map; 
+** assumption: var.len == 1, sorted; lf[8-9] must have GT first, per vcf specification
+** parameters: use_phased_var_only == true
+** TODO: check phase set (PS) to ensure phased variants are in the same PS
+** TODO: assert vcf header chr overlap w. bam header chr, otherwise throw check chr names
+*/
+
 int vcf_data::read_as_counts(const string & name) 
 {
-	// map < str chrm, map <int pos, map <str nt, genotype> vcf_pos_map; 
-	// assumption: var.len == 1, sorted; lf[8-9] must have GT first, per vcf specification
-	// parameters: use_phased_var_only == true
-	// TODO: check phase set (PS) to ensure phased variants are in the same PS
 	ifstream vcf_count_file(name);
 	if (vcf_count_file.is_open()) 
 	{
