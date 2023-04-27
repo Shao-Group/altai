@@ -477,9 +477,10 @@ bool hit::operator<(const hit &h) const
 	return (pos < h.pos);
 }
 
-int hit::print() const
+int hit::print(bool to_print) const
 {
-	if (!print_hit) return 0;
+
+	if (!print_hit && !to_print) return 0;
 	
 	// print basic information
 	printf("Hit %s: hid = %d, chrm %s [%d-%d), mpos = %d, flag = %d, quality = %d, strand = %c, xs = %c, ts = %c, isize = %d, qlen = %d, hi = %d, nh = %d, umi = %s, bridged = %c, #var = %d\n", 

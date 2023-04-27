@@ -100,7 +100,7 @@ public:
 	int set_tags(bam1_t *b);
 	int set_strand();
 	int get_aligned_intervals(vector<as_pos> &v) const;
-	int print() const;
+	int print(bool to_print=false) const;
 	bool has_variant() const;
 	int assign_genotype();
 };
