@@ -979,6 +979,8 @@ vector<as_pos32> bundle_bridge::get_aligned_intervals(fragment &fr)
 	if(v.size() >= 1 && fr.h1->pos >= v.front()) return vv;
 	if(v.size() >= 1 && fr.h2->rpos <= v.back()) return vv;
 
+	//// for (auto i : v) cout << "get splices" << i.aspos32string() << endl;	
+	
 	v.insert(v.begin(), fr.h1->pos);
 	v.push_back(fr.h2->rpos);
 	return v;
@@ -991,13 +993,18 @@ vector<as_pos32> bundle_bridge::get_splices(fragment &fr)
 	assert(fr.paths[0].type == 1 || fr.paths[0].type == 2);
 
 	vector<int> v = decode_vlist(fr.paths[0].v);
+
+	//// for (int i = 0; i < v.size() - 1; i++) 
+	//// 	cout << "get splices2 " << regions[v[i + 0]].rpos.aspos32string() << "--" << regions[v[i + 1]].lpos.aspos32string() << endl;
+
 	if(v.size() <= 0) return vv;
 
 	for(int i = 0; i < v.size() - 1; i++)
 	{
 		as_pos32 pp = regions[v[i + 0]].rpos;
 		as_pos32 qq = regions[v[i + 1]].lpos;
-		if(pp >= qq) continue;
+		if(pp.rightto(qq)) continue;
+		//cout << "get splices3 " << regions[v[i + 0]].rpos.aspos32string() << "--" << regions[v[i + 1]].lpos.aspos32string() << endl;
 		vv.push_back(pp);
 		vv.push_back(qq);
 	}
