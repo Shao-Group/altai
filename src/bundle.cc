@@ -83,6 +83,7 @@ int bundle::compute_strand()
 int bundle::build_intervals()
 {
 	fmap.clear();
+	set<hit*> added_hit;
 	for(int i = 0; i < br.fragments.size(); i++)
 	{
 		fragment &fr = br.fragments[i];
@@ -91,27 +92,45 @@ int bundle::build_intervals()
 		if(vv.size() <= 0) continue;
 		assert(vv.size() % 2 == 0);
 
+		/*
+		if (DEBUG_MODE_ON && verbose >= 10)
+		{
+			for(auto h: {fr.h1, fr.h2})
+			{
+				hit ht = *h;
+				cout << ht.qname << "itv size bridged=" << ht.itv_align.size() << " =" ;
+				ht.print(true);
+			}
+		}
+		*/
+
 		for(int k = 0; k < vv.size() / 2; k++)
 		{
 			int32_t p = vv[2 * k + 0];
 			int32_t q = vv[2 * k + 1];
 			fmap += make_pair(ROI(p, q), 1);
+			// if (DEBUG_MODE_ON && verbose >= 10) cout <<"itv added" << p << "-" << q << endl;
 		}
+		added_hit.insert(fr.h1);
+		added_hit.insert(fr.h2);
 	}
 
 	for(int i = 0; i < bb.hits.size(); i++)
 	{
 		hit &ht = bb.hits[i];
-		if(ht.bridged == true) continue;
-		if((ht.flag & 0x100) >= 1) continue;
-		if(br.breads.find(ht.qname) != br.breads.end()) continue;
-		// for(int k = 0; k < ht.itvm.size(); k++)
+		if((ht.flag & 0x100) >= 1 && !use_second_alignment) continue;
+		if(added_hit.find(&ht) != added_hit.end()) continue;
+		// if(ht.bridged == true) continue;
+		// if(br.breads.find(ht.qname) != br.breads.end()) continue;
+
 		for(int k = 0; k < ht.itv_align.size(); k++)
 		{
 			int32_t s = high32(ht.itv_align[k]);
 			int32_t t = low32(ht.itv_align[k]);
 			fmap += make_pair(ROI(s, t), 1);
 		}
+		// cout << ht.qname << "unbridged itv size=" << ht.itv_align.size() << endl;
+		// ht.print();
 	}
 	return 0;
 }
@@ -530,7 +549,7 @@ int bundle::build_splice_graph(int mode)
 		gr.set_vertex_info(i + 1, vi);
 	}
 
-	if (n_as <= 1) 
+	if (n_as < 1) 
 	{ 
 		throw BundleError();
 	}
@@ -1431,11 +1450,17 @@ int bundle::print(int index)
 	// print hits
 	for(int i = 0; i < bb.hits.size(); i++) bb.hits[i].print();
 
+	for(JIMI it = fmap.begin(); it != fmap.end(); it++)
+	{
+		printf("bundle.fmap %d: jmap [%d%s, %d%s) -> %d\n", 
+			index, lower(it->first).p32, lower(it->first).ale.c_str(), upper(it->first).p32, upper(it->first).ale.c_str(), it->second);
+	}
+
 	// print regions
 	const vector<region>& regions = br.regions;
 	for(int i = 0; i < regions.size(); i++)
 	{
-		regions[i].print(i);
+		regions[i].print(i);	
 	}
 
 	// print partial exons
@@ -1450,7 +1475,7 @@ int bundle::print(int index)
 		int pid1 = i.first.first;
 		int pid2 = i.first.second;
 		int c = i.second.first;
-		char s = i.second.first;
+		char s = i.second.second;
 		cout << "jset: " << pid1 << "-" << pid2 << " " << s << " strand, counts = " << c << endl;
 	}
 

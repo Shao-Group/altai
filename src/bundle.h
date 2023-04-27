@@ -42,7 +42,7 @@ public:
 	** vector<junction> allelic_junctions; 										    // allelic junctions, not used
 	** map<as_pos, vector<int> > allelic_itv;										// allelic aspos intervals and hits containing them
 	** vector<region> regions;														// regions, use br.regions instead
-	 */
+	*/
 	
 	vector<partial_exon> pexons;												// partial exons
 	vector<bool> regional;														// if a pe is regional
