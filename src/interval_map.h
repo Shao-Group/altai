@@ -62,6 +62,6 @@ int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr,
 
 
 // testing
-// int test_split_interval_map();
+int test_split_interval_map();
 
 #endif
