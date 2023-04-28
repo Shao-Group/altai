@@ -72,6 +72,24 @@ vcf_data::vcf_data(std::string file_name)
 }
 
 /*
+** @return ALLELE1, ALLELE2, NONSPECIFIC, if not found, UNPHASED 
+*/
+genotype vcf_data::get_genotype(string chrm, int pos, string ale)
+{
+	auto vcf1 = vcf_map.find(chrm);
+	if(vcf1 == vcf_map.end()) return UNPHASED;
+	
+	auto vcf2 = vcf1->second.find(pos);
+	if(vcf2 == vcf1->second.end()) return UNPHASED;
+	
+	auto vcf3 = vcf2->find(ale);
+	if(vcf3 == vcf2->end()) return UNPHASED;
+	
+	genotype gt = *vcf3;
+	return gt;
+}
+
+/*
 ** map < str chrm, map <int pos, map <str nt, genotype> vcf_pos_map; 
 ** assumption: var.len == 1, sorted; lf[8-9] must have GT first, per vcf specification
 ** parameters: use_phased_var_only == true

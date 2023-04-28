@@ -15,7 +15,6 @@ See LICENSE for licensing.
 #include "htslib/vcf.h"
 
 enum genotype {UNPHASED, ALLELE1, ALLELE2, NONSPECIFIC};
-typedef pair<string, genotype> NTGT;
 
 const char* gt_str(genotype gt);
 bool gt_conflict(genotype g1, genotype g2);   		// true if (g1,g2) == (ALE1, ALE2) or (ALE2, ALE1)
@@ -33,11 +32,15 @@ public:
 	map < string, map <int, map<string, genotype> > > vcf_pos_map; // map <string chrm, map<int pos, map<string var, genotype> > >   map of variant posisions and vector_of_variant_sequences
 	map < string, map <int, int > > vcf_ale_len;		// map <string chrm, map<int pos, int length > >		    map of variant positions and lengths_on_reference
 
-public:  																		
-	static int increse_it(map <int, map <string, genotype> >::iterator &it1, map <int, int >::iterator &it2);
-	int read_as_counts(const std::string &);																			// read .asf file, make vcf_map and vcf_pos_map
+private:
+	int read_as_counts(const std::string &); // read .asf file, make vcf_map and vcf_pos_map
+
+public:
+	genotype get_genotype(string chrm, int pos, string ale); // return UNPHASED if not found
 	static string graphviz_gt_color(genotype gt);
+	static int increse_it(map <int, map <string, genotype> >::iterator &it1, map <int, int >::iterator &it2);
 	int print();
+
 };
 
 
