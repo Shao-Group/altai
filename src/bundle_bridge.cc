@@ -283,7 +283,7 @@ int bundle_bridge::build_regions()
 				r = as_pos32(r2, a);
 				ltype = ALLELIC_LEFT_SPLICE; 
 				rtype = ALLELIC_RIGHT_SPLICE;
-				genotype gt = vcf_map[bb.chrm][l2][a]; //FIXME: var may not exist
+				genotype gt = asp.get_genotype(bb.chrm, l2, a);
 				region rr(l, r, ltype, rtype, gt);
 				rr.assign_as_cov(c, 0, c); 
 				regions.push_back(rr);

@@ -60,7 +60,7 @@ int bridger::bridge()
 	int n2 = get_paired_fragments();
 
 	// first round of briding hard fragments
-	// remove_tiny_boundary();
+	// remove_tiny_boundary(); //TODO: examine and fix. Based on real spos, but regions
 
 	bridge_hard_fragments();
 	filter_paths();

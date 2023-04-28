@@ -1450,11 +1450,14 @@ int bundle::print(int index)
 	// print hits
 	for(int i = 0; i < bb.hits.size(); i++) bb.hits[i].print();
 
+	// print fmap
+	/*
 	for(JIMI it = fmap.begin(); it != fmap.end(); it++)
 	{
 		printf("bundle.fmap %d: jmap [%d%s, %d%s) -> %d\n", 
 			index, lower(it->first).p32, lower(it->first).ale.c_str(), upper(it->first).p32, upper(it->first).ale.c_str(), it->second);
 	}
+	*/
 
 	// print regions
 	const vector<region>& regions = br.regions;

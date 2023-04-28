@@ -82,10 +82,10 @@ genotype vcf_data::get_genotype(string chrm, int pos, string ale)
 	auto vcf2 = vcf1->second.find(pos);
 	if(vcf2 == vcf1->second.end()) return UNPHASED;
 	
-	auto vcf3 = vcf2->find(ale);
-	if(vcf3 == vcf2->end()) return UNPHASED;
+	auto vcf3 = vcf2->second.find(ale);
+	if(vcf3 == vcf2->second.end()) return UNPHASED;
 	
-	genotype gt = *vcf3;
+	genotype gt = vcf3->second;
 	return gt;
 }
 
