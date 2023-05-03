@@ -413,8 +413,6 @@ int bundle_bridge::align_hits_transcripts()
 
 int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, int> &m2, const hit &h, vector<int> &vv)
 {
-	// FIXME: a hit could be problematic if has indel at consecutive variants sites -- 
-	// align_itv cannot align to regions correctly. after fix, make align_hit() const hi
 	vv.clear();
 	vector<as_pos> v;
 	h.get_aligned_intervals(v);
