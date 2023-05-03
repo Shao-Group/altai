@@ -143,6 +143,7 @@ bool decompose_as_neighor = false;
 
 // for debugging
 bool DEBUG_MODE_ON = false;
+bool debug_bundle_only = false;
 bool print_vcf = false;
 bool print_hit = false;
 bool print_region_detail = false;
@@ -535,6 +536,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--DEBUG")
 		{
 			DEBUG_MODE_ON = true;			
+		}
+		else if(string(argv[i]) == "--debug_bundle_only")
+		{
+			debug_bundle_only = true;
 		}
 		else if(string(argv[i]) == "--print_vcf")
 		{

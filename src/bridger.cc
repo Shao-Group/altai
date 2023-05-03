@@ -228,10 +228,10 @@ int bridger::build_junction_graph()
 		assert(jsety[y].find(x) == jsety[y].end());
 		const region& r1 = bd->regions[x];
 		const region& r2 = bd->regions[y];
-		cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
+		if (DEBUG_MODE_ON) cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
 		if(gt_conflict(r1.gt, gt)) continue;
 		if(gt_conflict(r2.gt, gt)) continue;
-		// FIXME: non-specific edge weights
+		// TODO: non-specific edge weights may be changed to a better ratio
 		jsetx[x].insert(PI(y, w));
 		jsety[y].insert(PI(x, w));
 	}

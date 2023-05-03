@@ -186,6 +186,7 @@ extern bool decompose_as_neighor;
 
 // for debugging
 extern bool DEBUG_MODE_ON;
+extern bool debug_bundle_only;
 extern bool print_vcf;
 extern bool print_hit;
 extern bool print_region_detail;

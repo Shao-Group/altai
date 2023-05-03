@@ -654,7 +654,7 @@ int bundle_bridge::build_fragments()
 		fragment fr(&bb.hits[i], &bb.hits[x]);
 
 		// ===============================
-		// TODO: dit for UMI
+		// TODO dit for UMI
 		bb.hits[i].pi = x;
 		bb.hits[x].pi = i;
 		bb.hits[i].fidx = fragments.size();
@@ -701,19 +701,18 @@ int bundle_bridge::build_fragments()
 		}
 
 		// assign GT for fragments
+		// if fr.gt not concordant, will not be phaseable in brg1 or brg2, will be phased in brg3 instead.
 		set<int> vv(v1.begin(), v1.end());
 		vv.insert(v2.begin(), v2.end());
 		map<genotype, int> mm;
 		for (auto&& _v: vv) mm[regions[_v].gt] += 1;
 		if (mm[ALLELE1] == 0 && mm[ALLELE2] == 0) 
 		{
-			if (mm[UNPHASED] == 0) fr.gt = NONSPECIFIC;
-			else fr.gt = UNPHASED;
+			fr.gt = UNPHASED;
 		}
 		else if(mm[ALLELE1] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE1;
 		else if(mm[ALLELE2] > (mm[ALLELE2] + mm[ALLELE1]) * major_gt_threshold) fr.gt = ALLELE2;
 		else fr.gt = UNPHASED;
-		// TODO: correct fr.gt if not concordant
 	
 		fragments.push_back(fr);
 
@@ -725,7 +724,7 @@ int bundle_bridge::build_fragments()
 	//printf("total bb.hits = %lu, total fragments = %lu\n", bb.hits.size(), fragments.size());
 	
 
-	return 0; // FIXME:TODO: ignore UMI for now, need future implement
+	return 0; // FIXME:TODO: ignore UMI for now, need future implement. pay attention to gt of fcluster
 
 	// TODO
 	// ===============================================

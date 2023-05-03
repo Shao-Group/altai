@@ -214,11 +214,12 @@ int bundle::build_partial_exons()
 		else regional.push_back(false);		
 	}
 
+	/*
 	if (DEBUG_MODE_ON)
 	{
 		assert(regional.size() == pexons.size());
 		// assert(pexons.size() >= regions.size()); // not true
-		printf("size of regions %d, size of pexon %d", regions.size(), pexons.size());
+		printf("size of regions %d, size of pexon %d \n", regions.size(), pexons.size());
 		if (verbose >= 3 ) cout << "print pexons:\n";
 
 		for (int i = 0; i< pexons.size(); i++) 
@@ -243,6 +244,7 @@ int bundle::build_partial_exons()
 			}
 		}			
 	}
+	*/
 
 	return 0;
 }
