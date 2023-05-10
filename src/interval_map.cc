@@ -22,7 +22,8 @@ int32_t compute_overlap(const split_interval_map &imap, as_pos32 p)
 // lower(it->first) <= x < upper(it->first)
 SIMI locate_right_iterator(const split_interval_map &imap, as_pos32 x)
 {
-	return imap.upper_bound(ROI(as_pos32(x - 1), as_pos32(x))); 
+	SIMI it = imap.upper_bound(ROI(as_pos32(x - 1), as_pos32(x))); 
+	return it;
 }
 
 // locate iterator to the left of x - 1, aka contains x in right-CLOSED-interval
