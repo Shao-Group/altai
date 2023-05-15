@@ -21,6 +21,7 @@ using namespace std;
 
 const char* gt_str(genotype gt)	
 {
+	// if(!(gt >= 0 && gt <= 3)) cout << "\n" << "wired gt value " << gt << endl;
 	assert(gt >= 0 && gt <= 3);
 	size_t i = gt;
 	vector<char*>ss {"UNPHASED", "ALLELE1", "ALLELE2", "NONSPECIFIC"};
@@ -45,7 +46,8 @@ bool gt_explicit_same(genotype g1, genotype g2)
 	return false;
 }
 
-bool gt_implicit_same(genotype g1, genotype g2) // true if explicit_same or (UNPHASE, NONSPECIFIC) same. (UNPHASE, ALE1) is false
+// true if explicit_same or (UNPHASE, NONSPECIFIC) same. (UNPHASE, ALE1) is false
+bool gt_implicit_same(genotype g1, genotype g2) 
 {
 	if (gt_explicit_same(g1, g2)) return true;
 	if (g1 == UNPHASED && g2 == UNPHASED) return true;
@@ -56,12 +58,16 @@ bool gt_implicit_same(genotype g1, genotype g2) // true if explicit_same or (UNP
 
 bool gt_as(genotype g)
 {
-	if (g == ALLELE1 || g == ALLELE2) return true;
+	if (g == ALLELE1 || g == ALLELE2) 
+	{
+		return true;
+	}	
 	else 
 	{
 		assert( g == NONSPECIFIC || g == UNPHASED);
 		return false;
 	}
+	assert(0); // should never happen
 }
 
 vcf_data::vcf_data() {}
@@ -96,7 +102,6 @@ genotype vcf_data::get_genotype(string chrm, int pos, string ale)
 ** TODO: check phase set (PS) to ensure phased variants are in the same PS
 ** TODO: assert vcf header chr overlap w. bam header chr, otherwise throw check chr names
 */
-
 int vcf_data::read_as_counts(const string & name) 
 {
 	ifstream vcf_count_file(name);
