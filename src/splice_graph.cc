@@ -1147,6 +1147,7 @@ int splice_graph::output_transcripts(ofstream &fout, const vector<path> &p) cons
 
 int splice_graph::output_transcript(ofstream &fout, const path &p, const string &tid) const
 {
+	assert(0); // won't be used
 	fout.precision(2);
 	fout<<fixed;
 

@@ -60,6 +60,7 @@ vertex_info::vertex_info(const vertex_info &vi)
 	gt = vi.gt;
 	as_type = vi.as_type;
 	if(DEBUG_MODE_ON) assert(as_type>= 0 && as_type <= 7);
+	if(DEBUG_MODE_ON) assert(gt == ALLELE1 || gt == ALLELE2 || gt == UNPHASED || gt == NONSPECIFIC);
 }
 
 bool vertex_info::is_as_vertex() {return vertex_info::is_as_vertex(*this);}
