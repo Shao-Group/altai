@@ -58,6 +58,7 @@ int region::build_join_interval_map()
 	while(true)
 	{
 		//if(it->second >= 2) 
+		//FIXME: make jmap lpos rpos not exceeding r.lpos r.rpos
 		jmap += make_pair(it->first, 1);
 		if(it == rit) break;
 		it++;
@@ -199,19 +200,26 @@ int region::print(int index) const
 {	
 	printf("region %d: length = %d, pexons = %lu, type = (%d, %d), pos = [%d%s, %d%s), cov/dev = (%.2lf, %.2lf), gt = %s(%d)\n", 
 			index, rpos - lpos, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ave, dev, gt_str(gt), gt);
-	return 0;
+	
+	if (!print_region_detail) 
+	{
+		return 0;
+	}
 
-	int32_t lc = compute_overlap(*mmap, as_pos32(lpos));
-	int32_t rc = compute_overlap(*mmap, as_pos32(rpos - 1));
-	printf("region %d: partial-exons = %lu, type = (%d, %d), pos = [%d%s, %d%s), boundary coverage = (%d, %d)\n", 
-			index, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), lc, rc);
+	/* not work with as_pos, seg fault
+	// int32_t lc = compute_overlap(*mmap, as_pos32(lpos));
+	// int32_t rc = compute_overlap(*mmap, as_pos32(rpos - 1));
+	// printf("region %d: partial-exons = %lu, type = (%d, %d), pos = [%d%s, %d%s), boundary coverage = (%d, %d)\n", 
+	// 		index, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), lc, rc);
+	*/
 
 	/*
 	for(JIMI it = jmap.begin(); it != jmap.end(); it++)
 	{
-		printf(" [%d, %d) -> %d\n", lower(it->first), upper(it->first), it->second);
+		printf("region %d: jmap [%d%s, %d%s) -> %d\n", 
+			index, lower(it->first).p32, lower(it->first).ale.c_str(), upper(it->first).p32, upper(it->first).ale.c_str(), it->second);
 	}
-	*/
+	
 
 	return 0;
 }
