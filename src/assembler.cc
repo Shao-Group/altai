@@ -110,6 +110,8 @@ int assembler::assemble()
 	process(0);
 
 	assign_RPKM();
+	trsts.insert(trsts.end(), non_full_trsts.begin(), non_full_trsts.end()); //FIXME: TODO:
+	if(DEBUG_MODE_ON && trsts.size() < 1) throw runtime_error("No AS transcript found!");
 
 	filter ft(trsts);
 	ft.merge_single_exon_transcripts();
@@ -159,12 +161,9 @@ int assembler::process(int n)
 
 			bundle bd(bb);
 			bd.build(1, true);
-
 			bd.print(index++);
-
 			assemble(bd.gr, bd.hs, bb.is_allelic, ts1, ts2);
 
-			if (DEBUG_MODE_ON) continue;
 
 			bd.build(2, true);
 			bd.print(index++);
@@ -188,16 +187,15 @@ int assembler::process(int n)
 
 			//TODO: modify filters.
 			//FIXME: for now, did not use filter.
-			continue;
 			
 			filter ft1(gv1);
-			ft1.filter_length_coverage();
-			ft1.remove_nested_transcripts();
+			// ft1.filter_length_coverage();
+			// ft1.remove_nested_transcripts();
 			if(ft1.trs.size() >= 1) trsts.insert(trsts.end(), ft1.trs.begin(), ft1.trs.end());
 
 			filter ft2(gv2);
-			ft2.filter_length_coverage();
-			ft2.remove_nested_transcripts();
+			// ft2.filter_length_coverage();
+			// ft2.remove_nested_transcripts();
 			if(ft2.trs.size() >= 1) non_full_trsts.insert(non_full_trsts.end(), ft2.trs.begin(), ft2.trs.end());
 		}
 		catch (BundleError e)
@@ -212,6 +210,14 @@ int assembler::process(int n)
 
 int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic, transcript_set &ts1, transcript_set &ts2)
 {
+	if(DEBUG_MODE_ON)
+	{
+		for (int i = 0  ;  i < gr0.vinf.size(); i++)
+		{
+			cout << "gr0 bef scallop first round: " << i << " " << gt_str(gr0.vinf[i].gt) << endl;
+		}
+	}
+
 	super_graph sg(gr0, hs0);
 	sg.build();
 
@@ -222,51 +228,96 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 
 		if(determine_regional_graph(gr) == true) continue;
 		if(gr.num_edges() <= 0) continue;
+		if(debug_bundle_only) continue; //debug parameter to build bundle only and skip assembly, default: false
 
 		try 
 		{
 			for(int r = 0; r < assemble_duplicates; r++)
 			{
 				string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
+				
+				// TODO: remove
+				if(DEBUG_MODE_ON)
+				{
+					for (int i = 0 ;  i < gr.vinf.size(); i++)
+					{
+						cout << "bef scallop first round: " << i << " ";
+						cout << gt_str(gr.vinf[i].gt) << endl;
+					}
+				}
 
 				gr.gid = gid;
 
 				// partial decomp of non-AS nodes
 				scallop sc(gr, hs, r == 0 ? false : true, true);
 				sc.assemble(is_allelic);  
-				if(verbose >=3) for(auto& i: sc.paths) i.print(index);
-				
-				
-				// split graph
-				if(sc.asnonzeroset.size() == 0) throw runtime_error("does not have AS nodes"); //FIXME:
-				splice_graph gr1, gr2;
-				hyper_set hs1, hs2;
-				phaser ph(sc, &gr1, &hs1, &gr2, &hs2);
-
-				// assemble alleles in seperate splice graphs/ scallops
-				scallop sc1(gr1, hs1, r == 0 ? false : true, false);
-				sc1.assemble(is_allelic);  
-				scallop sc2(gr2, hs2, r == 0 ? false : true, false);
-				sc2.assemble(is_allelic);  
-
-				// collect transcripts
-				if(verbose >= 2)
-				{
-					printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());
-					for(int i = 0; i < sc1.trsts.size(); i++) sc1.trsts[i].write(cout);
-					printf("assembly with r = %d, total %lu transcripts:\n", r, sc2.trsts.size());
-					for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
-				}
-
 				for(int i = 0; i < sc.trsts.size(); i++)
 				{
-					ts1.add(sc1.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-					ts1.add(sc2.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts1.add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 				}
 				for(int i = 0; i < sc.non_full_trsts.size(); i++)
 				{
-					ts2.add(sc1.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-					ts2.add(sc2.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
+
+				if(verbose >=3) for(auto& i: sc.paths) i.print(index);
+				
+				// TODO: remove
+				if(DEBUG_MODE_ON)
+				{
+					cout << "print graph aft sc 1-round" << endl;
+					sc.gr.print();
+					for (int i = 0; i < sc.gr.vinf.size(); i++)
+					{
+						cout << "aft scallop first round: " << i << " ";
+						cout << gt_str(sc.gr.vinf[i].gt) << endl;
+					}
+				}
+				
+				// split graph
+				// FIXME: eventually should decompose all graphs incld. non-as splice graphs
+				if(sc.asnonzeroset.size() != 0)
+				{
+					// assemble alleles in seperate splice graphs/ scallops
+					splice_graph gr1, gr2;
+					hyper_set hs1, hs2;
+					scallop sc1, sc2;
+					phaser ph(sc, &gr1, &hs1, &gr2, &hs2, &sc1, &sc2);
+
+					// scallop sc1(gr1, hs1, r == 0 ? false : true, false);
+					sc1.assemble(is_allelic);  
+					// scallop sc2(gr2, hs2, r == 0 ? false : true, false);
+					sc2.assemble(is_allelic);  
+					
+					// collect transcripts
+					if(verbose >= 2)
+					{
+						printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());
+						for(int i = 0; i < sc1.trsts.size(); i++) sc1.trsts[i].write(cout);
+						printf("assembly with r = %d, total %lu transcripts:\n", r, sc2.trsts.size());
+						for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
+					}
+
+					//FIXME:TODO: did not filter
+					trsts.insert(trsts.end(), sc1.trsts.begin(), sc1.trsts.end());
+					trsts.insert(trsts.end(), sc2.trsts.begin(), sc2.trsts.end());
+					continue;
+
+					for(int i = 0; i < sc.trsts.size(); i++)
+					{
+						ts1.add(sc1.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+						ts1.add(sc2.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					}
+					for(int i = 0; i < sc.non_full_trsts.size(); i++)
+					{
+						ts2.add(sc1.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+						ts2.add(sc2.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+					}
+				}
+				else
+				{
+					cerr << "did not handle non-AS graphs yet" << endl;
+					throw BundleError();
 				}
 			}
 		}
@@ -327,4 +378,5 @@ int assembler::write()
 			t.write(fout1);
 	}
     fout1.close();
+	return 0;
 }
