@@ -9,6 +9,15 @@ See LICENSE for licensing.
 #include <algorithm>
 #include <cstdio>
 
+hyper_set& hyper_set::operator=(const hyper_set &hs)
+{
+	nodes = hs.nodes;
+	edges = hs.edges;
+	ecnts = hs.ecnts;
+	e2s = hs.e2s;
+	return *this;
+}
+
 int hyper_set::clear()
 {
 	nodes.clear();
@@ -123,33 +132,33 @@ int hyper_set::build_index()
 	return 0;
 }
 
-// int hyper_set::update_index()
-// {
-// 	vector<int> fb1;
-// 	for(MISI::iterator p = e2s.begin(); p != e2s.end(); p++)
-// 	{
-// 		int e = p->first;
-// 		set<int> &ss = p->second;
-// 		vector<int> fb2;
-// 		for(set<int>::iterator it = ss.begin(); it != ss.end(); it++)
-// 		{
-// 			vector<int> &v = edges[*it];
-// 			for(int i = 0; i < v.size(); i++)
-// 			{
-// 				if(v[i] != e) continue;
-// 				bool b1 = false, b2 = false;
-// 				if(i == 0 || v[i - 1] == -1) b1 = true;
-// 				if(i == v.size() - 1 || v[i + 1] == -1) b2 = true;
-// 				if(b1 == true && b2 == true) fb2.push_back(*it);
-// 				break;
-// 			}
-// 		}
-// 		for(int i = 0; i < fb2.size(); i++) ss.erase(fb2[i]);
-// 		if(ss.size() == 0) fb1.push_back(e);
-// 	}
-// 	for(int i = 0; i < fb1.size(); i++) e2s.erase(fb1[i]);
-// 	return 0;
-// }
+int hyper_set::update_index()
+{
+	vector<int> fb1;
+	for(MISI::iterator p = e2s.begin(); p != e2s.end(); p++)
+	{
+		int e = p->first;
+		set<int> &ss = p->second;
+		vector<int> fb2;
+		for(set<int>::iterator it = ss.begin(); it != ss.end(); it++)
+		{
+			vector<int> &v = edges[*it];
+			for(int i = 0; i < v.size(); i++)
+			{
+				if(v[i] != e) continue;
+				bool b1 = false, b2 = false;
+				if(i == 0 || v[i - 1] == -1) b1 = true;
+				if(i == v.size() - 1 || v[i + 1] == -1) b2 = true;
+				if(b1 == true && b2 == true) fb2.push_back(*it);
+				break;
+			}
+		}
+		for(int i = 0; i < fb2.size(); i++) ss.erase(fb2[i]);
+		if(ss.size() == 0) fb1.push_back(e);
+	}
+	for(int i = 0; i < fb1.size(); i++) e2s.erase(fb1[i]);
+	return 0;
+}
 
 set<int> hyper_set::get_intersection(const vector<int> &v)
 {

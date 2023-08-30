@@ -27,6 +27,9 @@ typedef pair< pair<int, int>, int> PPII;
 class hyper_set
 {
 public:
+	hyper_set& operator=(const hyper_set &hs);
+
+public:
 	MVII nodes;			// hyper-edges using list-of-nodes
 	VVI edges;			// hyper-edges using list-of-edges
 	vector<int> ecnts;	// counts for edges
@@ -40,7 +43,7 @@ public:
 	int build(directed_graph &gr, MEI &e2i);
 	int build_edges(directed_graph &gr, MEI &e2i);
 	int build_index();
-	// int update_index();
+	int update_index();
 	set<int> get_intersection(const vector<int> &v);
 	MI get_successors(int e);
 	MI get_predecessors(int e);
