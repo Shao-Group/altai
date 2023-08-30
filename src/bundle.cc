@@ -530,6 +530,7 @@ int bundle::build_splice_graph(int mode)
 		vi.lpos = r.lpos;
 		vi.rpos = r.rpos;
 		vi.length = length;
+		vi.gt = r.gt;
 		
 		// FIXME: not complete enumeration
 		// UHPHASED_MONOVAR vs NS_NONVAR
