@@ -137,6 +137,7 @@ int splice_graph::set_edge_info(edge_base* e, const edge_info &ei)
 
 MED splice_graph::get_edge_weights() const
 {
+	assert(0); // should not be called
 	return ewrt;
 }
 
