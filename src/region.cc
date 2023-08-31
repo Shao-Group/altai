@@ -148,6 +148,9 @@ int region::build_partial_exons()
 		return 0;
 	}
 
+	// a region with (ltype & RIGHT_SPLICE || ltype & ALLELIC_RIGHT_SPLICE) > 0) or (rtype & LEFT_SPLICE  || rtype & ALLELIC_LEFT_SPLICE) > 0)
+	// should always have a partial exon
+
 	if((ltype & RIGHT_SPLICE) > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
 		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY, gt);
