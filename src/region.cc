@@ -49,7 +49,7 @@ int region::build_join_interval_map()
 {
 	jmap.clear();
 
-	PSIMI pei = locate_boundary_iterators(*mmap, lpos, rpos);
+	PSIMI pei = locate_boundary_iterators(*mmap, lpos, rpos); // FIXME: should check returned iterators
 	SIMI lit = pei.first, rit = pei.second;
 
 	if(lit == mmap->end() || rit == mmap->end()) return 0;
@@ -216,7 +216,6 @@ int region::print(int index) const
 	// 		index, pexons.size(), ltype, rtype, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), lc, rc);
 	*/
 
-	/*
 	for(JIMI it = jmap.begin(); it != jmap.end(); it++)
 	{
 		printf("region %d: jmap [%d%s, %d%s) -> %d\n", 
