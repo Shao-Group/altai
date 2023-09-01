@@ -378,13 +378,21 @@ int phaser::refine_allelic_graphs()
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
 	for (splice_graph* pgr: gr_pointers)
 	{
-		for (auto ew: pgr->get_edge_weights())
+		PEEI pei;
+		edge_iterator it1, it2;
+
+		// remove edges < min_guaranteed_edge_weight
+		for (pei = pgr->edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
 		{	
-			edge_descriptor e = ew.first;
-			double w = ew.second;
-			if (w < min_guaranteed_edge_weight) pgr->remove_edge(e);
+			edge_descriptor e = *it1;
+			double w = pgr->get_edge_weight(e);
+			if (w < min_guaranteed_edge_weight)
+			{
+				pgr->remove_edge(e);	
+			} 
 		}
 
+		// recursively remove nodes in/out-degree == 0
 		while(true)
 		{
 			bool b = false;
@@ -397,8 +405,20 @@ int phaser::refine_allelic_graphs()
 			}
 			if(b == false) break;
 		}
+
 	}
-	
+
+	if(DEBUG_MODE_ON) 
+	{
+		cout << "pgr1-refine" << pgr1->ewrt.size();
+		for (auto i:pgr1->ewrt) cout << i.second << " " << endl;
+	}
+	if(DEBUG_MODE_ON) 
+	{
+		cout << "pgr2-refine" << pgr2->ewrt.size();
+		for (auto i:pgr2->ewrt) cout << i.second << " " << endl;
+	}
+
 	return 0;
 }
 
