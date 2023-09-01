@@ -11,8 +11,8 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include <limits.h>
 
-phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* _gr2, hyper_set* _hs2)
-	: sc(_sc), gr(_sc.gr), pgr1(_gr1), pgr2(_gr2), phs1(_hs1), phs2(_hs2)
+phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* _gr2, hyper_set* _hs2, scallop* _sc1, scallop* _sc2)
+	: sc(_sc), gr(_sc.gr), pgr1(_gr1), pgr2(_gr2), phs1(_hs1), phs2(_hs2), sc1(_sc1), sc2(_sc2)
 {
 	assert(sc.asnonzeroset.size() != 0); // throw runtime_error("does not have AS nodes");
 	
@@ -21,7 +21,8 @@ phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* 
 	split_gr();
 	refine_allelic_graphs();
 	split_hs_by_rebuild();
-	// refine_hyper_sets();
+	// refine_hyper_sets(); //FIXME:TODO:
+	// populate_allelic_splice_graph(); // FIXME: should call third scallop constructor to re-use v2v 
 }
 
 // init ewrt1/2, countbg1/2, normalize ratiobg1/2
@@ -49,7 +50,6 @@ int phaser::init()
 	ewrtbg1 = 0;       
     ewrtbg2 = 0;
 	for(int i = 0; i < gr.vinf.size(); i++)
-	{
 	{ 
 		// cout << "inside for loop: " << i << gt_str(gr.vinf[i].gt) << endl;
 		if (gr.vinf[i].gt == ALLELE1)
@@ -97,9 +97,6 @@ int phaser::init()
 			vwrtbg2 += gr.get_vertex_weight(i);
 		}
 	}
-	ewrtratiobg1 = normalize_epsilon(ewrtbg1, ewrtbg1);
-	ewrtratiobg2 = 1 - ewrtratiobg1;
-	
 	pair<double, double> r1r2 = normalize_epsilon(ewrtbg1, ewrtbg2);
 	ewrtratiobg1 = r1r2.first;
 	ewrtratiobg2 = r1r2.second;
@@ -123,8 +120,9 @@ int phaser::init()
 // assign edges to different gt
 int phaser::assign_gt()
 {
-	set<int> asnodes;  // := as nodes only
-	set<int> nsnodes;  // := ns & ns-related nodes only
+	// get nsnodes, sort by AS ratio
+	set<int> asnodes;					// := as nodes only
+	set<int> nsnodes;  					// := ns nodes only
 	for(const int i: sc.asnonzeroset)
 	{
 		if(gr.vinf[i].is_as_vertex()) 
@@ -136,134 +134,91 @@ int phaser::assign_gt()
 			nsnodes.insert(i);
 		}
 	}
-	for(const int i: sc.nsnonzeroset) 
-	{
-		nsnodes.insert(i);
-	}
 	assert(asnodes.size() >= 1);
+	assert(nsnodes.size() >= 1);
 	
-	// rank ns nodes by as_neightbor_degree and % decomposed neighbors, split_local if small degree 
-	if (nsnodes.size() <= max_num_exons)
+	// split local
+	if (nsnodes.size() + asnodes.size() < max_num_exons)
 	{
-		int as_neighbor_degree = 1;
-		bool is_traversed = false;
-		set<int> dcnodes; 								// := splitted nodes
-		set<int> nsnodes_with_last_degree{asnodes};		// := start from as nodes neighbors, deg 1
-
-		int flag = 0; // debug print
-
-		while(nsnodes.size() >= 1 && !is_traversed && as_neighbor_degree <= 3)
+		while(nsnodes.size() >= 1)
 		{
-			set<int> nsnodes_with_this_degree;
-			nsnodes_with_this_degree.clear();
-			for(int i: nsnodes_with_last_degree)
-			{	
-				const PEEI in = gr.in_edges(i);
-				const PEEI out = gr.out_edges(i);
-				for (auto e = in.first; e!= in.second; e++)	nsnodes_with_this_degree.insert((*e)->source());
-				for (auto e = out.first; e!= out.second; e++)	nsnodes_with_this_degree.insert((*e)->target());
-			}
-
-			if (flag == 0 && DEBUG_MODE_ON)
+			// split nsnodes wrt descending AS ratio
+			vector<int> vi = sort_nodes_by_currecnt_mae(nsnodes);
+			// if(DEBUG_MODE_ON) cout << "returned sort_nodes_by_currecnt_mae" << endl;
+			for(int i : vi)
 			{
-				cout << "flag" << flag << endl;
-				cout << "nsnodes_with_this_degree" ;
-				for (int k : nsnodes_with_this_degree) cout << k << " ";
-				cout << endl;
-				cout << "nsnodes_with_this_degree ";
-				for (int k : nsnodes_with_this_degree) cout << k << " ";
-				cout << endl;
-				flag ++;
-			}
-
-			// remove ns node w. current deg and highest decomposed rate of neighbors
-			nsnodes_with_last_degree = nsnodes_with_this_degree;
-			bool removed_one = true;
-			while(nsnodes_with_this_degree.size() >= 2 && removed_one) 
-			{
-				assert(as_neighbor_degree <= 3);
-				removed_one = false;
-
-				int num_as_neighrbor = -1;
-				int num_dc_neighbor = -1;
-				double ratio_dc_neighbor = -1;
-				int node_to_split = -1;
-				for(int i: nsnodes_with_this_degree)
-				{	
-					const PEEI in = gr.in_edges(i);
-					const PEEI out = gr.out_edges(i);
-					set<int> neighbors;
-					for (auto e = in.first; e!= in.second; e++)	neighbors.insert((*e)->source());
-					for (auto e = out.first; e!= out.second; e++)	neighbors.insert((*e)->target());
-					int a = 0;
-					int b = 0;
-					for (int j: neighbors)
-					{
-						if(asnodes.find(j) != asnodes.end()) 
-						{
-							a++;
-						}
-						else if (dcnodes.find(j) != dcnodes.end()) 
-						{
-							b++;
-						}
-						b = b + a;
-					}
-					double c = double(b) / neighbors.size();
-
-					if  (c > ratio_dc_neighbor ||
-						(c >= ratio_dc_neighbor && a > num_as_neighrbor) || 
-					    (c >= ratio_dc_neighbor && a >= num_as_neighrbor && b > num_dc_neighbor))
-					{
-						num_as_neighrbor = a;
-						num_dc_neighbor = b;
-						ratio_dc_neighbor = c;
-						node_to_split = i;
-					}
-				}
-
-				if (node_to_split!= -1)	
+				// if(DEBUG_MODE_ON) cout << i << " " << endl;
+				if(split_local(i))
 				{
-					split_local(node_to_split);
-					nsnodes_with_this_degree.erase(node_to_split);
-					nsnodes.erase(node_to_split);
-					dcnodes.insert(node_to_split);
-					removed_one = true;
-					is_traversed = false;
-				}
+					assert(nsnodes.find(i) != nsnodes.end());
+					nsnodes.erase(i);
+				} 
+				else break;
 			}
-
-			if (nsnodes_with_this_degree.size() >= 1)	
-			{
-				assert(nsnodes_with_this_degree.size() == 1);
-				int i = *nsnodes_with_this_degree.begin();
-				split_local(i);
-				nsnodes.erase(i);
-				dcnodes.insert(i);
-				is_traversed = false;
-			}
-
-			as_neighbor_degree += 1;
 		}
 	}
-
-	// split all based on background, if as_neighbor_degree large or too many nodes
-	for (int i: nsnodes)
+	
+	// split global
+	while(nsnodes.size() >= 1)
 	{
-		split_global(i);
+		// split nsnodes wrt descending AS ratio
+		vector<int> vi = sort_nodes_by_currecnt_mae(nsnodes);
+		for(int i : vi)
+		{
+			if(split_global(i))
+			{
+				assert(nsnodes.find(i) != nsnodes.end());
+				nsnodes.erase(i);
+			} 
+			else break;
+		}
 	}
 	
 	return 0;
 }
 
-int phaser::split_local(int i)
+// returns nodes with valid mae only
+vector<int> phaser::sort_nodes_by_currecnt_mae(const set<int>& s)
 {
-	// compute ratio
+	vector< pair<double, int> > nodes_mae;
+	for(int i : s)
+	{
+		pair<double, double> r1r2 = get_as_ratio(i);
+		double mae = max(r1r2.first, r1r2.second);
+		if (mae <= 0) continue;
+		nodes_mae.push_back({mae, i});
+	}
+
+	sort(nodes_mae.begin(), nodes_mae.end());
+	vector<int> nodes_descending_mae;
+
+	for(auto i = nodes_mae.end(); i != nodes_mae.begin(); i--)
+	{
+		auto j = prev(i, 1);
+		if(i!= nodes_mae.end()) 
+		{
+			cout << j->second << " " << j->first << " " << i->second  << " " << i->first << endl;
+			assert(j->first <= i->first);
+		}
+		assert(j->first > 0);
+		nodes_descending_mae.push_back(j->second);
+	}
+	
+	return nodes_descending_mae;
+}
+
+
+/** 
+ *	@param	i	node index
+ *	@return		<ratio1, ratio2>, if abnormal <-1, -1>
+ */ 
+pair<double, double> phaser::get_as_ratio(int i)
+{
 	vertex_info v = gr.get_vertex_info(i);
 	const PEEI in = gr.in_edges(i);
 	const PEEI out = gr.out_edges(i);
-
-	double local1, local2;
+	double local1 = 0;
+	double local2 = 0;
 	for (auto e = in.first; e!= in.second; e++)	
 	{
 		if(ewrt1[*e] > 0)	local1 += ewrt1[*e];
@@ -275,62 +230,64 @@ int phaser::split_local(int i)
 		if(ewrt2[*e] > 0)	local2 += ewrt2[*e]; 
 	}
 
-	double ratio1 = normalize_epsilon(local1, local2);
-	double ratio2 = 1 - ratio1;
+	assert(local1 >= 0);
+	assert(local2 >= 0);
+
+	if(local1 + local2 <= 0) 
+		return {-1, -1}; // w/o splitting, not being 1-degree neighbor of decomposed nodes
+	else 
+		return normalize_epsilon(local1, local2);
+	
+	assert(0);
+}
+
+bool phaser::split_local(int i)
+{
+	// get normalized as local ratio
+	pair<double, double> r1r2 = get_as_ratio(i);
+	double ratio1 = r1r2.first, ratio2 = r1r2.second;
+	if(ratio1 < 0) assert(ratio2 < 0);
+	if(ratio2 < 0) assert(ratio1 < 0);
+	if(ratio1 + ratio2 <= 0) return false;
+	
+	const PEEI in = gr.in_edges(i);
+	const PEEI out = gr.out_edges(i);
 	
 	if (strategy == "split_by_ratio")
 	{
-		split_by_ratio(i, in, out, ratio1);
-	}
-	else if (strategy == "split_by_phasing")
-	{
-		split_by_phasing(i, in, out, ewrtratiobg1);
-	}
-	else if (strategy == "min_parsimony")
-	{
-		split_by_min_parsimony(i, in, out, ratio1);
+		return split_by_ratio(i, in, out, ratio1);
 	}
 	else
 	{
-		cerr << "split strategy = " << strategy << endl;
-		throw runtime_error("split strategy not defined?");
-	}
-
-	return 0;
+		assert(0); // other strategy not implemented
+		return false;
+	}	
 }
 
-int phaser::split_global(int i)
+bool phaser::split_global(int i)
 {
-	vertex_info v = gr.get_vertex_info(i);
+	// vertex_info v = gr.get_vertex_info(i);
 	const PEEI in = gr.in_edges(i);
 	const PEEI out = gr.out_edges(i);
 	if (strategy == "split_by_ratio")
 	{
-		split_by_ratio(i, in, out, ewrtratiobg1);
-	}
-	else if (strategy == "split_by_phasing")
-	{
-		split_by_phasing(i, in, out, ewrtratiobg1);
-	}
-	else if (strategy == "min_parsimony")
-	{
-		split_by_min_parsimony(i, in, out, ewrtratiobg1);
+		return split_by_ratio(i, in, out, ewrtratiobg1);
 	}
 	else
 	{
-		cerr << "split strategy = " << strategy << endl;
-		throw runtime_error("split strategy not defined?");
+		assert(0); // other strategy not implemented
+		return false;
 	}
-	return 0;
 }
 
 
 //	split edges of vertex v, by ratio.
 //  directly modify ewrt1, ewrt2, if ewrt1[e] or ewrt2[e] <= -1 (not assigned)
-int phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio_allele1)
+bool phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio_allele1)
 {
-	assert(ratio_allele1 > 0); // ratio normalized, won't equal
+	assert(ratio_allele1 > 0); // ratio normalized, won't equal. NaN handled bef calling
 	assert(ratio_allele1 < 1);
+
 	vwrt1[v] = gr.get_vertex_weight(v) * ratio_allele1;
 	vwrt2[v] = gr.get_vertex_weight(v) * (1 - ratio_allele1);
 	for (auto e = in.first; e!= in.second; e++)	
@@ -358,18 +315,20 @@ int phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio_
 		}
 	}
 	
-	return 0;
+	return true;
 }
 
 // split edges of vertex v, by phasing path
 int phaser::split_by_phasing(int v, const PEEI& in, const PEEI& out, double r1)
 {
+	assert(0);
 	throw runtime_error("split_by_phasing not implemented yet");
 	return 0;
 }
 
 int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& itr_out_edges, double ratio_allele1)
 {
+	assert(0);
 	throw runtime_error("split_by_parsimony not defined yet");
 	return -1;
 }
@@ -377,23 +336,30 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 // split sg into two pairs of sg1/hs1 and sg2/hs2
 int phaser::split_gr()
 {
-	splice_graph tmp_sg1(gr);
-
-	tmp_sg1.vwrt = vwrt1;
-	tmp_sg1.ewrt = ewrt1;
-	MEE x2y_1;
+	//copy MEV(this is edge_discro), v2v
+	gr.vwrt = vwrt1;
+	gr.ewrt = ewrt1;
+	MEE x2y_1;// use x2y to map original edge to new edge
 	MEE y2x_1;
-	pgr1->copy(tmp_sg1, x2y_1, y2x_1);
+	pgr1->copy(gr, x2y_1, y2x_1);
 
-	
-	splice_graph tmp_sg2(gr);
-
-	tmp_sg2.vwrt = vwrt2;
-	tmp_sg2.ewrt = ewrt2;	
+	gr.vwrt = vwrt2;
+	gr.ewrt = ewrt2;	
 	MEE x2y_2;
 	MEE y2x_2;
-	pgr2->copy(tmp_sg2, x2y_2, y2x_2);
-			
+	pgr2->copy(gr, x2y_2, y2x_2);
+
+	if(DEBUG_MODE_ON) 
+	{
+		cout << "pgr1" << pgr1->ewrt.size();
+		for (auto i:pgr1->ewrt) cout << i.second << " " << endl;
+	}
+	if(DEBUG_MODE_ON) 
+	{
+		cout << "pgr2" << pgr2->ewrt.size();
+		for (auto i:pgr2->ewrt) cout << i.second << " " << endl;
+	}
+
 	return 0;
 }
 
@@ -451,41 +417,34 @@ int phaser::refine_allelic_graphs()
 
 int phaser::split_hs_by_rebuild()
 {
-	//FIXME: some AS hs should have been cut off 
+	//FIXME: parallel edges ; using edges() , e2i/i2e, ewrt1/ewrt2
+	//FIXME: some AS hs should have been cut off; TODO:assign_gt did not consider hs
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
 	vector<hyper_set*> hs_pointers{phs1, phs2};
 	for (int i = 0; i < gr_pointers.size(); i++)
 	{
 		splice_graph* pgr = gr_pointers[i];
 		hyper_set* phs = hs_pointers[i];
-		
-		//ewrt to < <int, int>, double> stewrt
-		map<pair<int, int>, double> stewrt;
-		for (auto&& ew: pgr->get_edge_weights())
-		{	
-			edge_descriptor e = ew.first;
-			double w = ew.second;
-			stewrt.insert({{e->source(), e->target()}, w});
-		}
+
+		*phs = sc.hs;
 
 		// phs->add_node_list iff every edge in hs has weight > 0 in allele
 		// new hs count is c or min edge weight in allele
-		for (auto&& nc: sc.hs.nodes)
+		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
-			auto&& nodelist = nc.first;
-			int c = nc.second;
+			vector<int>& edge_idx_list = sc.hs.edges[j];
+			int c = sc.hs.ecnts[j];
 			double bottleneck = c;
 			bool is_removed = false;
-			for(int j = 0; j < nodelist.size() - 1; j++)
+			for(int edge_idx : edge_idx_list)
 			{
-				pair<int, int> st{nodelist[j], nodelist[j+1]};
-				auto k = stewrt.find(st);
-				if(k != stewrt.end()) 
-				{
-					if(k->second < bottleneck) bottleneck = k->second;
+				edge_descriptor e = sc.i2e[edge_idx];
+				try {
+        			double w = pgr->get_edge_weight(e);
+					assert(w > 0);
+					if(w < bottleneck) bottleneck = w;
 				}
-				else
-				{
+				catch (EdgeWeightException ex) {
 					is_removed = true;
 					break;
 				}
@@ -501,13 +460,18 @@ int phaser::split_hs_by_rebuild()
 }
 
 /* 
-*  normalize value of x and y with epsilon. x, y are ratio/counts
-*  @return z = (x + eps) / (x + y + 2 * eps) 
+**  normalize value of x and y with epsilon. x, y are ratio/counts
+**  @return z = (x + eps) / (x + y + 2 * eps) 
+**  @return	<-1, -1> if both input are 0
 */
-double phaser::normalize_epsilon(double x, double y)
+pair<double, double> phaser::normalize_epsilon(double x, double y)
 {
-	x = x / (x + y);
-	y = 1 - x;
+	assert(x >= 0);
+	assert(y >= 0);
+	
+	if(x+y<= 0) return {-1,-1}; // neighbors not splitted yet
+
 	double z = (x + epsilon) / (x + y + 2 * epsilon);
-	return z;
+	assert(z > 0 && z < 1);
+	return {z, 1.0 - z};
 }
