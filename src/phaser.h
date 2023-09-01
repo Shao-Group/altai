@@ -40,10 +40,12 @@ private:
     splice_graph* pgr2;    // pointer to sg of allele2, value to return
     hyper_set* phs1;       // pointer to hs of allele2, value to return
     hyper_set* phs2;       // pointer to hs of allele2, value to return
+    scallop* sc1;
+    scallop* sc2;
 
 private:
     string strategy;                    
-    int epsilon = 1;  
+    double epsilon = 0.01;  
                             
 private:
     int init();
@@ -53,12 +55,14 @@ private:
     int split_hs_by_rebuild();
 
 private:
-    int split_local(int i);
-    int split_global(int i);
-    int split_by_ratio(int v, const PEEI& in, const PEEI& out, double r1);                  // split edges of vertex v, by ratio 
+    pair<double, double> get_as_ratio(int i);
+    vector<int> sort_nodes_by_currecnt_mae(const set<int>& s);
+    bool split_local(int i);
+    bool split_global(int i);
+    bool split_by_ratio(int v, const PEEI& in, const PEEI& out, double r1);                  // split edges of vertex v, by ratio 
     int split_by_phasing(int v, const PEEI& in, const PEEI& out, double r1);                // split edges of vertex v, by phasing path
     int split_by_min_parsimony(int v, const PEEI& in, const PEEI& out, double r1);          // split edges of vertex v, by parsimony
-    double normalize_epsilon(double x, double y);                               // adjustment to allele ratio. new_r1 = (r1+eps) / (r1+r2+2*eps)
+    pair<double, double> normalize_epsilon(double x, double y);                             // adjustment to allele ratio. new_r1 = (r1+eps) / (r1+r2+2*eps). returns<-1, -1> if both input are 0
 
 };
 
