@@ -34,6 +34,9 @@ int phaser::init()
 
 	strategy = "split_by_ratio";
 
+	vwrt1.resize(gr.vwrt.size(), -1);
+	vwrt2.resize(gr.vwrt.size(), -1); 
+
 	for(auto i: gr.ewrt)
 	{
 		edge_descriptor e = i.first;
@@ -47,18 +50,24 @@ int phaser::init()
     ewrtbg2 = 0;
 	for(int i = 0; i < gr.vinf.size(); i++)
 	{
+	{ 
+		// cout << "inside for loop: " << i << gt_str(gr.vinf[i].gt) << endl;
 		if (gr.vinf[i].gt == ALLELE1)
 		{
+			// cout << "inside if1 statement" << endl;
 			PEEI in = gr.in_edges(i);
 			PEEI out = gr.out_edges(i);
 			for (auto e = in.first; e!= in.second; e++)	
 			{
+				assert(gr.ewrt.find(*e) != gr.ewrt.end());
 				ewrt1[*e] = gr.ewrt[*e];
 				ewrt2[*e] = 0;
 				ewrtbg1 += gr.ewrt[*e];
+				// cout << "ale 1 in edge weight" << gr.ewrt[*e] << endl;
 			}
 			for (auto e = out.first; e!= out.second; e++)	
 			{
+				assert(gr.ewrt.find(*e) != gr.ewrt.end());
 				ewrt1[*e] = gr.ewrt[*e];
 				ewrt2[*e] = 0;
 				ewrtbg1 += gr.ewrt[*e];
@@ -67,16 +76,20 @@ int phaser::init()
 		}
 		else if (gr.vinf[i].gt == ALLELE2)
 		{
+			// cout << "inside if2 statement" << endl;
 			PEEI in = gr.in_edges(i);
 			PEEI out = gr.out_edges(i);
 			for (auto e = in.first; e!= in.second; e++)	
 			{
+				assert(gr.ewrt.find(*e) != gr.ewrt.end());
 				ewrt1[*e] = 0;
 				ewrt2[*e] = gr.ewrt[*e];
 				ewrtbg2 += gr.ewrt[*e];
+				// cout << "ale 2 in edge weight" << gr.ewrt[*e] << endl;
 			}
 			for (auto e = out.first; e!= out.second; e++)	
 			{
+				assert(gr.ewrt.find(*e) != gr.ewrt.end());
 				ewrt1[*e] = 0;
 				ewrt2[*e] = gr.ewrt[*e];
 				ewrtbg2 += gr.ewrt[*e];
@@ -87,6 +100,20 @@ int phaser::init()
 	ewrtratiobg1 = normalize_epsilon(ewrtbg1, ewrtbg1);
 	ewrtratiobg2 = 1 - ewrtratiobg1;
 	
+	pair<double, double> r1r2 = normalize_epsilon(ewrtbg1, ewrtbg2);
+	ewrtratiobg1 = r1r2.first;
+	ewrtratiobg2 = r1r2.second;
+	assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
+	assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
+	assert(ewrtratiobg1 >= 0);
+	assert(ewrtratiobg2 >= 0);
+
+	if(DEBUG_MODE_ON && print_phaser_detail)
+	{
+		cout << "phaser ratio bg" << ewrtbg1 << "--" << ewrtbg2 << "--";
+		cout << ewrtratiobg1 << "--" << ewrtratiobg2 << endl;
+	}	
+
 	//TODO: what if only one allele is expressed?
 	// if (countbg1 == 0 || countbg2 == 0){;} {	// return one empty graph}	
 
