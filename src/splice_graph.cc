@@ -94,8 +94,14 @@ vertex_info splice_graph::get_vertex_info(int v) const
 double splice_graph::get_edge_weight(edge_base *e) const
 {
 	MED::const_iterator it = ewrt.find(e);
-	assert(it != ewrt.end());
-	return it->second;
+	if (it != ewrt.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		throw EdgeWeightException();
+	}
 }
 
 edge_info splice_graph::get_edge_info(edge_base *e) const
