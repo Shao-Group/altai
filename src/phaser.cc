@@ -117,7 +117,10 @@ int phaser::init()
 	return 0;
 }
 
-// assign edges to different gt
+/*
+	assign edges to different gt
+ 	TODO: did not consider hs
+*/ 
 int phaser::assign_gt()
 {
 	// get nsnodes, sort by AS ratio
@@ -417,16 +420,28 @@ int phaser::refine_allelic_graphs()
 
 int phaser::split_hs_by_rebuild()
 {
-	//FIXME: parallel edges ; using edges() , e2i/i2e, ewrt1/ewrt2
-	//FIXME: some AS hs should have been cut off; TODO:assign_gt did not consider hs
+	//FIXME: some AS hs should have been cut off;
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
 	vector<hyper_set*> hs_pointers{phs1, phs2};
+	vector<MED*> ewrt_pointers{&ewrt1, &ewrt2}
+
 	for (int i = 0; i < gr_pointers.size(); i++)
 	{
-		splice_graph* pgr = gr_pointers[i];
-		hyper_set* phs = hs_pointers[i];
-
-		*phs = sc.hs;
+		// only two potential alleles 
+		assert (i == 0 || i == 1); 
+		if (i == 0)
+		{
+			splice_graph* pgr = pgr1;
+			hyper_set* phs = phs1;
+			MED& ewrt_cur = ewrt1;
+		}
+		else if (i == 1)
+		{
+			splice_graph* pgr = pgr2;
+			hyper_set* phs = phs2;
+			MED& ewrt_cur = ewrt2;
+		}
+		phs->clear();
 
 		// phs->add_node_list iff every edge in hs has weight > 0 in allele
 		// new hs count is c or min edge weight in allele
@@ -439,9 +454,10 @@ int phaser::split_hs_by_rebuild()
 			for(int edge_idx : edge_idx_list)
 			{
 				edge_descriptor e = sc.i2e[edge_idx];
-				try {
-        			double w = pgr->get_edge_weight(e);
-					assert(w > 0);
+				try 
+				{
+					double w = ewrt_cur[e];
+					assert(w >= 0);
 					if(w < bottleneck) bottleneck = w;
 				}
 				catch (EdgeWeightException ex) {
@@ -449,9 +465,13 @@ int phaser::split_hs_by_rebuild()
 					break;
 				}
 			}
-			if (!is_removed && int(bottleneck) > 0)
+
+			// add hyper_edge if all edges have AS weight > 1
+			// hyper_set will be rebuilt in allelic sc
+			if (!is_removed && int(bottleneck) >= 1)
 			{
-				phs->add_node_list(nodelist, int(bottleneck));
+				allelic_c = int(bottleneck)
+				phs->add_node_list(edge_idx_list, allelic_c); 
 			}
 		}
 	}
