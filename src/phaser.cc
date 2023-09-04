@@ -338,18 +338,19 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 
 // split sg into two pairs of sg1/hs1 and sg2/hs2
 int phaser::split_gr()
-{
+{	
+	x2y_1.clear();// use x2y to map original edge to new edge
+	y2x_1.clear();
+    x2y_2.clear();
+	y2x_2.clear();
+
 	//copy MEV(this is edge_discro), v2v
 	gr.vwrt = vwrt1;
 	gr.ewrt = ewrt1;
-	MEE x2y_1;// use x2y to map original edge to new edge
-	MEE y2x_1;
 	pgr1->copy(gr, x2y_1, y2x_1);
 
 	gr.vwrt = vwrt2;
 	gr.ewrt = ewrt2;	
-	MEE x2y_2;
-	MEE y2x_2;
 	pgr2->copy(gr, x2y_2, y2x_2);
 
 	if(DEBUG_MODE_ON) 

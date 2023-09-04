@@ -36,6 +36,11 @@ private:
     double ewrtratiobg1;        // normalized bg ratio of allele 1
     double ewrtratiobg2;        // normalized bg ratio of allele 2
 
+    MEE x2y_1;// use x2y to map original edge to new edge
+	MEE y2x_1;
+    MEE x2y_2;
+	MEE y2x_2;
+
     splice_graph* pgr1;    // pointer to sg of allele1, value to return
     splice_graph* pgr2;    // pointer to sg of allele2, value to return
     hyper_set* phs1;       // pointer to hs of allele2, value to return
