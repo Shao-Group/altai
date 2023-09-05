@@ -101,8 +101,8 @@ PEB graph_base::edge(int s, int t)
 
 PEB graph_base::edge(edge_descriptor e)
 {
-	assert(edge_descriptor != null_edge);
-	assert(edge_descriptor != nullptr);
+	assert(e != null_edge);
+	assert(e != nullptr);
 	auto it = se.find(e);
 	if (it != se.end())  
 	{
