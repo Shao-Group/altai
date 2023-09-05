@@ -57,7 +57,7 @@ private:
     int assign_gt();
     int split_gr();
     int refine_allelic_graphs();
-    int split_and_transform_hs();
+    int split_hs();
 
 private:
     pair<double, double> get_as_ratio(int i);

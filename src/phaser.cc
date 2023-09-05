@@ -21,7 +21,7 @@ phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* 
 	split_gr();
 	refine_allelic_graphs();
 	// populate_allelic_splice_graph(); // FIXME: should call third scallop constructor to re-use v2v 
-	split_and_transform_hs();
+	split_hs();
 }
 
 // init ewrt1/2, countbg1/2, normalize ratiobg1/2
@@ -423,7 +423,7 @@ int phaser::refine_allelic_graphs()
 **	via keeping hyper_edge whose all edges' weight >= 1 in each allelic graph
 **	TODO: break hyper_edge into pieces if the drop of weight is at AS pos
 */
-int phaser::split_and_transform_hs()
+int phaser::split_hs()
 {
 	for (int i = 0; i < 2; i++)
 	{
