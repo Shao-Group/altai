@@ -33,6 +33,7 @@ public:
 	scallop();
 	// scallop(const scallop &sc, const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false);
 	// plain scallop instance
+	scallop(splice_graph *gr, const hyper_set &hs, bool random_ordering = false);  
 	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false);  
 	// basic allelic scallop instance
 	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false); 

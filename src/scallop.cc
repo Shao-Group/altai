@@ -21,6 +21,24 @@ scallop::scallop()
 {}
 
 // basic allelic scallop instance
+scallop::scallop(splice_graph *g, const hyper_set &h, bool r, bool _keep)
+	: gr(std::move(*g)), hs(h), random_ordering(r), keep_as_nodes(_keep)
+{
+	// TODO: traverse and assign node phasing info if it is determined -- in init stage
+
+	round = 0;
+	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
+	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
+
+	gr.get_edge_indices(i2e, e2i);
+	hs.build(gr, e2i);
+	init_super_edges();
+	init_vertex_map();
+	init_inner_weights();
+	init_nonzeroset(keep_as_nodes);
+}
+
+// basic allelic scallop instance
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
@@ -37,6 +55,7 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	init_inner_weights();
 	init_nonzeroset(keep_as_nodes);
 }
+
 
 // plain scallop instance
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
