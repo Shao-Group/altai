@@ -16,6 +16,7 @@ hyper_set& hyper_set::operator=(const hyper_set &hs)
 	edges = hs.edges;
 	ecnts = hs.ecnts;
 	e2s = hs.e2s;
+	edges_to_transform = hs.edges_to_transform;
 	return *this;
 }
 
@@ -25,6 +26,7 @@ int hyper_set::clear()
 	edges.clear();
 	e2s.clear();
 	ecnts.clear();
+	edges_to_transform.clear();
 	return 0;
 }
 
@@ -57,15 +59,56 @@ int hyper_set::add_edge_list(const MVII& s)
 	edges.clear();
 	e2s.clear();
 	ecnts.clear();
+	edges_to_transform.clear();
 	for(auto i = s.begin(); i != s.end(); ++i)
 	{
 		vector<int> edge_idx_list = i->first;
 		int c = i->second;
-		edges.push_back(edge_idx_list);
+		edges_to_transform.push_back(edge_idx_list);
 		ecnts.push_back(c);
 	}
 	return 0;
 }
+
+/* 
+** transform original-indexed hs to new-indexed hs
+** via original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
+*/
+int hyper_set::transform(const splice_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
+{
+	assert(nodes.size() == 0);  // transform is only compatible w. add_edge_list, where nodes are never used
+	assert(edges.size() == 0);
+	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
+	
+	for(VII::iterator it = edges_to_transform.begin(); it != edges_to_transform.end(); it++)
+	{
+		const vector<int> &vv = *it;
+		vector<int> ve;
+
+		for(int k = 0; k < vv.size(); k++)
+		{
+			edge_descriptor e_old = i2e_old[k];				  // index ---> original edge_descriptor
+			
+			MEE::iterator x2yit  = x2y.find(e_old);			  // original edges descriptor ---> new edge descriptor
+			assert(x2yit != x2y.end());
+			edge_descriptor e_new = x2yit->second; 
+			assert(pgr->edge(e_new).second);				  // e_new exists in pgr
+
+			MEI::iterator e2iit = e2i_new.find(e_new);		  // new edge descriptor ---> new index
+			assert(e2iit != e2i_new.end());
+			int i_new = e2iit->second;
+			ve.push_back(i_new);
+		}
+		assert(vv.size() == ve.size());
+		edges.push_back(ve);
+	}
+
+	assert(edges.size() == edges_to_transform.size());
+	assert(edges.size() == ecnts.size());
+	edges_to_transform.clear();
+	return 0;
+}
+
 int hyper_set::build(directed_graph &gr, MEI& e2i)
 {
 	build_edges(gr, e2i);

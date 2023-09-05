@@ -32,6 +32,7 @@ public:
 public:
 	MVII nodes;			// hyper-edges using list-of-nodes
 	VVI edges;			// hyper-edges using list-of-edges
+	VVI edges_to_transform;			// hyper-edges using list-of-edges, not transformed to allelic graph yet
 	vector<int> ecnts;	// counts for edges
 	MISI e2s;			// index: from edge to hyper-edges
 
@@ -52,6 +53,8 @@ public:
 
 	// for reconstructing hs (when splitting)
 	int add_edge_list(const MVII& s);
+	int transform(const splice_graph* pgr, const VE& original_i2e, const MEE& x2y, const MEI& new_e2i);
+
 public:
 	int replace(int x, int e);
 	int replace(int x, int y, int e);

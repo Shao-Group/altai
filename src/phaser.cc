@@ -479,6 +479,17 @@ int phaser::split_hs()
 	return 0;
 }
 
+/*
+** transforms edge_descriptor and other pointers from sc0/gr0/hs0 to new pointers in sc1/sc2, using x2y
+** objects transformed: sc, hs
+*/
+int phaser::allelic_transform(splice_graph* pgr, hyper_set* phs, MEE& x2y)
+{
+	//FIXME:	// transform sc
+	MEI e2i = ......;
+	phs->transform(pgr, sc.i2e, x2y, psc->e2i);
+}
+
 /* 
 **  normalize value of x and y with epsilon. x, y are ratio/counts
 **  @return z = (x + eps) / (x + y + 2 * eps) 
