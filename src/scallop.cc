@@ -20,6 +20,7 @@ See LICENSE for licensing.
 scallop::scallop()
 {}
 
+// basic allelic scallop instance
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
@@ -37,6 +38,7 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	init_nonzeroset(keep_as_nodes);
 }
 
+// plain scallop instance
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(false)
 {

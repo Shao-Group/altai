@@ -33,20 +33,20 @@ private:
     double vwrtbg2;        // sum bg weights of allele 2
     double ewrtbg1;        // normalized bg ratio of allele 1
     double ewrtbg2;        // normalized bg ratio of allele 2
-    double ewrtratiobg1;        // normalized bg ratio of allele 1
-    double ewrtratiobg2;        // normalized bg ratio of allele 2
+    double ewrtratiobg1;   // normalized bg ratio of allele 1
+    double ewrtratiobg2;   // normalized bg ratio of allele 2
 
-    MEE x2y_1;// use x2y to map original edge to new edge
-	MEE y2x_1;
-    MEE x2y_2;
+    MEE x2y_1;             // use x2y to map original edge to new edge, in allele 1
+	MEE y2x_1;             // use y2x to map new edge to original edge
+    MEE x2y_2;             // use x2y to map original edge to new edge, in allele 2
 	MEE y2x_2;
 
     splice_graph* pgr1;    // pointer to sg of allele1, value to return
     splice_graph* pgr2;    // pointer to sg of allele2, value to return
     hyper_set* phs1;       // pointer to hs of allele2, value to return
     hyper_set* phs2;       // pointer to hs of allele2, value to return
-    scallop* sc1;
-    scallop* sc2;
+    scallop* sc1;          // pointer to sc of allele1, value to return
+    scallop* sc2;          // pointer to sc of allele2, value to return
 
 private:
     string strategy;                    

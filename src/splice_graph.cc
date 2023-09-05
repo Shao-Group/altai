@@ -36,6 +36,10 @@ splice_graph::splice_graph(const splice_graph &gr)
 	copy(gr, x2y, y2x);
 }
 
+/*
+	x2y: original to new
+	y2x: new to original
+*/
 int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 {
 	clear();
