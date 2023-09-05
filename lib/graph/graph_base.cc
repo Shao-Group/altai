@@ -99,6 +99,18 @@ PEB graph_base::edge(int s, int t)
 	return PEB(null_edge, false);
 }
 
+PEB graph_base::edge(edge_descriptor e)
+{
+	assert(edge_descriptor != null_edge);
+	assert(edge_descriptor != nullptr);
+	auto it = se.find(e);
+	if (it != se.end())  
+	{
+		return PEB(*it, true);
+	}
+	return PEB(null_edge, false);
+}
+
 vector<edge_descriptor> graph_base::edges(int s, int t)
 {
 	vector<edge_descriptor> v;
