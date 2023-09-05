@@ -71,8 +71,7 @@ int hyper_set::add_edge_list(const MVII& s)
 }
 
 /* 
-** transform original-indexed hs to new-indexed hs
-** via original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
+**  transform original-indexed hs to new-indexed hs
 */
 int hyper_set::transform(const splice_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
 {
@@ -80,6 +79,7 @@ int hyper_set::transform(const splice_graph* pgr, const VE& i2e_old, const MEE& 
 	assert(edges.size() == 0);
 	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
 	
+	// original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
 	for(VII::iterator it = edges_to_transform.begin(); it != edges_to_transform.end(); it++)
 	{
 		const vector<int> &vv = *it;
