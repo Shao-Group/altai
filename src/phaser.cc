@@ -20,9 +20,8 @@ phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* 
 	assign_gt();
 	split_gr();
 	refine_allelic_graphs();
-	split_hs_by_rebuild();
-	// refine_hyper_sets(); //FIXME:TODO:
 	// populate_allelic_splice_graph(); // FIXME: should call third scallop constructor to re-use v2v 
+	split_and_transform_hs();
 }
 
 // init ewrt1/2, countbg1/2, normalize ratiobg1/2
@@ -419,14 +418,14 @@ int phaser::refine_allelic_graphs()
 	return 0;
 }
 
-int phaser::split_hs_by_rebuild()
+/*
+**	split hs0 to two allelic hs1/hs2
+**	via keeping hyper_edge whose all edges' weight >= 1 in each allelic graph
+**	TODO: break hyper_edge into pieces if the drop of weight is at AS pos
+*/
+int phaser::split_and_transform_hs()
 {
-	//FIXME: some AS hs should have been cut off;
-	vector<splice_graph*> gr_pointers{pgr1, pgr2};
-	vector<hyper_set*> hs_pointers{phs1, phs2};
-	vector<MED*> ewrt_pointers{&ewrt1, &ewrt2}
-
-	for (int i = 0; i < gr_pointers.size(); i++)
+	for (int i = 0; i < 2; i++)
 	{
 		// only two potential alleles 
 		assert (i == 0 || i == 1); 
@@ -442,10 +441,9 @@ int phaser::split_hs_by_rebuild()
 			hyper_set* phs = phs2;
 			MED& ewrt_cur = ewrt2;
 		}
-		phs->clear();
-
-		// phs->add_node_list iff every edge in hs has weight > 0 in allele
-		// new hs count is c or min edge weight in allele
+		
+		// copy hs0 to hs1/hs2; remove undesired edges
+		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
 			vector<int>& edge_idx_list = sc.hs.edges[j];
@@ -461,22 +459,23 @@ int phaser::split_hs_by_rebuild()
 					assert(w >= 0);
 					if(w < bottleneck) bottleneck = w;
 				}
-				catch (EdgeWeightException ex) {
+				catch (EdgeWeightException ex) 
+				{
 					is_removed = true;
 					break;
 				}
 			}
-
-			// add hyper_edge if all edges have AS weight > 1
-			// hyper_set will be rebuilt in allelic sc
+			// add hyper_edge if all edges have AS weight > 1 (hs will be transformed)
 			if (!is_removed && int(bottleneck) >= 1)
 			{
-				allelic_c = int(bottleneck)
-				phs->add_node_list(edge_idx_list, allelic_c); 
+				int allelic_c = int(bottleneck);
+				assert(edges_w_count.find(edge_idx_list) == edges_w_count.end());
+				edges_w_count.insert({edge_idx_list, allelic_c})
 			}
 		}
+		phs->clear();
+		phs->add_edge_list(edges_w_count);
 	}
-	
 	return 0;
 }
 

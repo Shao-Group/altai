@@ -6,6 +6,7 @@ See LICENSE for licensing.
 
 #include "hyper_set.h"
 #include "config.h"
+#include "splice_graph.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -48,6 +49,23 @@ int hyper_set::add_node_list(const vector<int> &s, int c)
 	return 0;
 }
 
+// compatible: hyper_set::build_index()
+// NOT compatible: hyper_set::build(), hyper_set::build_edges()
+int hyper_set::add_edge_list(const MVII& s)
+{
+	nodes.clear();
+	edges.clear();
+	e2s.clear();
+	ecnts.clear();
+	for(auto i = s.begin(); i != s.end(); ++i)
+	{
+		vector<int> edge_idx_list = i->first;
+		int c = i->second;
+		edges.push_back(edge_idx_list);
+		ecnts.push_back(c);
+	}
+	return 0;
+}
 int hyper_set::build(directed_graph &gr, MEI& e2i)
 {
 	build_edges(gr, e2i);
@@ -57,6 +75,7 @@ int hyper_set::build(directed_graph &gr, MEI& e2i)
 
 int hyper_set::build_edges(directed_graph &gr, MEI& e2i)
 {
+	assert(edges.size() == 0);
 	edges.clear();
 	for(MVII::iterator it = nodes.begin(); it != nodes.end(); it++)
 	{

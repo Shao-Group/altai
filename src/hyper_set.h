@@ -50,6 +50,8 @@ public:
 	MPII get_routes(int x, directed_graph &gr, MEI &e2i);
 	int print();
 
+	// for reconstructing hs (when splitting)
+	int add_edge_list(const MVII& s);
 public:
 	int replace(int x, int e);
 	int replace(int x, int y, int e);
