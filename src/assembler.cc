@@ -276,48 +276,49 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				
 				// split graph
 				// FIXME: eventually should decompose all graphs incld. non-as splice graphs
-				if(sc.asnonzeroset.size() != 0)
-				{
-					// assemble alleles in seperate splice graphs/ scallops
-					splice_graph gr1, gr2;
-					hyper_set hs1, hs2;
-					scallop sc1, sc2;
-					phaser ph(sc, &gr1, &hs1, &gr2, &hs2, &sc1, &sc2);
-
-					// scallop sc1(gr1, hs1, r == 0 ? false : true, false);
-					sc1.assemble(is_allelic);  
-					// scallop sc2(gr2, hs2, r == 0 ? false : true, false);
-					sc2.assemble(is_allelic);  
-					
-					// collect transcripts
-					if(verbose >= 2)
-					{
-						printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());
-						for(int i = 0; i < sc1.trsts.size(); i++) sc1.trsts[i].write(cout);
-						printf("assembly with r = %d, total %lu transcripts:\n", r, sc2.trsts.size());
-						for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
-					}
-
-					//FIXME:TODO: did not filter
-					trsts.insert(trsts.end(), sc1.trsts.begin(), sc1.trsts.end());
-					trsts.insert(trsts.end(), sc2.trsts.begin(), sc2.trsts.end());
-					continue;
-
-					for(int i = 0; i < sc.trsts.size(); i++)
-					{
-						ts1.add(sc1.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-						ts1.add(sc2.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-					}
-					for(int i = 0; i < sc.non_full_trsts.size(); i++)
-					{
-						ts2.add(sc1.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-						ts2.add(sc2.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-					}
-				}
-				else
+				if(sc.asnonzeroset.size() <= 0)
 				{
 					cerr << "did not handle non-AS graphs yet" << endl;
 					throw BundleError();
+				}
+				
+				// assemble alleles in seperate splice graphs/ scallops
+				splice_graph gr1, gr2;
+				hyper_set hs1, hs2;
+				scallop sc1, sc2;
+				phaser ph(sc, &gr1, &hs1, &gr2, &hs2, &sc1, &sc2);
+				sc1.assemble(is_allelic);  
+				sc2.assemble(is_allelic);  
+				
+				// collect transcripts
+				if(verbose >= 2)
+				{
+					printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());
+					for(int i = 0; i < sc1.trsts.size(); i++) sc1.trsts[i].write(cout);
+					printf("assembly with r = %d, total %lu transcripts:\n", r, sc2.trsts.size());
+					for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
+				}
+
+				//FIXME:TODO: did not filter
+				trsts.insert(trsts.end(), sc1.trsts.begin(), sc1.trsts.end());
+				trsts.insert(trsts.end(), sc2.trsts.begin(), sc2.trsts.end());
+				continue;
+
+				for(int i = 0; i < sc1.trsts.size(); i++)
+				{
+					ts1.add(sc1.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
+				for(int i = 0; i < sc1.non_full_trsts.size(); i++)
+				{
+					ts2.add(sc1.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
+				for(int i = 0; i < sc2.trsts.size(); i++)
+				{
+					ts1.add(sc2.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				}
+				for(int i = 0; i < sc2.non_full_trsts.size(); i++)
+				{
+					ts2.add(sc2.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 				}
 			}
 		}
