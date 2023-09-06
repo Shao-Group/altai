@@ -20,8 +20,8 @@ phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* 
 	assign_gt();
 	split_gr();
 	refine_allelic_graphs();
-	// populate_allelic_splice_graph(); // FIXME: should call third scallop constructor to re-use v2v 
 	split_hs();
+	populate_allelic_scallop(); 
 }
 
 // init ewrt1/2, countbg1/2, normalize ratiobg1/2
@@ -480,15 +480,48 @@ int phaser::split_hs()
 }
 
 /*
-** transforms edge_descriptor and other pointers from sc0/gr0/hs0 to new pointers in sc1/sc2, using x2y
+** populate & build sc1, sc2; transform hs1, hs2;
+** at the end, sc1, sc2 are ready to assemble
+*/
+int phaser::populate_allelic_scallop()
+{
+	for (int i = 0; i < 2; i++)
+	{
+		// only two potential alleles 
+		assert (i == 0 || i == 1); 
+		if (i == 0)
+		{
+			splice_graph* pgr = pgr1;
+			hyper_set* phs = phs1;
+			scallop* psc = sc1;
+			// MED& ewrt_cur = ewrt1;
+			MEE& x2y = x2y_1;
+		}
+		else if (i == 1)
+		{
+			splice_graph* pgr = pgr2;
+			hyper_set* phs = phs2;
+			scallop* psc = sc2;
+			// MED& ewrt_cur = ewrt2;
+			MEE& x2y = x2y_2;
+		}
+		//FIXME: this sc constructor will use *move* constructor of gr
+		//FIXME: potential memory leak?
+		*psc = scallop(splice_graph&& (*pgr), const hyper_set & (*phs), bool r = true, bool keep_as = false, const scallop &sc); 
+		allelic_transform(psc, pgr, x2y);
+	}
+	return 0;
+}
+
+/*
+** transforms edge_descriptor and other pointers from sc0/hs0 to new pointers, using x2y
 ** objects transformed: sc, hs
 */
-int phaser::allelic_transform(splice_graph* pgr, hyper_set* phs, MEE& x2y)
+int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 {
-	//FIXME:	// transform sc
-	MEI e2i = ......;
-	phs->transform(pgr, sc.i2e, x2y, psc->e2i);
+	psc->transform(pgr, sc.i2e, x2y); // hs.transform called in sc
 }
+
 
 /* 
 **  normalize value of x and y with epsilon. x, y are ratio/counts

@@ -19,7 +19,6 @@ See LICENSE for licensing.
 class phaser
 {
 public:
-	phaser(scallop& sc, splice_graph* gr1, hyper_set* hs1, splice_graph* gr2, hyper_set* hs2);
 	phaser(scallop& sc, splice_graph* gr1, hyper_set* hs1, splice_graph* gr2, hyper_set* hs2, scallop* sc1, scallop* sc2);
 
 private:
@@ -59,7 +58,8 @@ private:
     int split_gr();
     int refine_allelic_graphs();
     int split_hs();
-    int allelic_transform(splice_graph* pgr, hyper_set* phs, MEE& x2y);
+    int populate_allelic_scallop();
+    int allelic_transform(scallop* psc, splice_graph* pgr, hyper_set* phs, MEE& x2y);
 
 private:
     pair<double, double> get_as_ratio(int i);

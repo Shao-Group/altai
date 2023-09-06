@@ -31,13 +31,8 @@ class scallop
 {
 public:
 	scallop();
-	// scallop(const scallop &sc, const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false);
-	// plain scallop instance
-	scallop(splice_graph *gr, const hyper_set &hs, bool random_ordering = false);  
-	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false);  
-	// basic allelic scallop instance
-	scallop(const splice_graph &gr, const hyper_set &hs, bool random_ordering = false, bool keep_as_nodes = false); 
-
+	scallop(const splice_graph &gr, const hyper_set &hs, bool r = false, bool keep_as = true); // sc w. both alleles 
+	scallop(splice_graph && gr, const hyper_set &hs, bool r = false, bool keep_as = false, const scallop &sc); // sc for each allele
 	virtual ~scallop();
 
 public:
@@ -69,6 +64,8 @@ private:
 	int init_vertex_astype();
 	int init_nonzeroset(bool keep_as_nodes);
 
+	// allelic transform
+	int transform(splice_graph* pgr, VE& old_i2e, MEE& x2y)
 
 	// resolve iteratively
 	bool resolve_trivial_vertex(int type, double jump_ratio);

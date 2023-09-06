@@ -20,29 +20,55 @@ See LICENSE for licensing.
 scallop::scallop()
 {}
 
-// basic allelic scallop instance
-scallop::scallop(splice_graph *g, const hyper_set &h, bool r, bool _keep)
-	: gr(std::move(*g)), hs(h), random_ordering(r), keep_as_nodes(_keep)
+/*
+** sc1/sc2 for each deconvoluted allele, based on sc0;
+** re-use v2v
+** transform mev, hs
+** rebuild e2i, i2e
+*/
+scallop::scallop(splice_graph && _gr, const hyper_set &_hs, bool r = false, bool k = false, const scallop &sc)
+	: gr(_gr), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
-	// TODO: traverse and assign node phasing info if it is determined -- in init stage
-
 	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
-	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
-
 	gr.get_edge_indices(i2e, e2i);
-	hs.build(gr, e2i);
-	init_super_edges();
-	init_vertex_map();
-	init_inner_weights();
+	// hs.build_index();						// see transform();
+	mev = sc.mev;  								// init_super_edges(); // will be transformed
+	v2v = sc.v2v; 								// init_vertex_map();
+	init_inner_weights(); 						// FIXME:already set?
 	init_nonzeroset(keep_as_nodes);
 }
 
-// basic allelic scallop instance
+// transform mev, hs
+int scallop::transform(splice_graph* pgr, VE& i2e_old, MEE& x2y)
+{
+	MEV mev2;
+	for(auto i: mev)
+	{
+		edge_descriptor e1 = i.first;
+		vector<int> vertices_in_super_edge = i.second;
+		// transform edge
+		MEE::iterator e2_iterator = x2y.find(e1);
+		assert(e2_iterator != x2y.end()); 
+		edge_descriptor e2 = e2_iterator->second;
+		assert(e2 != e1);
+		// add edge
+		assert(mev2.find(e2) == mev2.end());
+		mev2.insert({e2, vertices_in_super_edge});
+	}
+	mev = mev2;
+
+	hs.transform(pgr, i2e_old, x2y, e2i);
+	hs.build_index();
+}
+
+
+/*
+**	sc0 w. both alleles
+*/ 
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
-	// TODO: traverse and assign node phasing info if it is determined -- in init stage
+	//TODO? traverse and assign node phasing info if it is determined -- in init stage
 
 	round = 0;
 	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
@@ -58,6 +84,7 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
 
 
 // plain scallop instance
+/*
 scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(false)
 {
@@ -72,6 +99,7 @@ scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
 	init_inner_weights();
 	init_nonzeroset(keep_as_nodes);
 }
+*/
 
 scallop::~scallop()
 {
