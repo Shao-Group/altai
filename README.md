@@ -100,14 +100,3 @@ bcftools sort input.vcf > output.vcf
 ```
 
 The reconstructed allele-specific transcripts shall be written as gvf format into `output-prefix.gvf`. Their sequences will be written as fasta format into `output-prefix.fa`. Note that **`altai` only outputs allele-specific transcripts**. If you want to have a complete allele-specific transcriptome with both allele-specific transcripts (two alleles different) and non-allele-specific transcripts (both alleles same), run the pipline below.
-
-## Assemble an allele-specific transcriptome 
-
-This is a complete pipeline of how to assemble an allele-specific transcriptome using Altai and a non-allele-specific transcript assembler (e.g. [Scallop](https://github.com/Kingsford-Group/scallop)).
-
-## Identify allele-specifically differentially expressed  transcripts
-
-After assembling an allele-specific transcriptome, users can obtain a `gvf` file and a `fasta` file. This 
-
-although `altai` and `scallop` report a coverage value for every transcript, 
-
