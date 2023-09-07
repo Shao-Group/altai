@@ -99,4 +99,4 @@ Make sure the vcf file is also sorted (with contigs in the same order as the bam
 bcftools sort input.vcf > output.vcf
 ```
 
-The reconstructed allele-specific transcripts shall be written as gvf format into `output-prefix.gvf`. Their sequences will be written as fasta format into `output-prefix.fa`. Note that **`altai` only outputs allele-specific transcripts**. If you want to have a complete allele-specific transcriptome with both allele-specific transcripts (two alleles different) and non-allele-specific transcripts (both alleles same), run the pipline below.
+The reconstructed allele-specific transcripts shall be written as gvf format into `output-prefix.gvf`. Their sequences will be written as fasta format into `output-prefix.fa`. 
