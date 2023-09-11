@@ -429,24 +429,16 @@ int phaser::split_hs()
 	{
 		// only two potential alleles 
 		assert (i == 0 || i == 1); 
-		if (i == 0)
-		{
-			splice_graph* pgr = pgr1;
-			hyper_set* phs = phs1;
-			MED& ewrt_cur = ewrt1;
-		}
-		else if (i == 1)
-		{
-			splice_graph* pgr = pgr2;
-			hyper_set* phs = phs2;
-			MED& ewrt_cur = ewrt2;
-		}
+		
+		splice_graph* pgr      = (i == 0)? pgr1  : pgr2;
+		hyper_set*    phs      = (i == 0)? phs1  : phs2;
+		MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
 		
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
-			vector<int>& edge_idx_list = sc.hs.edges[j];
+			const vector<int>& edge_idx_list = sc.hs.edges[j];
 			int c = sc.hs.ecnts[j];
 			double bottleneck = c;
 			bool is_removed = false;
@@ -470,7 +462,7 @@ int phaser::split_hs()
 			{
 				int allelic_c = int(bottleneck);
 				assert(edges_w_count.find(edge_idx_list) == edges_w_count.end());
-				edges_w_count.insert({edge_idx_list, allelic_c})
+				edges_w_count.insert({edge_idx_list, allelic_c});
 			}
 		}
 		phs->clear();
@@ -489,22 +481,13 @@ int phaser::populate_allelic_scallop()
 	{
 		// only two potential alleles 
 		assert (i == 0 || i == 1); 
-		if (i == 0)
-		{
-			splice_graph* pgr = pgr1;
-			hyper_set* phs = phs1;
-			scallop* psc = sc1;
-			// MED& ewrt_cur = ewrt1;
-			MEE& x2y = x2y_1;
-		}
-		else if (i == 1)
-		{
-			splice_graph* pgr = pgr2;
-			hyper_set* phs = phs2;
-			scallop* psc = sc2;
-			// MED& ewrt_cur = ewrt2;
-			MEE& x2y = x2y_2;
-		}
+		splice_graph* pgr = (i == 0)? pgr1 : pgr2;
+		hyper_set*    phs = (i == 0)? phs1 : phs2;
+		scallop*      psc = (i == 0)? sc1  : sc2;
+		MEE&          x2y = (i == 0)? x2y_1: x2y_2;
+		// MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
+
+	
 		//FIXME: this sc constructor will use *move* constructor of gr
 		//FIXME: potential memory leak?
 		*psc = scallop(splice_graph&& (*pgr), const hyper_set & (*phs), bool r = true, bool keep_as = false, const scallop &sc); 

@@ -53,7 +53,7 @@ public:
 
 	// for reconstructing hs (when splitting)
 	int add_edge_list(const MVII& s);
-	int transform(const splice_graph* pgr, const VE& original_i2e, const MEE& x2y, const MEI& new_e2i);
+	int transform(const directed_graph* pgr, const VE& original_i2e, const MEE& x2y, const MEI& new_e2i);
 
 public:
 	int replace(int x, int e);

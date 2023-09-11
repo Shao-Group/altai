@@ -59,7 +59,7 @@ private:
     int refine_allelic_graphs();
     int split_hs();
     int populate_allelic_scallop();
-    int allelic_transform(scallop* psc, splice_graph* pgr, hyper_set* phs, MEE& x2y);
+    int allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y);
 
 private:
     pair<double, double> get_as_ratio(int i);

@@ -6,7 +6,6 @@ See LICENSE for licensing.
 
 #include "hyper_set.h"
 #include "config.h"
-#include "splice_graph.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -73,28 +72,28 @@ int hyper_set::add_edge_list(const MVII& s)
 /* 
 **  transform original-indexed hs to new-indexed hs
 */
-int hyper_set::transform(const splice_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
+int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
 {
 	assert(nodes.size() == 0);  // transform is only compatible w. add_edge_list, where nodes are never used
 	assert(edges.size() == 0);
 	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
 	
 	// original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
-	for(VII::iterator it = edges_to_transform.begin(); it != edges_to_transform.end(); it++)
+	for(VVI::iterator it = edges_to_transform.begin(); it != edges_to_transform.end(); ++it)
 	{
 		const vector<int> &vv = *it;
 		vector<int> ve;
 
 		for(int k = 0; k < vv.size(); k++)
 		{
-			edge_descriptor e_old = i2e_old[k];				  // index ---> original edge_descriptor
+			edge_descriptor e_old = i2e_old[k];				// index ---> original edge_descriptor
 			
-			MEE::iterator x2yit  = x2y.find(e_old);			  // original edges descriptor ---> new edge descriptor
+			auto x2yit  = x2y.find(e_old);			  		// original edges descriptor ---> new edge descriptor
 			assert(x2yit != x2y.end());
 			edge_descriptor e_new = x2yit->second; 
-			assert(pgr->edge(e_new).second);				  // e_new exists in pgr
+			assert(pgr->edge(e_new).second);				// e_new exists in pgr
 
-			MEI::iterator e2iit = e2i_new.find(e_new);		  // new edge descriptor ---> new index
+			auto e2iit = e2i_new.find(e_new);		  		// new edge descriptor ---> new index
 			assert(e2iit != e2i_new.end());
 			int i_new = e2iit->second;
 			ve.push_back(i_new);
