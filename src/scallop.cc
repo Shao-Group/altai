@@ -78,6 +78,7 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 
 	hs.transform(pgr, i2e_old, x2y, e2i);
 	hs.build_index();
+	return 0;
 }
 
 
@@ -558,7 +559,7 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 {
 	int root = -1;
 	double ratio = DBL_MAX;
-	int se = -1;
+	// int se = -1;
 	bool flag = false;
 	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
 	if(random_ordering) random_shuffle(vv.begin(), vv.end());
@@ -575,7 +576,7 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 		if(gr.in_degree(i) >= 2 && gr.out_degree(i) >= 2) continue;
 		if(classify_trivial_vertex(i, true) != type) continue;
 
-		int e;
+		// int e;
 		double r = compute_balance_ratio(i);
 
 		if(r < 1.02)
@@ -592,7 +593,7 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 
 		root = i;
 		ratio = r;
-		se = e;
+		// se = e;
 
 		if(ratio < jump_ratio) break;
 		if(random_ordering == true) break;
@@ -1478,7 +1479,6 @@ int scallop::collect_path(int e)
 
 int scallop::greedy_decompose()
 {
-	throw runtime_error("scallop::greedy_decompose need to be AS compatible");
 	if(gr.num_edges() == 0) return 0;
 
 	for(int i = 1; i < gr.num_vertices() - 1; i++) balance_vertex(i);

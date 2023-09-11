@@ -285,8 +285,12 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				// assemble alleles in seperate splice graphs/ scallops
 				splice_graph gr1, gr2;
 				hyper_set hs1, hs2;
-				scallop sc1, sc2;
-				phaser ph(sc, &gr1, &hs1, &gr2, &hs2, &sc1, &sc2);
+				scallop* psc1 = nullptr; 
+				scallop* psc2 = nullptr;
+				phaser ph(sc, &gr1, &hs1, &gr2, &hs2, psc1, psc2);
+				
+				scallop& sc1 = *psc1;
+				scallop& sc2 = *psc2;
 				sc1.assemble(is_allelic);  
 				sc2.assemble(is_allelic);  
 				

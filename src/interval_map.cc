@@ -161,7 +161,7 @@ int test_split_interval_map()
 		it = imap.find(ROI(i, i+1));
 		if(it == imap.end())
 		{
-			printf("find %d: does not exist\n", i,  i+1);
+			printf("find %d-%d: does not exist\n", i,  i+1);
 		}
 		else
 		{

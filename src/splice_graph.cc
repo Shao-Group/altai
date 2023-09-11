@@ -37,8 +37,10 @@ splice_graph::splice_graph(const splice_graph &gr)
 }
 
 /*
-	x2y: original to new
-	y2x: new to original
+*	x2y: original to new
+*	y2x: new to original
+*	warning: This 3-argument copy() hides overloaded virtual function graph_base::copy(graph_base&)
+*	when copy(1 argument) is needed, graph_base::copy will be called and may cause undesired behavior
 */
 int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 {

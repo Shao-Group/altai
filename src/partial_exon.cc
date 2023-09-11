@@ -43,6 +43,7 @@ int partial_exon::assign_as_cov(double _ave, double _max, double _dev)
 	ave = _ave;
 	max = _max;
 	dev = _dev;
+	return 0;
 }
 
 bool partial_exon::operator < (partial_exon pe)

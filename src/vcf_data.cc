@@ -24,8 +24,8 @@ const char* gt_str(genotype gt)
 	// if(!(gt >= 0 && gt <= 3)) cout << "\n" << "wired gt value " << gt << endl;
 	assert(gt >= 0 && gt <= 3);
 	size_t i = gt;
-	vector<char*>ss {"UNPHASED", "ALLELE1", "ALLELE2", "NONSPECIFIC"};
-	return ss[gt];
+	vector<const char*>ss {"UNPHASED", "ALLELE1", "ALLELE2", "NONSPECIFIC"};
+	return ss[i];
 }
 
 bool gt_conflict(genotype g1, genotype g2) 

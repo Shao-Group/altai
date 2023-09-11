@@ -24,12 +24,12 @@ See LICENSE for licensing.
 #endif
 
 router::router(int r, splice_graph &g, MEI &ei, VE &ie)
-	:root(r), gr(g), e2i(ei), i2e(ie), degree(-1), type(-1)
+	:root(r), gr(g), e2i(ei), i2e(ie), type(-1), degree(-1)
 {
 }
 
 router::router(int r, splice_graph &g, MEI &ei, VE &ie, const MPII &mpi)
-	:root(r), gr(g), e2i(ei), i2e(ie), degree(-1), type(-1)
+	:root(r), gr(g), e2i(ei), i2e(ie), type(-1), degree(-1)
 {
 	routes.clear();
 	counts.clear();

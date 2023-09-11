@@ -429,8 +429,6 @@ int phaser::split_hs()
 	{
 		// only two potential alleles 
 		assert (i == 0 || i == 1); 
-		
-		splice_graph* pgr      = (i == 0)? pgr1  : pgr2;
 		hyper_set*    phs      = (i == 0)? phs1  : phs2;
 		MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
 		
@@ -490,10 +488,9 @@ int phaser::populate_allelic_scallop()
 	
 		//FIXME: this sc constructor will use *move* constructor of gr
 		//FIXME: potential memory leak?
-		// scallop s1 (*pgr, *phs, sc, true, false);
-		scallop s2 (pgr,  *phs, sc, true, false); 
-		// psc = &s1; //FIXME:
-		// scallop test = scallop(splice_graph* pgr, const scallop &sc, const hyper_set & (*phs), bool r = true, bool keep_as = false); 
+		scallop ale_sc (pgr,  *phs, sc, true, false); 
+		assert (psc == nullptr);
+		psc = &ale_sc;
 		allelic_transform(psc, pgr, x2y);
 	}
 	return 0;
@@ -506,6 +503,7 @@ int phaser::populate_allelic_scallop()
 int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 {
 	psc->transform(pgr, sc.i2e, x2y); // hs.transform called in sc
+	return 0;
 }
 
 

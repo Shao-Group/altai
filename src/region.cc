@@ -23,7 +23,7 @@ region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype 
 }
 
 region::region(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt, const split_interval_map *_mmap, const split_interval_map *_imap)
-	:lpos(_lpos), rpos(_rpos), mmap(_mmap), imap(_imap), ltype(_ltype), rtype(_rtype), gt(_gt)
+	:lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype), gt(_gt), mmap(_mmap), imap(_imap)
 {
 	ave = 0;
 	max = 0;
@@ -42,6 +42,7 @@ int region::rebuild(const split_interval_map *_mmap)
 	build_join_interval_map();
 	smooth_join_interval_map();
 	build_partial_exons();
+	return 0;
 }
 
 
@@ -77,6 +78,7 @@ int region::assign_as_cov(int _ave, int _dev, int _max)
 	ave = _ave;
 	dev = _dev;
 	max = _max;
+	return 0;
 }
 
 int region::smooth_join_interval_map()

@@ -28,7 +28,7 @@ typedef pair<edge_descriptor, edge_info> PEIF;
 
 class EdgeWeightException : public std::exception {
     public:
-char * what () {return "Edge weight not exists";}
+		const char * what () {return "Edge weight not exists";}
 };
 
 class splice_graph : public directed_graph

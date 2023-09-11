@@ -30,6 +30,7 @@ vector<string> split(const string s, const string sep)
 		s2.erase(0, delim_pos + sep.length()); //also remove sep
 	}
 	v.push_back(s);
+	return v;
 }
 
 size_t string_hash(const std::string& str)
