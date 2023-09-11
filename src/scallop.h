@@ -37,6 +37,7 @@ public:
 
 public:
 	int assemble(bool is_allelic);
+	int transform(splice_graph* pgr, const VE& old_i2e, const MEE& x2y);  // allelic transform
 
 public:
 	splice_graph gr;					// splice graph
@@ -63,9 +64,6 @@ private:
 	int init_inner_weights();
 	int init_vertex_astype();
 	int init_nonzeroset(bool keep_as_nodes);
-
-	// allelic transform
-	int transform(splice_graph* pgr, VE& old_i2e, MEE& x2y)
 
 	// resolve iteratively
 	bool resolve_trivial_vertex(int type, double jump_ratio);
