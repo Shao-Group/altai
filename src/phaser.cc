@@ -485,9 +485,6 @@ int phaser::populate_allelic_scallop()
 		MEE&          x2y = (i == 0)? x2y_1: x2y_2;
 		// MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
 
-	
-		//FIXME: this sc constructor will use *move* constructor of gr
-		//FIXME: potential memory leak?
 		scallop ale_sc (pgr,  *phs, sc, true, false); 
 		assert (psc == nullptr);
 		psc = &ale_sc;
@@ -502,7 +499,27 @@ int phaser::populate_allelic_scallop()
 */
 int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 {
-	psc->transform(pgr, sc.i2e, x2y); // hs.transform called in sc
+	psc->transform(pgr, sc.i2e, x2y);  // hs.transform called in sc
+
+	if(DEBUG_MODE_ON)
+	{
+		set<edge_descriptor> sc_edegs;
+		set<edge_descriptor> gr_edegs;
+		set<edge_descriptor> mev_edegs;
+		PEEI sc_peei = psc->gr.edges();
+		PEEI gr_peei = pgr->edges();
+		for (auto i = sc_peei.first; i != sc_peei.second; ++i) sc_edegs.insert(*i);
+		for (auto j = gr_peei.first; j != gr_peei.second; ++j) sc_edegs.insert(*j);
+		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edegs.insert(ev.first);
+
+		assert(sc_edegs == gr_edegs);
+		assert(sc_edegs == mev_edegs);		
+		for (auto es : psc->hs.e2s) 
+		{
+			edge_descriptor hs_edge = psc->i2e[es.first];
+			assert(sc_edegs.find(hs_edge) != sc_edegs.end());
+		}
+	}
 	return 0;
 }
 
