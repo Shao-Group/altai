@@ -56,6 +56,7 @@ public:
 	virtual int degree(int v) const;
 	virtual PEB edge(int s, int t);
 	virtual PEB edge(edge_descriptor e);
+	virtual PEB edge(edge_descriptor e) const;
 	virtual PEEI edges() const;
 	virtual vector<edge_descriptor> edges(int x, int y);
 	virtual set<int> adjacent_vertices(int v);
