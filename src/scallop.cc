@@ -26,20 +26,39 @@ scallop::scallop()
 ** transform mev, hs
 ** rebuild e2i, i2e
 */
-scallop::scallop(splice_graph && _gr, const hyper_set &_hs, bool r = false, bool k = false, const scallop &sc)
-	: gr(_gr), hs(_hs), random_ordering(r), keep_as_nodes(false)
+// scallop::scallop(splice_graph && _gr, const hyper_set &_hs, const scallop &sc, bool r, bool k)
+// 	: gr(_gr), hs(_hs), random_ordering(r), keep_as_nodes(false)
+// {
+// 	round = 0;
+// 	gr.get_edge_indices(i2e, e2i);
+// 	// hs.build_index();						// see transform();
+// 	mev = sc.mev;  								// init_super_edges(); // will be transformed
+// 	v2v = sc.v2v; 								// init_vertex_map();
+// 	init_inner_weights(); 					
+// 	init_nonzeroset(keep_as_nodes);
+// }
+
+/*
+** sc1/sc2 for each deconvoluted allele, based on sc0;
+** re-use v2v
+** transform mev, hs
+** rebuild e2i, i2e
+*/
+scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool r, bool keep_as)
+	: gr(std::move(*g)), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
 	round = 0;
 	gr.get_edge_indices(i2e, e2i);
 	// hs.build_index();						// see transform();
 	mev = sc.mev;  								// init_super_edges(); // will be transformed
 	v2v = sc.v2v; 								// init_vertex_map();
-	init_inner_weights(); 						// FIXME:already set?
+	init_inner_weights(); 					
 	init_nonzeroset(keep_as_nodes);
 }
 
+
 // transform mev, hs
-int scallop::transform(splice_graph* pgr, VE& i2e_old, MEE& x2y)
+int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 {
 	MEV mev2;
 	for(auto i: mev)
@@ -47,7 +66,7 @@ int scallop::transform(splice_graph* pgr, VE& i2e_old, MEE& x2y)
 		edge_descriptor e1 = i.first;
 		vector<int> vertices_in_super_edge = i.second;
 		// transform edge
-		MEE::iterator e2_iterator = x2y.find(e1);
+		auto e2_iterator = x2y.find(e1);
 		assert(e2_iterator != x2y.end()); 
 		edge_descriptor e2 = e2_iterator->second;
 		assert(e2 != e1);

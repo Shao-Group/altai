@@ -490,7 +490,10 @@ int phaser::populate_allelic_scallop()
 	
 		//FIXME: this sc constructor will use *move* constructor of gr
 		//FIXME: potential memory leak?
-		*psc = scallop(splice_graph&& (*pgr), const hyper_set & (*phs), bool r = true, bool keep_as = false, const scallop &sc); 
+		// scallop s1 (*pgr, *phs, sc, true, false);
+		scallop s2 (pgr,  *phs, sc, true, false); 
+		// psc = &s1; //FIXME:
+		// scallop test = scallop(splice_graph* pgr, const scallop &sc, const hyper_set & (*phs), bool r = true, bool keep_as = false); 
 		allelic_transform(psc, pgr, x2y);
 	}
 	return 0;
