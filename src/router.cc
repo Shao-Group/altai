@@ -40,8 +40,17 @@ router::router(int r, splice_graph &g, MEI &ei, VE &ie, const MPII &mpi)
 	}
 }
 
+/*
+*	router operator= is ill-formed. Should not be used.
+*	The line `gr = rt.gr` calls an implicitly-generated copy() funciton.
+*	This copy() function by default cannot handle edge_descriptor properly.
+*	Hence, ewrt/einf/edge_base* may or may not be corresponding to each other.
+*	router::operator= should not be used.
+*/
 router& router::operator=(const router &rt)
 {
+	throw runtime_error("router operator= is ill-formed. Do NOT use. See code comments.");
+	/*
 	root = rt.root;
 	gr = rt.gr;
 	e2i = rt.e2i;
@@ -57,7 +66,7 @@ router& router::operator=(const router &rt)
 	ratio = rt.ratio;
 	eqns = rt.eqns;
 	pe2w = rt.pe2w;
-
+	*/
 	return (*this);
 }
 
