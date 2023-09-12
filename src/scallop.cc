@@ -17,23 +17,6 @@ See LICENSE for licensing.
 #include <cfloat>
 #include <algorithm>
 
-/*
-** sc1/sc2 for each deconvoluted allele, based on sc0;
-** re-use v2v
-** transform mev, hs
-** rebuild e2i, i2e
-*/
-// scallop::scallop(splice_graph && _gr, const hyper_set &_hs, const scallop &sc, bool r, bool k)
-// 	: gr(_gr), hs(_hs), random_ordering(r), keep_as_nodes(false)
-// {
-// 	round = 0;
-// 	gr.get_edge_indices(i2e, e2i);
-// 	// hs.build_index();						// see transform();
-// 	mev = sc.mev;  								// init_super_edges(); // will be transformed
-// 	v2v = sc.v2v; 								// init_vertex_map();
-// 	init_inner_weights(); 					
-// 	init_nonzeroset(keep_as_nodes);
-// }
 
 /*
 ** sc1/sc2 for each deconvoluted allele, based on sc0;
@@ -45,12 +28,12 @@ scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool 
 	: gr(*g), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
 	round = 0;
-	gr.get_edge_indices(i2e, e2i);
 	gr.edge_integrity_examine();
+	gr.get_edge_indices(i2e, e2i);
 	// hs.build_index();						// see transform();
 	mev = sc.mev;  								// init_super_edges(); // will be transformed
 	v2v = sc.v2v; 								// init_vertex_map();
-	init_inner_weights(); 					
+	init_inner_weights();		
 	init_nonzeroset(keep_as_nodes);
 }
 
@@ -100,24 +83,6 @@ scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	init_nonzeroset(keep_as_nodes);
 }
 
-
-// plain scallop instance
-/*
-scallop::scallop(const splice_graph &g, const hyper_set &h, bool r)
-	: gr(g), hs(h), random_ordering(r), keep_as_nodes(false)
-{
-	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
-	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
-
-	gr.get_edge_indices(i2e, e2i);
-	hs.build(gr, e2i);
-	init_super_edges();
-	init_vertex_map();
-	init_inner_weights();
-	init_nonzeroset(keep_as_nodes);
-}
-*/
 
 scallop::~scallop()
 {
