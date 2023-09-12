@@ -51,6 +51,7 @@ public:
 
 public:
 	// get and set properties
+	int edge_integrity_examine() const;
 	double get_vertex_weight(int v) const;
 	double get_edge_weight(edge_base *e) const;
 	vertex_info get_vertex_info(int v) const;

@@ -36,6 +36,27 @@ splice_graph::splice_graph(const splice_graph &gr)
 	copy(gr, x2y, y2x);
 }
 
+/* 
+*	assert edges(), ewrt, einf all have exactly the same edge_descriptors
+* 	&& ewrt is non-negative
+*/
+int splice_graph::edge_integrity_examine() const
+{
+	assert(se.size() == ewrt.size());
+	assert(se.size() == einf.size());
+	PEEI ei = edges();
+	for (edge_iterator i = ei.first; i != ei.second; ++i)
+	{
+		edge_descriptor e = *i;
+		auto ew = ewrt.find(e);
+		assert(ew != ewrt.end());
+		assert(ew->second >= 0);
+		assert(einf.find(e) != einf.end());
+	}
+	return 0;
+}
+
+
 /*
 *	x2y: original to new
 *	y2x: new to original
