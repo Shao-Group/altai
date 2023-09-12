@@ -546,7 +546,7 @@ int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 		PEEI sc_peei = psc->gr.edges();
 		PEEI gr_peei = pgr->edges();
 		for (auto i = sc_peei.first; i != sc_peei.second; ++i) sc_edegs.insert(*i);
-		for (auto j = gr_peei.first; j != gr_peei.second; ++j) sc_edegs.insert(*j);
+		for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edegs.insert(*j);
 		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edegs.insert(ev.first);
 
 		assert(sc_edegs == gr_edegs);
