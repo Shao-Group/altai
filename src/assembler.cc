@@ -223,13 +223,12 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 
 	for(int k = 0; k < sg.subs.size(); k++)
 	{
-		splice_graph &gr = sg.subs[k];
+		splice_graph gr = sg.subs[k];
 		hyper_set &hs = sg.hss[k];
 
 		if(determine_regional_graph(gr) == true) continue;
 		if(gr.num_edges() <= 0) continue;
 		if(debug_bundle_only) continue; //debug parameter to build bundle only and skip assembly, default: false
-
 		try 
 		{
 			for(int r = 0; r < assemble_duplicates; r++)
