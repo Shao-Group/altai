@@ -72,6 +72,47 @@ int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 	return 0;
 }
 
+int splice_graph::remove_edge(edge_descriptor e)
+{
+	if(se.find(e) == se.end()) return -1;
+	vv[e->source()]->remove_out_edge(e);
+	vv[e->target()]->remove_in_edge(e);
+	delete e;
+	se.erase(e);
+	ewrt.erase(e);
+	einf.erase(e); 
+	
+	if(DEBUG_MODE_ON)
+	{
+		assert (se.size() == ewrt.size());
+		assert (se.size() == einf.size());
+	}
+	return 0;
+}
+
+int splice_graph::remove_edge(int s, int t)
+{
+	vector<edge_base*> v;
+	PEEI p = vv[s]->out_edges();
+	for(edge_iterator it = p.first; it != p.second; it++)
+	{
+		if((*it)->target() != t) continue;
+		v.push_back(*it);
+	}
+	for(int i = 0; i < v.size(); i++)
+	{
+		remove_edge(v[i]);
+	}
+
+	if(DEBUG_MODE_ON)
+	{
+		assert (se.size() == ewrt.size());
+		assert (se.size() == einf.size());
+	}
+	return 0;
+}
+
+
 int splice_graph::clear()
 {
 	directed_graph::clear();
