@@ -127,18 +127,17 @@ int phaser::assign_gt()
 	set<int> nsnodes;  					// := ns nodes only
 	for(const int i: sc.asnonzeroset)
 	{
-		if(gr.vinf[i].is_as_vertex()) 
-		{
-			asnodes.insert(i);
-		}
-		else 
-		{
-			nsnodes.insert(i);
-		}
+		if(gr.vinf[i].is_as_vertex()) asnodes.insert(i);
+		else nsnodes.insert(i);
+	}
+	for(const int i: sc.nsnonzeroset)
+	{
+		if(gr.vinf[i].is_as_vertex()) asnodes.insert(i);
+		else nsnodes.insert(i);
 	}
 	assert(asnodes.size() >= 1);
 	assert(nsnodes.size() >= 1);
-	
+
 	// split local
 	if (nsnodes.size() + asnodes.size() < max_num_exons)
 	{
@@ -167,15 +166,13 @@ int phaser::assign_gt()
 		vector<int> vi = sort_nodes_by_currecnt_mae(nsnodes);
 		for(int i : vi)
 		{
-			if(split_global(i))
-			{
-				assert(nsnodes.find(i) != nsnodes.end());
-				nsnodes.erase(i);
-			} 
-			else break;
+			split_global(i);
+			assert(nsnodes.find(i) != nsnodes.end());
+			nsnodes.erase(i);
 		}
 	}
-	
+	assert(nsnodes.size() == 0);
+
 	return 0;
 }
 
@@ -338,6 +335,9 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 // split sg into two pairs of sg1/hs1 and sg2/hs2
 int phaser::split_gr()
 {	
+	MED gr0_ewrt_copy;
+	if(DEBUG_MODE_ON) gr0_ewrt_copy = gr.ewrt;
+
 	x2y_1.clear();// use x2y to map original edge to new edge
 	y2x_1.clear();
     x2y_2.clear();
@@ -352,23 +352,40 @@ int phaser::split_gr()
 	gr.ewrt = ewrt2;	
 	pgr2->copy(gr, x2y_2, y2x_2);
 
-	if(DEBUG_MODE_ON) 
+	if(DEBUG_MODE_ON && print_phaser_detail) 
 	{
-		cout << "pgr1" << pgr1->ewrt.size();
-		for (auto i:pgr1->ewrt) cout << i.second << " " << endl;
-	}
-	if(DEBUG_MODE_ON) 
-	{
-		cout << "pgr2" << pgr2->ewrt.size();
-		for (auto i:pgr2->ewrt) cout << i.second << " " << endl;
-	}
+		cout << "DEBUG phaser::split_gr()" << endl;
+		cout << "ewrt size:" << ewrt1.size() << endl;
+		cout << "edge\tgr0.ewrt\tewrt1\tewrt2" << endl;
+		assert (ewrt1.size() == gr0_ewrt_copy.size());
+		assert (ewrt1.size() == ewrt2.size());
 
+		for (int j = 0; j < ewrt1.size(); j ++)
+		{
+			auto i = next(ewrt1.begin(), j);
+			auto k = next(ewrt2.begin(), j);
+			auto l = next(gr0_ewrt_copy.begin(), j);
+			assert (i->first == k->first);  // all edge_descriptors are the same before transform
+			assert (l->first == i->first);
+			cout << "edge " << i->first->source() << "->" << i->first->target();
+			cout << "\t" << l->first << ": " << l->second;
+			cout << "\t" << i->second << "\t"  << k->second << " " << endl;
+		}	
+
+		cout << "pgr1(order of ewrt may be different)\tsize: " << pgr1->ewrt.size() << "addr-" << pgr1 << endl;
+		for (auto i:pgr1->ewrt) cout << "\t" << i.first << ": " << i.second << " " << endl;
+		pgr1->edge_integrity_examine();
+
+		cout << "pgr2(order of ewrt may be different)\tsize: " << pgr2->ewrt.size() << "addr-" << pgr2 << endl;
+		for (auto i:pgr2->ewrt) cout << "\t" << i.first << ": " << i.second << " " << endl;
+		pgr2->edge_integrity_examine();
+	}
 	return 0;
 }
 
 
 // remove edges < min_guaranteed_edge_weight, 
-// remove nodes in/out-degree == 0
+// remove edges incident to nodes in/out-degree == 0
 int phaser::refine_allelic_graphs()
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
@@ -377,18 +394,17 @@ int phaser::refine_allelic_graphs()
 		PEEI pei;
 		edge_iterator it1, it2;
 
-		// remove edges < min_guaranteed_edge_weight
-		for (pei = pgr->edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{	
-			edge_descriptor e = *it1;
+		// To avoid boundary error during removal, add edges into a set a prior.
+		set<edge_descriptor> edges_1;
+		for (pei = pgr->edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++) edges_1.insert(*it1);
+		for (edge_descriptor e: edges_1)
+		{
 			double w = pgr->get_edge_weight(e);
-			if (w < min_guaranteed_edge_weight)
-			{
-				pgr->remove_edge(e);	
-			} 
+			if (w < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
 
-		// recursively remove nodes in/out-degree == 0
+		// recursively remove edges incident to nodes in/out-degree == 0
+		// nodes will always remain in graph (maybe as isolated)
 		while(true)
 		{
 			bool b = false;
@@ -403,16 +419,27 @@ int phaser::refine_allelic_graphs()
 		}
 
 	}
+	
+	if(DEBUG_MODE_ON && print_phaser_detail) 
+	{
+		cout << "phaser::refine_allelic_graphs done" << endl;
+		pgr1->edge_integrity_examine();
+		pgr2->edge_integrity_examine();
+		
+		cout << "pgr1-refine\tsize:" << pgr1->ewrt.size() << "\taddr-" << pgr1 << endl;
+		set<edge_descriptor> gr1edges;
+		for (auto i:pgr1->ewrt) 
+		{
+			cout << "\t" << i.first << ": " << i.second << " " << endl;
+			gr1edges.insert(i.first);
+		}
 
-	if(DEBUG_MODE_ON) 
-	{
-		cout << "pgr1-refine" << pgr1->ewrt.size();
-		for (auto i:pgr1->ewrt) cout << i.second << " " << endl;
-	}
-	if(DEBUG_MODE_ON) 
-	{
-		cout << "pgr2-refine" << pgr2->ewrt.size();
-		for (auto i:pgr2->ewrt) cout << i.second << " " << endl;
+		cout << "pgr2-refine\tsize" << pgr2->ewrt.size() << "\taddr-" << pgr2 << endl;
+		for (auto i:pgr2->ewrt) 
+		{
+			cout << "\t" << i.first << ": " << i.second << " " << endl;
+			assert(gr1edges.find(i.first) == gr1edges.end());
+		}
 	}
 
 	return 0;
@@ -466,6 +493,18 @@ int phaser::split_hs()
 		phs->clear();
 		phs->add_edge_list(edges_w_count);
 	}
+
+	if(DEBUG_MODE_ON && print_phaser_detail)
+	{
+		cout << "hs0.size=" << sc.hs.edges.size() << endl;
+		for (auto phs : {phs1, phs2})
+		{
+			cout << "phs_" << phs << "\t";
+			cout << "edges.size=" << phs->edges.size() << "\t";
+			cout << "edges2tf.size" << phs->edges_to_transform.size() << endl; 
+		}
+		
+	}
 	return 0;
 }
 
@@ -477,16 +516,14 @@ int phaser::populate_allelic_scallop()
 {
 	for (int i = 0; i < 2; i++)
 	{
-		// only two potential alleles 
-		assert (i == 0 || i == 1); 
+		assert (i == 0 || i == 1);								// only two potential alleles 
 		splice_graph* pgr = (i == 0)? pgr1 : pgr2;
 		hyper_set*    phs = (i == 0)? phs1 : phs2;
 		scallop*      psc = (i == 0)? sc1  : sc2;
 		MEE&          x2y = (i == 0)? x2y_1: x2y_2;
-		// MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
-
+		
 		scallop ale_sc (pgr,  *phs, sc, true, false); 
-		assert (psc == nullptr);
+		assert (psc == nullptr);		
 		psc = &ale_sc;
 		allelic_transform(psc, pgr, x2y);
 	}
