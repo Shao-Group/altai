@@ -17,9 +17,6 @@ See LICENSE for licensing.
 #include <cfloat>
 #include <algorithm>
 
-scallop::scallop()
-{}
-
 /*
 ** sc1/sc2 for each deconvoluted allele, based on sc0;
 ** re-use v2v
@@ -45,10 +42,11 @@ scallop::scallop()
 ** rebuild e2i, i2e
 */
 scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool r, bool keep_as)
-	: gr(std::move(*g)), hs(_hs), random_ordering(r), keep_as_nodes(false)
+	: gr(*g), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
 	round = 0;
 	gr.get_edge_indices(i2e, e2i);
+	gr.edge_integrity_examine();
 	// hs.build_index();						// see transform();
 	mev = sc.mev;  								// init_super_edges(); // will be transformed
 	v2v = sc.v2v; 								// init_vertex_map();
@@ -85,7 +83,7 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 /*
 **	sc0 w. both alleles
 */ 
-scallop::scallop(const splice_graph &g, const hyper_set &h, bool r, bool _keep)
+scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
 	//TODO? traverse and assign node phasing info if it is determined -- in init stage

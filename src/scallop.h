@@ -30,10 +30,8 @@ typedef map<int, int> MI;
 class scallop
 {
 public:
-	scallop();
-	scallop(const splice_graph &gr, const hyper_set &hs, bool r = false, bool keep_as = true);                      // sc w. both alleles 
-	// scallop(splice_graph && gr,     const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
-	scallop(splice_graph * gr,      const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
+	scallop(splice_graph &gr, const hyper_set &hs, bool r = false, bool keep_as = true);                      // sc w. both alleles 
+	scallop(splice_graph* gr,      const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
 	virtual ~scallop();
 
 public:
@@ -41,7 +39,7 @@ public:
 	int transform(splice_graph* pgr, const VE& old_i2e, const MEE& x2y);  // allelic transform
 
 public:
-	splice_graph gr;					// splice graph
+	splice_graph& gr;					// splice graph
 	MEI e2i;							// edge map, from edge to index
 	VE i2e;								// edge map, from index to edge
 	bool random_ordering;				// whether using random ordering
