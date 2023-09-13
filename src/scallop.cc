@@ -180,9 +180,9 @@ int scallop::assemble(bool is_allelic)
 		}
 	}
 
+	collect_existing_st_paths();
 	if (keep_as_nodes) return 0;	
 
-	collect_existing_st_paths();
 	greedy_decompose();
 
 	trsts.clear();
