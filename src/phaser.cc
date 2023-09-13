@@ -535,7 +535,19 @@ int phaser::populate_allelic_scallop()
 ** objects transformed: sc, hs
 */
 int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
-{
+{	
+	if(DEBUG_MODE_ON && print_phaser_detail)
+	{	
+		cout << "DEBUG phaser::allelic_transform" << endl;
+		cout << "pgr addr-" << pgr << endl;
+		cout << "x2y size=" << x2y.size() << " print" << endl;
+		for(auto xypair: x2y)
+		{
+			cout << "\t" << xypair.first << "\t" << xypair.second << endl;
+		}
+		cout << "finished printing x2y" << endl;
+	}
+
 	psc->transform(pgr, sc.i2e, x2y);  // hs.transform called in sc
 
 	if(DEBUG_MODE_ON)
@@ -550,12 +562,18 @@ int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edegs.insert(ev.first);
 
 		assert(sc_edegs == gr_edegs);
-		assert(sc_edegs == mev_edegs);		
+		
+		// hs_edges is a subset of sc_edges
 		for (auto es : psc->hs.e2s) 
 		{
 			edge_descriptor hs_edge = psc->i2e[es.first];
 			assert(sc_edegs.find(hs_edge) != sc_edegs.end());
 		}
+
+		// sc_edges is a subset of mev_edges. The latter one contains edges removed in allelic_graph_refine
+		for (edge_descriptor e : sc_edegs) assert (mev_edegs.find(e) != mev_edegs.end()); 
+	
+		cout << "DEBUG: phaser::allelic_transform is completed and all edge_descriptor are properly transformed" << endl;
 	}
 	return 0;
 }
