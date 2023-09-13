@@ -1118,6 +1118,7 @@ int scallop::remove_edge(int e)
 	e2i.erase(ee);
 	i2e[e] = null_edge;
 	gr.remove_edge(ee);
+	mev.erase(ee);
 
 	return 0;
 }
@@ -1386,6 +1387,7 @@ int scallop::collect_existing_st_paths()
 	return 0;
 }
 
+// will remove edge e (by index)
 int scallop::collect_path(int e)
 {
 	assert(mev.find(i2e[e]) != mev.end());
@@ -1436,10 +1438,12 @@ int scallop::collect_path(int e)
 	gr.remove_edge(i2e[e]);
 	e2i.erase(i2e[e]);
 	i2e[e] = null_edge;
+	mev.erase(i2e[e]);
 
 	return 0;
 }
 
+// will remove some edges. don't use until last round of scallop
 int scallop::greedy_decompose()
 {
 	if(gr.num_edges() == 0) return 0;
