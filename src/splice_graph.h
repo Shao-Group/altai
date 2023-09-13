@@ -35,7 +35,7 @@ class splice_graph : public directed_graph
 {
 public:
 	splice_graph();
-	splice_graph(splice_graph && gr) = default;
+	// splice_graph(splice_graph && gr) = default; // move constructor is not used
 	splice_graph(const splice_graph &gr);
 	virtual ~splice_graph();
 
