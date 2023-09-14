@@ -11,17 +11,24 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include <limits.h>
 
-phaser::phaser(scallop& _sc, splice_graph* _gr1, hyper_set* _hs1, splice_graph* _gr2, hyper_set* _hs2, scallop* _sc1, scallop* _sc2)
-	: sc(_sc), gr(_sc.gr), pgr1(_gr1), pgr2(_gr2), phs1(_hs1), phs2(_hs2), sc1(_sc1), sc2(_sc2)
+phaser::phaser(scallop& _sc, bool _is_allelic)
+	: sc(_sc), gr(_sc.gr), is_allelic(_is_allelic)
 {
 	assert(sc.asnonzeroset.size() != 0); // throw runtime_error("does not have AS nodes");
-	
+
+	splice_graph gr1, gr2;
+	hyper_set hs1, hs2;
+	pgr1 = &gr1;  
+	pgr2 = &gr2;
+	phs1 = &hs1;
+	phs2 = &hs2;
+
 	init();
 	assign_gt();
 	split_gr();
 	refine_allelic_graphs();
 	split_hs();
-	populate_allelic_scallop(); 
+	assemble_allelic_scallop(); 
 }
 
 // init ewrt1/2, countbg1/2, normalize ratiobg1/2
@@ -509,24 +516,23 @@ int phaser::split_hs()
 }
 
 /*
-** populate & build sc1, sc2; transform hs1, hs2;
+** populate & build & assemble sc1, sc2; transform hs1, hs2;
 ** at the end, sc1, sc2 are ready to assemble
 */
-int phaser::populate_allelic_scallop()
+int phaser::assemble_allelic_scallop()
 {
-	for (int i = 0; i < 2; i++)
-	{
-		assert (i == 0 || i == 1);								// only two potential alleles 
-		splice_graph* pgr = (i == 0)? pgr1 : pgr2;
-		hyper_set*    phs = (i == 0)? phs1 : phs2;
-		scallop*      psc = (i == 0)? sc1  : sc2;
-		MEE&          x2y = (i == 0)? x2y_1: x2y_2;
-		
-		scallop ale_sc (pgr,  *phs, sc, true, false); 
-		assert (psc == nullptr);		
-		psc = &ale_sc;
-		allelic_transform(psc, pgr, x2y);
-	}
+
+	scallop sc1(pgr1,  *phs1, sc, true, false);
+	scallop sc2(pgr2,  *phs2, sc, true, false);	
+	allelic_transform(sc1, pgr1, x2y_1);
+	allelic_transform(sc2, pgr2, x2y_2);
+	sc1.assemble(is_allelic);  
+	sc2.assemble(is_allelic);  
+
+	trsts1 = sc1.trsts;
+	trsts2 = sc2.trsts;
+	non_full_trsts1 = sc1.non_full_trsts;
+	non_full_trsts2 = sc2.non_full_trsts;
 	return 0;
 }
 
@@ -534,8 +540,9 @@ int phaser::populate_allelic_scallop()
 ** transforms edge_descriptor and other pointers from sc0/hs0 to new pointers, using x2y
 ** objects transformed: sc, hs
 */
-int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
+int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 {	
+	scallop* psc = &sc1;
 	if(DEBUG_MODE_ON && print_phaser_detail)
 	{	
 		cout << "DEBUG phaser::allelic_transform" << endl;
@@ -552,6 +559,8 @@ int phaser::allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y)
 
 	if(DEBUG_MODE_ON)
 	{
+		psc->gr.edge_integrity_examine();
+
 		set<edge_descriptor> sc_edegs;
 		set<edge_descriptor> gr_edegs;
 		set<edge_descriptor> mev_edegs;

@@ -16,10 +16,16 @@ See LICENSE for licensing.
 #include "scallop.h"
 #define MEPD map<edge_descriptor, pair<double, double> >
 
+/*
+*   phaser takes scallop object as an input and does:
+*   1. split it into two allelic scallop instances (objects splitted: sc, gr, hs);
+*   2. assemble allelic scallop instances (sc1, sc2)
+*   3. transcripts and non-full-length transcripts are stored as public, and will be collected + processed in assembler class
+*/
 class phaser
 {
 public:
-	phaser(scallop& sc, splice_graph* gr1, hyper_set* hs1, splice_graph* gr2, hyper_set* hs2, scallop* sc1, scallop* sc2);
+	phaser(scallop& sc, bool is_allelic);
 
 private:
     const scallop& sc;
@@ -37,29 +43,35 @@ private:
     double ewrtratiobg2;   // normalized bg ratio of allele 2
 
     MEE x2y_1;             // use x2y to map original edge to new edge, in allele 1
-	MEE y2x_1;             // use y2x to map new edge to original edge
+	MEE y2x_1;             // use y2x to map new edge to original edge, in allele 1
     MEE x2y_2;             // use x2y to map original edge to new edge, in allele 2
-	MEE y2x_2;
+	MEE y2x_2;             // use y2x to map new edge to original edge, in allele 2
 
-    splice_graph* pgr1;    // pointer to sg of allele1, value to return
-    splice_graph* pgr2;    // pointer to sg of allele2, value to return
-    hyper_set* phs1;       // pointer to hs of allele2, value to return
-    hyper_set* phs2;       // pointer to hs of allele2, value to return
-    scallop* sc1;          // pointer to sc of allele1, value to return
-    scallop* sc2;          // pointer to sc of allele2, value to return
+    splice_graph* pgr1;    // pointer to sg of allele1
+    splice_graph* pgr2;    // pointer to sg of allele2
+    hyper_set* phs1;       // pointer to hs of allele1
+    hyper_set* phs2;       // pointer to hs of allele2
+
+    bool is_allelic;       // should be true
+
+public: 
+    vector<transcript> trsts1;              // transcripts of allele1
+    vector<transcript> trsts2;              // transcripts of allele2
+    vector<transcript> non_full_trsts1;		// predicted non full length transcripts of allele1
+    vector<transcript> non_full_trsts2;		// predicted non full length transcripts of allele2
 
 private:
     string strategy;                    
     double epsilon = 0.01;  
-                            
+
 private:
     int init();
     int assign_gt();
     int split_gr();
     int refine_allelic_graphs();
     int split_hs();
-    int populate_allelic_scallop();
-    int allelic_transform(scallop* psc, splice_graph* pgr, MEE& x2y);
+    int assemble_allelic_scallop();     
+    int allelic_transform(scallop& sc, splice_graph* pgr, MEE& x2y);
 
 private:
     pair<double, double> get_as_ratio(int i);
