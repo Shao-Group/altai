@@ -31,7 +31,7 @@ class scallop
 {
 public:
 	scallop(splice_graph &gr, const hyper_set &hs, bool r = false, bool keep_as = true);                      // sc w. both alleles 
-	scallop(splice_graph* gr,      const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
+	scallop(splice_graph* gr, const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
 	virtual ~scallop();
 
 public:
