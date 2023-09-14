@@ -108,7 +108,7 @@ int scallop::assemble(bool is_allelic)
 
 	if (DEBUG_MODE_ON) 
 	{
-		assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices());
+		if(keep_as_nodes) assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices()); // only true in first round
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
 			string loc = gr.chrm + ":" + to_string(gr.vinf[0].lpos.p32) + "-" + to_string(gr.vinf[gr.vinf.size() - 1].rpos.p32);

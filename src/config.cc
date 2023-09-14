@@ -148,6 +148,7 @@ bool print_vcf = false;
 bool print_hit = false;
 bool print_region_detail = false;
 bool print_phaser_detail = false;
+bool print_scallop_detail = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -557,6 +558,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--print_phaser_detail")
 		{
 			print_phaser_detail = true;			
+		}
+		else if(string(argv[i]) == "--print_scallop_detail")
+		{
+			print_scallop_detail = true;			
 		}
 		else
 		{
