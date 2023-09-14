@@ -171,7 +171,7 @@ int scallop::assemble(bool is_allelic)
 
 	collect_existing_st_paths();
 
-	if (keep_as_nodes) 
+	if (keep_as_nodes && is_allelic) 
 	{
 		if (verbose >= 2 && DEBUG_MODE_ON)
 		{

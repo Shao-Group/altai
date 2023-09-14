@@ -248,27 +248,21 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				{
 					ts2.add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 				}
-				if(verbose >=3 && DEBUG_MODE_ON) for(auto& i: sc.paths) i.print(index);
-				
-				
-				// split graph
-				// FIXME: eventually should decompose all graphs incld. non-as splice graphs
-				if(sc.asnonzeroset.size() <= 0)
+				if(!is_allelic || sc.asnonzeroset.size() <= 0) 
 				{
-					cerr << "did not handle non-AS graphs yet" << endl;
-					throw BundleError();
+					assert(sc.asnonzeroset.size() <= 0);
+					assert(sc.nsnonzeroset.size() <= 0);
+					continue;
 				}
 				
 				// assemble alleles in seperate splice graphs/ scallops
-				// collect transcripts
 				phaser ph(sc, is_allelic);				
-
-				abort();
-
 				vector<transcript>& trsts1 = ph.trsts1;
 				vector<transcript>& trsts2 = ph.trsts2;
 				vector<transcript>& non_full_trsts1 = ph.non_full_trsts1;
 				vector<transcript>& non_full_trsts2 = ph.non_full_trsts2;
+
+				// collect transcripts //FIXME: two alleles transcripts should be written to different files
 				if(verbose >= 2)
 				{
 					printf("assembly with r = %d, total %lu transcripts:\n", r, sc1.trsts.size());

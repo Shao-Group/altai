@@ -552,11 +552,6 @@ int bundle::build_splice_graph(int mode)
 		gr.set_vertex_info(i + 1, vi);
 	}
 
-	if (n_as < 1) 
-	{ 
-		throw BundleError();
-	}
-
 	gr.add_vertex();
 	vertex_info vin;
 	vin.lpos = bb.rpos;
