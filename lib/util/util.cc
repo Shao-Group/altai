@@ -60,10 +60,10 @@ size_t vector_hash(const vector<as_pos32> & vec)
 	string s = "";
 	for(int i = 0; i < vec.size(); i++)
 	{
-		seed ^= (size_t)(vec[i].p32) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= (size_t)(vec[i].p32 + string_hash(vec[i].ale)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		s += vec[i].ale;
 	}
-	return (seed & 0x7FFFFFFF + string_hash(s));
+	return (seed & 0x7FFFFFFF);
 }
 
 
