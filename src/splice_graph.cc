@@ -66,6 +66,10 @@ int splice_graph::edge_integrity_examine() const
 int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 {
 	clear();
+	chrm = gr.chrm;
+	gid = gr.gid;
+	strand = gr.strand;
+
 	for(int i = 0; i < gr.num_vertices(); i++)
 	{
 		add_vertex();
@@ -137,6 +141,9 @@ int splice_graph::remove_edge(int s, int t)
 int splice_graph::clear()
 {
 	directed_graph::clear();
+	chrm = '.';
+	gid = '.';
+	strand = '.';
 	vwrt.clear();
 	vinf.clear();
 	ewrt.clear();
