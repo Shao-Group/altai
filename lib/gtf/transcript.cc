@@ -197,12 +197,15 @@ size_t transcript::get_intron_chain_hashing() const
 {
 	if(exons.size() == 0) return 0;
 
-	// removed bc PI32 contains allele seq as string
-	// if(exons.size() == 1)
-	// {
-	// 	size_t p = (exons[0].first.p32 + exons[0].first.ale  + exons[0].second.p32 + exons[0].second.ale) / 10000;
-	// 	return p + 1;
-	// }
+	if(exons.size() == 1)
+	{
+		assert(get_intron_chain().size() == 0);
+		vector<as_pos32> vv;
+		vv.push_back(as_pos32{-2, "SingleExon"});
+		vv.push_back(exons[0].first);
+		vv.push_back(exons[0].second);
+		return vector_hash(vv) + 1;
+	}
 
 	vector<as_pos32> vv;
 	vector<PI32> v = get_intron_chain();
@@ -281,6 +284,7 @@ int transcript::intron_chain_compare(const transcript &t) const
 // 	return intron_chain_match(t);
 // }
 
+// TODO: need to properly handle AS-single-exon transcripts, which are represented as 3 "exons"
 int transcript::compare1(const transcript &t, double single_exon_overlap) const
 {
 	if(exons.size() < t.exons.size()) return +1;
@@ -293,12 +297,16 @@ int transcript::compare1(const transcript &t, double single_exon_overlap) const
 
 	if(exons.size() == 1)
 	{
-		int32_t p1 = exons[0].first < t.exons[0].first ? exons[0].first.p32 : t.exons[0].first.p32;
-		int32_t p2 = exons[0].first < t.exons[0].first ? t.exons[0].first.p32 : exons[0].first.p32;
-		int32_t q1 = exons[0].second > t.exons[0].second ? exons[0].second.p32 : t.exons[0].second.p32;
-		int32_t q2 = exons[0].second > t.exons[0].second ? t.exons[0].second.p32 : exons[0].second.p32;
+		// int32_t p1 = exons[0].first < t.exons[0].first ? exons[0].first.p32 : t.exons[0].first.p32;
+		// int32_t p2 = exons[0].first < t.exons[0].first ? t.exons[0].first.p32 : exons[0].first.p32;
+		// int32_t q1 = exons[0].second > t.exons[0].second ? exons[0].second.p32 : t.exons[0].second.p32;
+		// int32_t q2 = exons[0].second > t.exons[0].second ? t.exons[0].second.p32 : exons[0].second.p32;
+		as_pos32 p1 = exons[0].first < t.exons[0].first ? exons[0].first.p32 : t.exons[0].first.p32;
+		as_pos32 p2 = exons[0].first < t.exons[0].first ? t.exons[0].first.p32 : exons[0].first.p32;
+		as_pos32 q1 = exons[0].second > t.exons[0].second ? exons[0].second.p32 : t.exons[0].second.p32;
+		as_pos32 q2 = exons[0].second > t.exons[0].second ? t.exons[0].second.p32 : exons[0].second.p32;
 
-		int32_t overlap = q2 - p2;
+		int32_t overlap = q2.p32 - p2.p32;
 		if(overlap >= single_exon_overlap * length()) return 0;
 		if(overlap >= single_exon_overlap * t.length()) return 0;
 
