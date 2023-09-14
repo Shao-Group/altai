@@ -521,7 +521,8 @@ int phaser::split_hs()
 */
 int phaser::assemble_allelic_scallop()
 {
-
+	pgr1->gid = pgr1->gid + "allele1";
+	pgr2->gid = pgr2->gid + "allele2";
 	scallop sc1(pgr1,  *phs1, sc, true, false);
 	scallop sc2(pgr2,  *phs2, sc, true, false);	
 	allelic_transform(sc1, pgr1, x2y_1);

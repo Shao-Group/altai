@@ -17,7 +17,6 @@ See LICENSE for licensing.
 #include <cfloat>
 #include <algorithm>
 
-
 /*
 ** sc1/sc2 for each deconvoluted allele, based on sc0;
 ** re-use v2v
@@ -70,7 +69,6 @@ scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
 {
 	//TODO? traverse and assign node phasing info if it is determined -- in init stage
-
 	round = 0;
 	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
 	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
@@ -106,14 +104,13 @@ int scallop::assemble(bool is_allelic)
 		
 	}
 
-	if (DEBUG_MODE_ON) 
+	if (DEBUG_MODE_ON && print_scallop_detail) 
 	{
 		if(keep_as_nodes) assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices()); // only true in first round
 		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
 		{
 			string loc = gr.chrm + ":" + to_string(gr.vinf[0].lpos.p32) + "-" + to_string(gr.vinf[gr.vinf.size() - 1].rpos.p32);
 			gr.draw(gr.gid + "." + loc + "." + "gr.undecomposed.tex");
-			if(output_tex_files == true) gr.draw(gr.gid + ".post.tex");
 			if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
 		}		
 	}
@@ -172,18 +169,31 @@ int scallop::assemble(bool is_allelic)
 		break;
 	}
 
-	if (DEBUG_MODE_ON) 
-	{
-		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
-		{
-			gr.draw(gr.gid + "gr.nsdecomposed.tex");
-		}
-	}
-
 	collect_existing_st_paths();
-	if (keep_as_nodes) return 0;	
 
+	if (keep_as_nodes) 
+	{
+		if (verbose >= 2 && DEBUG_MODE_ON)
+		{
+			cout << "scallop finished while-loop once" << endl;
+			gr.print_weights();
+			cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
+			hs.print();
+			if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
+
+		}
+		return 0;	
+	}
+	
 	greedy_decompose();
+	
+	if (verbose >= 2 && DEBUG_MODE_ON)
+	{
+		cout << "scallop finished greedy" << endl;
+		gr.print_weights();
+		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
+		hs.print();
+	}
 
 	trsts.clear();
 	non_full_trsts.clear();
@@ -677,6 +687,7 @@ int scallop::init_vertex_astype()
 }
 
 // if keep_as_nodes, separate ns/asnonzeroset, else use only nsnonzeroset
+// source/sink are strictly excluded
 int scallop::init_nonzeroset(bool keep_as)
 {
 	nsnonzeroset.clear();
@@ -695,12 +706,7 @@ int scallop::init_nonzeroset(bool keep_as)
 		}
 	}
 
-	if (DEBUG_MODE_ON ) 
-	{
-		if (decompose_as_neighor && asnonzeroset.size() <= 2) throw runtime_error("scallop::init_nonzeroset 1");
-		if (!decompose_as_neighor && asnonzeroset.size() <= 4) throw runtime_error("scallop::init_nonzeroset 2");
-	}
-	
+	if (!keep_as) assert(asnonzeroset.size() == 0);	
 	return 0;
 }
 
