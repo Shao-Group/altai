@@ -26,6 +26,7 @@ See LICENSE for licensing.
 scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool r, bool keep_as)
 	: gr(*g), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
+	assert(!keep_as);
 	round = 0;
 	gr.edge_integrity_examine();
 	gr.get_edge_indices(i2e, e2i);
@@ -70,9 +71,6 @@ scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
 {
 	//TODO? traverse and assign node phasing info if it is determined -- in init stage
 	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + ".pre.tex");
-	if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
-
 	gr.get_edge_indices(i2e, e2i);
 	hs.build(gr, e2i);
 	init_super_edges();
@@ -96,23 +94,15 @@ int scallop::assemble(bool is_allelic)
 				gr.gid.c_str(), c, gr.num_vertices(), gr.num_edges(), hs.edges.size());
 	}
 
-	if (verbose >= 2)
-	{
-		gr.print_weights();
-		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
-		hs.print();
-		
-	}
-
 	if (DEBUG_MODE_ON && print_scallop_detail) 
 	{
-		if(keep_as_nodes) assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices()); // only true in first round
-		if (gr.num_vertices() - asnonzeroset.size() > 2)  // has ns nonzero nodes
-		{
-			string loc = gr.chrm + ":" + to_string(gr.vinf[0].lpos.p32) + "-" + to_string(gr.vinf[gr.vinf.size() - 1].rpos.p32);
-			gr.draw(gr.gid + "." + loc + "." + "gr.undecomposed.tex");
-			if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
-		}		
+		gr.print_weights();
+		hs.print();
+		if(keep_as_nodes) 
+			assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices()); 
+		else
+			assert(asnonzeroset.size() == 0);
+		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
 	}
 
 	while(true)
@@ -171,28 +161,28 @@ int scallop::assemble(bool is_allelic)
 
 	collect_existing_st_paths();
 
+	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
+	{
+		cout << "scallop finished while-loop once" << endl;
+		gr.print_weights();
+		hs.print();
+		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
+		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
+	}
+
 	if (keep_as_nodes && is_allelic) 
 	{
-		if (verbose >= 2 && DEBUG_MODE_ON)
-		{
-			cout << "scallop finished while-loop once" << endl;
-			gr.print_weights();
-			cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
-			hs.print();
-			if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
-
-		}
 		return 0;	
 	}
 	
 	greedy_decompose();
 	
-	if (verbose >= 2 && DEBUG_MODE_ON)
+	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
 	{
 		cout << "scallop finished greedy" << endl;
 		gr.print_weights();
-		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
 		hs.print();
+		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
 	}
 
 	trsts.clear();
