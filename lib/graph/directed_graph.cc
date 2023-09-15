@@ -823,7 +823,7 @@ int directed_graph::graphviz(const string &file, const MIS &mis, const MIS &mii,
 	graphviz_header(fout);
 
 	// draw file name
-	fout<< "label=\"" << file.c_str() << "\\n" << label <<"\"\n";
+	fout<< "label=\"" << file.c_str() << "\\n" << label <<"\\n";
 	fout << "ALLELE1-red, ALLELE2-green, NONSPECIFIC-gray, UNPHASED-black" << "\"\n";
 	fout<< "labeljust=l" << "\n" << "labelloc=t\n";
 
