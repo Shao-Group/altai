@@ -170,13 +170,14 @@ int scallop::assemble(bool is_allelic)
 		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
 	}
 
-	if (keep_as_nodes && is_allelic) 
-	{
-		return 0;	
-	}
+	if (keep_as_nodes && is_allelic)  return 0;
+	
 	
 	greedy_decompose();
-	
+	trsts.clear();
+	non_full_trsts.clear();
+	gr.output_transcripts1(trsts, non_full_trsts, paths);
+
 	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
 	{
 		cout << "scallop finished greedy" << endl;
@@ -184,10 +185,6 @@ int scallop::assemble(bool is_allelic)
 		hs.print();
 		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
 	}
-
-	trsts.clear();
-	non_full_trsts.clear();
-	gr.output_transcripts1(trsts, non_full_trsts, paths);
 
 	if(verbose >= 2) 
 	{
