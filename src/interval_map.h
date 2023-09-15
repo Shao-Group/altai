@@ -20,12 +20,13 @@ using namespace boost;
 using namespace std;
 
 typedef icl::right_open_interval<as_pos32> ROI;
+typedef icl::right_open_interval<int32_t> ROI_int;
 
 // join interval map
 typedef icl::interval_map<as_pos32, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI> join_interval_map;
 typedef join_interval_map::const_iterator JIMI;
 typedef pair<JIMI, JIMI> PJIMI;
-typedef icl::interval_map<int32_t, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI> join_interval_map_int;
+typedef icl::interval_map<int32_t, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI_int> join_interval_map_int;
 typedef join_interval_map_int::const_iterator JIMI_int;
 
 // split interval map

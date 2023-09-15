@@ -1217,73 +1217,74 @@ int splice_graph::print_weights()
 	return 0;
 }
 
-int splice_graph::output_transcripts(ofstream &fout, const vector<path> &p) const
-{
-	for(int i = 0; i < p.size(); i++)
-	{
-		string tid = gid + "." + tostring(i);
-		output_transcript(fout, p[i], tid);
-	}
-	return 0;
-}
+// int splice_graph::output_transcripts(ofstream &fout, const vector<path> &p) const
+// {
+// 	assert(0); // won't be used
+// 	for(int i = 0; i < p.size(); i++)
+// 	{
+// 		string tid = gid + "." + tostring(i);
+// 		output_transcript(fout, p[i], tid);
+// 	}
+// 	return 0;
+// }
 
-int splice_graph::output_transcript(ofstream &fout, const path &p, const string &tid) const
-{
-	assert(0); // won't be used
-	fout.precision(2);
-	fout<<fixed;
+// int splice_graph::output_transcript(ofstream &fout, const path &p, const string &tid) const
+// {
+// 	assert(0); // won't be used
+// 	fout.precision(2);
+// 	fout<<fixed;
 
-	const vector<int> &v = p.v;
-	double coverage = p.abd;		// number of molecular
+// 	const vector<int> &v = p.v;
+// 	double coverage = p.abd;		// number of molecular
 
-	assert(v[0] == 0);
-	assert(v[v.size() - 1] == num_vertices() - 1);
-	if(v.size() < 2) return 0;
+// 	assert(v[0] == 0);
+// 	assert(v[v.size() - 1] == num_vertices() - 1);
+// 	if(v.size() < 2) return 0;
 
-	int ss = v[1];
-	int tt = v[v.size() - 2];
-	int32_t ll = get_vertex_info(ss).lpos.p32;									// TODO: make AS
-	int32_t rr = get_vertex_info(tt).rpos.p32;									// TODO: make AS
+// 	int ss = v[1];
+// 	int tt = v[v.size() - 2];
+// 	int32_t ll = get_vertex_info(ss).lpos.p32;									// TODO: make AS
+// 	int32_t rr = get_vertex_info(tt).rpos.p32;									// TODO: make AS
 
-	fout<<chrm.c_str()<<"\t";		// chromosome name
-	fout<<"altai"<<"\t";			// source
-	fout<<"transcript\t";			// feature
-	fout<<ll + 1<<"\t";				// left position
-	fout<<rr<<"\t";					// right position
-	fout<<1000<<"\t";				// score, now as abundance
-	fout<<strand<<"\t";				// strand
-	fout<<".\t";					// frame
-	fout<<"gene_id \""<<gid.c_str()<<"\"; ";
-	fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
-	fout<<"coverage \""<<coverage<<"\";"<<endl;
+// 	fout<<chrm.c_str()<<"\t";		// chromosome name
+// 	fout<<"altai"<<"\t";			// source
+// 	fout<<"transcript\t";			// feature
+// 	fout<<ll + 1<<"\t";				// left position
+// 	fout<<rr<<"\t";					// right position
+// 	fout<<1000<<"\t";				// score, now as abundance
+// 	fout<<strand<<"\t";				// strand
+// 	fout<<".\t";					// frame
+// 	fout<<"gene_id \""<<gid.c_str()<<"\"; ";
+// 	fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
+// 	fout<<"coverage \""<<coverage<<"\";"<<endl;
 
 	
-	join_interval_map_int jmap;
-	for(int k = 1; k < v.size() - 1; k++)
-	{
-		int32_t p1 = get_vertex_info(v[k]).lpos.p32;
-		int32_t p2 = get_vertex_info(v[k]).rpos.p32;
-		jmap += make_pair(ROI(p1, p2), 1);
-	}
+// 	join_interval_map_int jmap;
+// 	for(int k = 1; k < v.size() - 1; k++)
+// 	{
+// 		int32_t p1 = get_vertex_info(v[k]).lpos.p32;
+// 		int32_t p2 = get_vertex_info(v[k]).rpos.p32;
+// 		jmap += make_pair(ROI(p1, p2), 1);
+// 	}
 
-	int cnt = 0;
-	for(JIMI_int it = jmap.begin(); it != jmap.end(); it++)
-	{
-		fout<<chrm.c_str()<<"\t";			// chromosome name
-		fout<<"altai"<<"\t";				// source
-		fout<<"exon\t";						// feature
-		fout<<lower(it->first) + 1<<"\t";	// left position
-		fout<<upper(it->first)<<"\t";		// right position
-		fout<<1000<<"\t";					// score
-		fout<<strand<<"\t";					// strand
-		fout<<".\t";						// frame
-		fout<<"gene_id \""<<gid.c_str()<<"\"; ";
-		fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
-		fout<<"exon_number \""<<++cnt<<"\"; ";
-		fout<<"coverage \""<<coverage<<"\";"<<endl;
-	}
-	return 0;
-}
+// 	int cnt = 0;
+// 	for(JIMI_int it = jmap.begin(); it != jmap.end(); it++)
+// 	{
+// 		fout<<chrm.c_str()<<"\t";			// chromosome name
+// 		fout<<"altai"<<"\t";				// source
+// 		fout<<"exon\t";						// feature
+// 		fout<<lower(it->first) + 1<<"\t";	// left position
+// 		fout<<upper(it->first)<<"\t";		// right position
+// 		fout<<1000<<"\t";					// score
+// 		fout<<strand<<"\t";					// strand
+// 		fout<<".\t";						// frame
+// 		fout<<"gene_id \""<<gid.c_str()<<"\"; ";
+// 		fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
+// 		fout<<"exon_number \""<<++cnt<<"\"; ";
+// 		fout<<"coverage \""<<coverage<<"\";"<<endl;
+// 	}
+// 	return 0;
+// }
 
 int splice_graph::output_transcripts(vector<transcript> &v, const vector<path> &p) const
 {
@@ -1319,14 +1320,26 @@ int splice_graph::output_transcript(transcript &trst, const path &p, const strin
 	trst.transcript_id = tid;
 	trst.coverage = p.abd;
 	trst.strand = strand;
+	trst.gt = UNPHASED;
 
 	const vector<int> &v = p.v;
-	join_interval_map_int jmap;
-	for(int k = 1; k < v.size() - 1; k++)
+	join_interval_map jmap;
+	for(int k = 1; k < v.size() - 1; k++) // first and last vertices are source/sink
 	{
-		as_pos32 p1 = get_vertex_info(v[k]).lpos;
-		as_pos32 p2 = get_vertex_info(v[k]).rpos;
+		genotype g = get_vertex_info(v[k]).gt;
+		as_pos32 p1 (get_vertex_info(v[k]).lpos.p32, "$");
+		as_pos32 p2 (get_vertex_info(v[k]).rpos.p32, "$");
 		jmap += make_pair(ROI(p1, p2), 1);
+		if (g == ALLELE1 || g == ALLELE2)
+		{
+			trst.add_as_exons(get_vertex_info(v[k]).lpos, get_vertex_info(v[k]).rpos);
+			if (trst.gt == UNPHASED || trst.gt == NONSPECIFIC) trst.gt = g;
+			else assert(trst.gt == g);
+		}
+		else if (g == NONSPECIFIC && trst.gt == UNPHASED)
+		{
+			trst.gt = NONSPECIFIC;
+		}
 	}
 
 	for(JIMI it = jmap.begin(); it != jmap.end(); it++)

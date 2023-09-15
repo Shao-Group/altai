@@ -19,6 +19,7 @@ See LICENSE for licensing.
 #include "item.h"
 #include "htslib/faidx.h"
 #include "../../src/as_pos32.hpp"
+#include "../../src/vcf_data.h"
 
 using namespace std;
 
@@ -42,7 +43,7 @@ public:
 	string transcript_id;
 	string gene_type;
 	string transcript_type;
-	string allele;
+	genotype gt;
 	as_pos32 start;
 	as_pos32 end;
 	double score;
@@ -55,9 +56,11 @@ public:
 	double TPM;
 
 	vector<PI32> exons;
+	vector<PI32> as_exons;
 
 public:
 	int add_exon(as_pos32 s, as_pos32 t);
+	int add_as_exons(as_pos32 s, as_pos32 t);
 	int add_exon(const item &e);
 	int assign_RPKM(double factor);
 	int sort();
