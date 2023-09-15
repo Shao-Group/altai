@@ -102,6 +102,7 @@ int phaser::init()
 			}
 			vwrtbg2 += gr.get_vertex_weight(i);
 		}
+		else assert(!gr.vinf[i].is_as_vertex() || gr.vinf[i].gt == UNPHASED);
 	}
 	pair<double, double> r1r2 = normalize_epsilon(ewrtbg1, ewrtbg2);
 	ewrtratiobg1 = r1r2.first;
@@ -343,7 +344,12 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 int phaser::split_gr()
 {	
 	MED gr0_ewrt_copy;
-	if(DEBUG_MODE_ON) gr0_ewrt_copy = gr.ewrt;
+	if(DEBUG_MODE_ON) 
+	{	
+		gr0_ewrt_copy = gr.ewrt;
+		for (auto && ei1: ewrt1) assert(ei1.second >= 0);
+		for (auto && ei2: ewrt2) assert(ei2.second >= 0);
+	}
 
 	x2y_1.clear();// use x2y to map original edge to new edge
 	y2x_1.clear();
