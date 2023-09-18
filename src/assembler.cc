@@ -123,8 +123,6 @@ int assembler::assemble()
 
 	write();
 	
-	cout << "Altai finished running." << endl;
-
 	return 0;
 }
 
