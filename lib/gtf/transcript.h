@@ -68,6 +68,8 @@ public:
 	int shrink();
 	int assign(const item &e);
 	int length() const;
+	int make_non_specific();
+	int assign_gt(genotype g);
 	PI32 get_bounds() const;
 	// PI32 get_first_intron() const;
 	size_t get_intron_chain_hashing() const;

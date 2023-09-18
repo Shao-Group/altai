@@ -172,6 +172,25 @@ int transcript::length() const
 	return s;
 }
 
+int transcript::make_non_specific()
+{
+	gt = NONSPECIFIC;
+	as_exons.clear();
+	for (const PI32 & e: exons)
+	{
+		assert(e.first.ale == "$");
+		assert(e.second.ale == "$");
+	}
+	return 0;
+}
+
+int transcript::assign_gt(genotype g)
+{	
+	assert(!gt_conflict(gt, g));
+	gt = g;
+	return 0;
+}
+
 PI32 transcript::get_bounds() const
 {
 	if(exons.size() == 0) return PI32(-1, -1);
