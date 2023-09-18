@@ -59,5 +59,7 @@ int main(int argc, const char **argv)
 	assembler asmb;
 	asmb.assemble();
 
+	printf("Altai is completed.\n");
+
 	return 0;
 }
