@@ -297,47 +297,51 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			*/
 
 			// add transcripts to corresponding transcript_set
-			for(int i = 0; i < trsts1.size(); i++)
+			for(const transcript& _t: trsts1)
 			{
-				ts_full[1].add(trsts1[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
+				transcript t(_t);
+				ts_full[1].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
 			}
-			for(int i = 0; i < non_full_trsts1.size(); i++)
+			for(const transcript& _t: non_full_trsts1)
 			{
-				ts_nonfull[1].add(non_full_trsts1[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t(_t);
+				ts_nonfull[1].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
-			for(int i = 0; i < trsts2.size(); i++)
+			for(const transcript& _t: trsts2)
 			{
-				ts_full[2].add(trsts2[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t(_t);
+				ts_full[2].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
-			for(int i = 0; i < non_full_trsts2.size(); i++)
+			for(const transcript& _t: non_full_trsts2)
 			{
-				ts_nonfull[2].add(non_full_trsts2[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t(_t);
+				ts_nonfull[2].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
 
-			// also add those to NONSPECIFIC transcript_set
-			for(int i = 0; i < trsts1.size(); i++)
+			// also add those to NONSPECIFIC transcript_set; coverage should add for both alleles
+			for(const transcript& _t: trsts1)
 			{
-				transcript t = trsts1[i];
+				transcript t(_t);
 				t.make_non_specific();
-				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
+				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
 			}
-			for(int i = 0; i < non_full_trsts1.size(); i++)
+			for(const transcript& _t: non_full_trsts1)
 			{
-				transcript t = non_full_trsts1[i];
+				transcript t(_t);
 				t.make_non_specific();
-				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
-			for(int i = 0; i < trsts2.size(); i++)
+			for(const transcript& _t:trsts2)
 			{
-				transcript t = trsts2[i];
+				transcript t(_t);
 				t.make_non_specific();
-				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
-			for(int i = 0; i < non_full_trsts2.size(); i++)
+			for(const transcript& _t: non_full_trsts2)
 			{
-				transcript t = non_full_trsts2[i];
+				transcript t(_t);
 				t.make_non_specific();
-				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
 		}
 	}
