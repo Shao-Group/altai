@@ -16,7 +16,7 @@ See LICENSE for licensing.
 
 #include "item.h"
 #include "transcript.h"
-#include "../../src/as_pos32.hpp"
+#include "src/as_pos32.hpp"
 
 using namespace std;
 

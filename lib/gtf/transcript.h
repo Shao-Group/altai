@@ -18,8 +18,8 @@ See LICENSE for licensing.
 #include <set>
 #include "item.h"
 #include "htslib/faidx.h"
-#include "../../src/as_pos32.hpp"
-#include "../../src/vcf_data.h"
+#include "src/as_pos32.hpp"
+#include "src/vcf_data.h"
 
 using namespace std;
 

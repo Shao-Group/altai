@@ -15,7 +15,7 @@ See LICENSE for licensing.
 #include <map>
 #include "util.h"
 #include "transcript.h"
-#include "config.h"
+#include "src/config.h"
 
 transcript::transcript()
 {
@@ -265,6 +265,9 @@ size_t transcript::get_intron_chain_hashing() const
 
 int transcript::intron_chain_compare(const transcript &t) const
 {
+	assert(!gt_conflict(gt, t.gt));
+	if (DEBUG_MODE_ON)  for(const auto & e: exons)  assert(e.first.ale == "$" && e.second.ale == "$" );
+	
 	if(exons.size() < t.exons.size()) return +1;
 	if(exons.size() > t.exons.size()) return -1;
 	if(exons.size() <= 1) return 0;
@@ -315,7 +318,7 @@ int transcript::intron_chain_compare(const transcript &t) const
 // 	return intron_chain_match(t);
 // }
 
-// TODO: need to properly handle AS-single-exon transcripts, which are represented as 3 "exons"
+
 int transcript::compare1(const transcript &t, double single_exon_overlap) const
 {
 	assert(gt_implicit_same(gt, t.gt));
@@ -327,6 +330,8 @@ int transcript::compare1(const transcript &t, double single_exon_overlap) const
 	if(strand < t.strand) return +1;
 	if(strand > t.strand) return -1;
 
+	if (DEBUG_MODE_ON)  for(const auto & e: exons)  assert(e.first.ale == "$" && e.second.ale == "$" );
+		
 	if(exons.size() == 1)
 	{
 		// int32_t p1 = exons[0].first < t.exons[0].first ? exons[0].first.p32 : t.exons[0].first.p32;

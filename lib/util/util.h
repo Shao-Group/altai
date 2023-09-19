@@ -19,7 +19,7 @@ See LICENSE for licensing.
 #include <cmath>
 #include <cstdlib>
 #include <exception>
-#include "../../src/as_pos32.hpp"
+#include "src/as_pos32.hpp"
 
 using namespace std;
 
