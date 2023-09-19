@@ -112,7 +112,7 @@ string ref_file1;
 string ref_file2;
 string vcf_file;
 string output_file;
-string output_file1;
+string output_file1 = "";
 string chr_exclude;
 set<string> chrex;
 
@@ -140,6 +140,7 @@ string version = "v0.0.1";
 bool FILTER_BY_COV = false;
 bool phasing_profile_only = false;
 bool decompose_as_neighor = false;
+bool use_filter = true;
 
 // for debugging
 bool DEBUG_MODE_ON = false;
@@ -533,6 +534,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--decompose_as_neighor")
 		{
 			decompose_as_neighor = true;
+		}
+		else if(string(argv[i]) == "--not_use_filter")
+		{
+			use_filter = false;
 		}
 		// for debug
 		else if(string(argv[i]) == "--DEBUG")

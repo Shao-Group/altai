@@ -40,15 +40,15 @@ private:
 	bool terminate;
 	int qcnt;
 	double qlen;
-	vector<transcript> trsts;
-	vector<transcript> non_full_trsts;
+	vector< vector<transcript> > trsts;
+	vector< vector<transcript> > nonfull_trsts;
 
 public:
 	int assemble();
 
 private:
 	int process(int n);
-	int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic, transcript_set &ts1, transcript_set &ts2);
+	int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic, vector<transcript_set> &ts1, vector<transcript_set> &ts2);
 	int assign_RPKM();
 	int write();
 	bool determine_regional_graph(splice_graph &gr);

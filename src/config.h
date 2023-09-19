@@ -183,6 +183,7 @@ extern string version;
 extern bool FILTER_BY_COV;
 extern bool phasing_profile_only;
 extern bool decompose_as_neighor;
+extern bool use_filter;
 
 // for debugging
 extern bool DEBUG_MODE_ON;
