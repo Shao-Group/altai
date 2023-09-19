@@ -375,7 +375,8 @@ int assembler::assign_RPKM()
 
 int assembler::write()
 {
-	if(verbose >= 1) printf("Writing outputs for all transcripts.\n");
+
+	if(verbose >= 1) printf("\nWriting outputs for all transcripts.\n");
 
 	for(int a = 0; a < trsts.size(); a++)
 	{
@@ -387,9 +388,9 @@ int assembler::write()
 
 		if(verbose >= 2) 
 		{
-			if (a == 0) printf("Writing outputs for all transcripts of transcripts ragardless of allele.\n");
-			if (a == 1) printf("Writing outputs for all transcripts of allele 1.\n");
-			if (a == 2) printf("Writing outputs for all transcripts of allele 2.\n");
+			if (a == 0) printf("\tWriting outputs for all transcripts of merged alleles.\n");
+			if (a == 1) printf("\tWriting outputs for all transcripts of allele 1.\n");
+			if (a == 2) printf("\tWriting outputs for all transcripts of allele 2.\n");
 			assert(a <= 2);
 		}
 

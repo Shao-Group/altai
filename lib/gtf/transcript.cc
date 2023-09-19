@@ -385,30 +385,38 @@ int transcript::write(ostream &fout, double cov2, int count) const
 	
 	PI32 p = get_bounds();
 
-	fout<<seqname.c_str()<<"\t";				// chromosome name
-	fout<<source.c_str()<<"\t";					// source
-	fout<<"transcript\t";						// feature
-	fout<<p.first.p32 + 1<<"\t";					// left position
-	fout<<p.second.p32 <<"\t";						// right position
-	fout<<1000<<"\t";							// score, now as expression
-	fout<<strand<<"\t";							// strand
-	fout<<".\t";								// frame
-	fout<<"gene_id \""<<gene_id.c_str()<<"\"; ";
-	fout<<"transcript_id \""<<transcript_id.c_str()<<"\"; ";
-	if(gene_type != "") fout<<"gene_type \""<<gene_type.c_str()<<"\"; ";
-	if(transcript_type != "") fout<<"transcript_type \""<<transcript_type.c_str()<<"\"; ";
+	fout	<<	seqname.c_str()		<<"\t";										// chromosome name
+	fout	<<	source.c_str()		<<"\t";										// source
+	fout	<<	"transcript"		<<"\t";										// feature
+	fout	<<	p.first.p32 + 1		<<"\t";										// left position; 0-based to 1-based by adding 1
+	fout	<<	p.second.p32 		<<"\t";										// right position
+	fout	<<	1000				<<"\t";										// score, now as expression
+	fout	<<	strand				<<"\t";										// strand
+	fout	<<	"."					<<"\t";															// frame
+	fout	<<	"gene_id \""		<<	gene_id.c_str()				<<"\"; ";
+	fout	<<	"transcript_id \""	<<	transcript_id.c_str()		<<"\"; ";
+	if(gene_type != "") 
+		fout<<	"gene_type \""		<<	gene_type.c_str()			<<"\"; ";
+	if(transcript_type != "") 
+		fout<<"transcript_type \""	<<	transcript_type.c_str()		<<"\"; ";
+	
 	//fout<<"RPKM \""<<RPKM<<"\"; ";
-	fout<<"cov \""<<coverage<<"\"; ";
-	if(cov2 >= -0.5) fout<<"cov2 \""<<cov2<<"\"; ";
-	if(count >= -0.5) fout<<"count \""<<count<<"\"; ";
-	fout << endl;
+	fout	<<	"cov \""			<<	coverage					<<"\"; ";
+
+	if(cov2 >= -0.5) 
+		fout<<	"cov2 \""			<<	cov2						<<"\"; ";
+	
+	if(count >= -0.5) 
+		fout<<	"count \""			<<	count						<<"\"; ";
+	
+	fout 	<< 	endl;
 
 	for(int k = 0; k < exons.size(); k++)
 	{
 		fout<<seqname.c_str()<<"\t";		// chromosome name
 		fout<<source.c_str()<<"\t";			// source
 		fout<<"exon\t";						// feature
-		fout<<exons[k].first.p32 + 1<<"\t";		// left position
+		fout<<exons[k].first.p32 + 1<<"\t";		// left position; 0-based to 1-based by adding 1
 		fout<<exons[k].second.p32<<"\t";		// right position
 		fout<<1000<<"\t";					// score, now as expression
 		fout<<strand<<"\t";					// strand
@@ -486,188 +494,36 @@ int transcript::write_gvf(ostream &fout, double cov2, int count) const
 
 int transcript::write_fasta(ostream &fout, int line_len, faidx_t *fai) const
 {
-	throw "transcript::write_fasta not implemented";
-	// if(exons.size() == 0) return 0;
+	assert(0 && "Not implemented");		// TODO: pull sequences from genome fasta, replace allele
 
-	// string name = transcript_id;	
-	
-	// int seqlen;
-	// if (strand != '.')
 	// {
-	// 	string sequence;
-	// 	if (strand == '+')
+	// 	int q1 = exons[k].first.p32;
+	// 	int q2 = exons[k].second.p32;
+		
+	// 	if() 
 	// 	{
-	// 		for(int k = 0; k < exons.size(); ++k)
-	// 		{
-	// 			if (exons[k].first.ale == "$")
-	// 			{
-	// 				char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 				sequence += s;
-	// 				free(s);	
-	// 			}
-	// 			else 
-	// 			{
-	// 				if (exons[k].first.ale == "*") sequence += "N";
-	// 				else sequence += exons[k].first.ale;
-	// 			}
-	// 		}
 	// 	}
-	// 	else if (strand == '-')
 	// 	{
-	// 		for(int k = exons.size() - 1; k >= 0 ; --k)
-	// 		{
-	// 			string rc;
-	// 			if (exons[k].first.ale == "$")
-	// 			{
-	// 				char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 				reverse_complement_DNA(rc, s);
-	// 				free(s);
-	// 			}
-	// 			else 
-	// 			{
-	// 				string s = exons[k].first.ale;
-	// 				if (s == "*") s = "N";
-	// 				reverse_complement_DNA(rc, s);
-	// 			}
-	// 			sequence += rc;
-	// 		}
 	// 	}
-	// 	else {cout << "\n"<< strand; assert(0 && "Error strand must be one of ./+/- "); }
 
-	// 	fout << ">" << name << endl;
-	// 	int i = 0;
-	// 	for(; i < sequence.length() / line_len; ++i)  fout << sequence.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence.substr(line_len * i, sequence.length() - line_len * i) << endl;
+	// 	int l = sequence.length();
+	// 	string ale = exons[k].first.ale;
+	// 	int exon_len = exons[k-1].second.p32 - exons[k-1].first.p32;
+	// 	int p = l - exon_len + (exons[k].first.p32 - exons[k-1].first.p32);
+	// 	int as_len = exons[k].second.p32 - exons[k].first.p32;
+	// 	sequence.replace(p, as_len, exons[k].first.ale);
+
+	// 	i ++;
 	// }
-	// else  // When strand un-determined, unlikely to happen
 	// {
-	// 	string sequence;
-	// 	string sequence_rc;
-	// 	for(int k = 0; k < exons.size(); ++k)
-	// 	{
-	// 		string seq;
-	// 		if (exons[k].first.ale == "$")
-	// 		{
-	// 			char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 			seq = s;
-	// 			free(s);
-	// 		}
-	// 		else 
-	// 		{
-	// 			if(exons[k].first.ale == "*") seq = "N";
-	// 			else seq = exons[k].first.ale;
-	// 		}
-	// 		sequence += seq;
-	// 		string rc;
-	// 		reverse_complement_DNA(rc, seq);
-	// 		sequence_rc.insert(0, rc);
-	// 	}
-	// 	fout << ">" << name << "_forward" << endl;
-	// 	int i = 0;
-	// 	for(; i < sequence.length() / line_len; ++i)  fout << sequence.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence.substr(line_len * i, sequence.length() - line_len * i) << endl;
 
-	// 	fout << ">" << name  << "_reverse" << endl;
-	// 	i = 0;
-	// 	for(; i < sequence_rc.length() / line_len; ++i)  fout << sequence_rc.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence_rc.substr(line_len * i, sequence_rc.length() - line_len * i) << endl;
+
+
+	// {
 	// }
-
-	return 0;	
-}
-
-
-int transcript::write_fasta_AS_only(ostream &fout, int line_len, faidx_t *fai) const
-{
-	throw "transcript::write_fasta_AS_only not implemented";
-	// if(exons.size() == 0) return 0;
-	// // is transcript AS //TODO: time complexity optimize
-	// bool _b = false;
-	// for(int i = 0; i < exons.size(); ++i) if(exons[i].first.ale != "$") {_b = true; break;}
-	// if (! _b) return 0;
-
-	// string name = transcript_id;	
-	
-	// int seqlen;
-	// if (strand != '.')
-	// {
-	// 	string sequence;
-	// 	if (strand == '+')
-	// 	{
-	// 		for(int k = 0; k < exons.size(); ++k)
-	// 		{
-	// 			if (exons[k].first.ale == "$")
-	// 			{
-	// 				char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 				sequence += s;
-	// 				free(s);	
-	// 			}
-	// 			else 
-	// 			{
-	// 				if (exons[k].first.ale == "*") sequence += "N";
-	// 				else sequence += exons[k].first.ale;
-	// 			}
-	// 		}
-	// 	}
-	// 	else if (strand == '-')
-	// 	{
-	// 		for(int k = exons.size() - 1; k >= 0 ; --k)
-	// 		{
-	// 			string rc;
-	// 			if (exons[k].first.ale == "$")
-	// 			{
-	// 				char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 				reverse_complement_DNA(rc, s);
-	// 				free(s);
-	// 			}
-	// 			else 
-	// 			{
-	// 				string s = exons[k].first.ale;
-	// 				if (s == "*") s = "N";
-	// 				reverse_complement_DNA(rc, s);
-	// 			}
-	// 			sequence += rc;
-	// 		}
-	// 	}
-	// 	else assert(0 && "Error strand must be one of ./+/- "); 
-
-	// 	fout << ">" << name << endl;
-	// 	int i = 0;
-	// 	for(; i < sequence.length() / line_len; ++i)  fout << sequence.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence.substr(line_len * i, sequence.length() - line_len * i) << endl;
 	// }
-	// else  // When strand un-determined, unlikely to happen
+	// else 
 	// {
-	// 	string sequence;
-	// 	string sequence_rc;
-	// 	for(int k = 0; k < exons.size(); ++k)
-	// 	{
-	// 		string seq;
-	// 		if (exons[k].first.ale == "$")
-	// 		{
-	// 			char * s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included
-	// 			seq = s;
-	// 			free(s);
-	// 		}
-	// 		else 
-	// 		{
-	// 			if(exons[k].first.ale == "*") seq = "N";
-	// 			else seq = exons[k].first.ale;
-	// 		}
-	// 		sequence += seq;
-	// 		string rc;
-	// 		reverse_complement_DNA(rc, seq);
-	// 		sequence_rc.insert(0, rc);
-	// 	}
-	// 	fout << ">" << name << "_forward" << endl;
-	// 	int i = 0;
-	// 	for(; i < sequence.length() / line_len; ++i)  fout << sequence.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence.substr(line_len * i, sequence.length() - line_len * i) << endl;
-
-	// 	fout << ">" << name  << "_reverse" << endl;
-	// 	i = 0;
-	// 	for(; i < sequence_rc.length() / line_len; ++i)  fout << sequence_rc.substr(line_len * i, line_len) << endl;
-	// 	fout << sequence_rc.substr(line_len * i, sequence_rc.length() - line_len * i) << endl;
 	// }
 
 	return 0;	

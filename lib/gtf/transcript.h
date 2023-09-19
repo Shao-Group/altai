@@ -80,12 +80,10 @@ public:
 	int compare1(const transcript &t, double single_exon_overlap) const;
 	int extend_bounds(const transcript &t);
 	// string label() const;
-	// int write(ostream &fout) const;
 	int write(ostream &fout, double cov2 = -1, int count = -1) const;
-	// int write_gvf(ostream &fout) const;
 	int write_gvf(ostream &fout, double cov2 = -1, int count = -1) const;
 	int write_fasta(ostream &fout, int line_len, faidx_t *fai) const;
-	int write_fasta_AS_only(ostream &fout, int line_len, faidx_t *fai) const;
+
 	
 
 	static int reverse_complement_DNA(string &, const string);
