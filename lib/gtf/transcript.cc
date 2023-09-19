@@ -23,8 +23,10 @@ transcript::transcript()
 
 transcript::transcript(const item &e)
 {
+	throw "transcript::transcript should not be constructed with an item object";
 	assign(e);
 	exons.clear();
+	as_exons.clear();
 }
 
 transcript::~transcript()
