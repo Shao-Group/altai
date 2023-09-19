@@ -193,6 +193,42 @@ int transcript::assign_gt(genotype g)
 	return 0;
 }
 
+/*
+*	transform gt and as_exon
+*	@return	!gt_explicit_same(this->gt, g)
+*/
+bool transcript::transform_gt(genotype g)
+{	
+	if(gt_explicit_same(gt, g)) return true;
+	
+	gt = g;
+
+	if(g == NONSPECIFIC || g == UNPHASED) 
+	{
+		make_non_specific();
+		return false;
+	}
+
+	vector<PI32> as_new;
+	for(PI32 a: as_exons)
+	{
+		assert(a.first.ale == a.second.ale);
+		int p = a.first.p32;
+		int q = a.second.p32;
+		string s = "$";
+		for(const auto & string_gt_pair: asp.vcf_pos_map[seqname][p])
+		{
+			if(string_gt_pair.second == g) s = string_gt_pair.first;
+		}
+		as_pos32 p2(p, s);
+		as_pos32 q2(q, s);
+		as_new.push_back({p2, q2});
+	}
+	as_exons = as_new;
+
+	return false;
+}
+
 PI32 transcript::get_bounds() const
 {
 	if(exons.size() == 0) return PI32(-1, -1);
@@ -496,16 +532,43 @@ int transcript::write_fasta(ostream &fout, int line_len, faidx_t *fai) const
 {
 	assert(0 && "Not implemented");		// TODO: pull sequences from genome fasta, replace allele
 
+
+	if(exons.size() == 0) return 0;
+		
+	string sequence;
+	for(int k = 0; k < exons.size(); ++k)
+	{
+		assert(exons[k].first.ale == "$");
+		assert(exons[k].second.ale == "$");
+		int seqlen;
+		char* s = faidx_fetch_seq(fai, seqname.c_str(), exons[k].first.p32, exons[k].second.p32-1, &seqlen);	//both [seq_begin, seq_end] included; both exons and fai are 0-based
+		sequence += s;
+		free(s);	
+	}
+
+	// int k = 0;
+	// int i = 0;
+	// while(i < as_exons.size() && k < exons.size())
 	// {
+	// 	int p1 = as_exons[i].first.p32;
+	// 	int p2 = as_exons[i].second.p32;
 	// 	int q1 = exons[k].first.p32;
 	// 	int q2 = exons[k].second.p32;
 		
 	// 	if() 
 	// 	{
+			
 	// 	}
+	// 	else if ()
 	// 	{
-	// 	}
 
+	// 	}
+		
+
+	// 	assert(k >= 1);
+	// 	assert(exons[k].first.ale != "$")
+	// 	assert(exons[k].first.ale == exons[k].second.ale);
+	// 	assert(exons[k].first.rightsameto(exons[k-1].first));
 	// 	int l = sequence.length();
 	// 	string ale = exons[k].first.ale;
 	// 	int exon_len = exons[k-1].second.p32 - exons[k-1].first.p32;
@@ -515,17 +578,31 @@ int transcript::write_fasta(ostream &fout, int line_len, faidx_t *fai) const
 
 	// 	i ++;
 	// }
+	// if(i < as_exons.size())
 	// {
 
+	// }
 
 
+	// string rc;
+	// reverse_complement_DNA(rc, sequence);
+	// if (strand == "-")
 	// {
 	// }
+	// else if (strand == '.'){	//TODO: use both
 	// }
 	// else 
 	// {
+	// 	assert (strand == '+'); 	//trand must be one of ./+/- 
 	// }
 
+
+	string name = transcript_id;	
+
+	fout << ">" << name << endl;
+	int i = 0;
+	for(; i < sequence.length() / line_len; ++i)  fout << sequence.substr(line_len * i, line_len) << endl;
+	fout << sequence.substr(line_len * i, sequence.length() - line_len * i) << endl;
 	return 0;	
 }
 
@@ -556,4 +633,51 @@ int transcript::reverse_complement_DNA(string &rc, const string s)
 		rc += c;
 	}
 	return 0;
+}
+
+/*
+*	recovers full transcripts from partial transcripts, if >50% match
+*	only works for multi-exon transcripts
+*	@return a copy of recovered transcripts
+*/
+vector<transcript>& transcript::recover_full_from_partial_transcripts
+	(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio, bool will_change_gt)
+{
+	vector<transcript> recovered;
+	set<int> recovered_hasing;
+
+	if (min_chain_overlap_ratio <= 0 || full_txs.size() == 0 || part_txs.size() == 0) return recovered;
+	assert(min_chain_overlap_ratio > 0 && min_chain_overlap_ratio <= 1);
+
+	for(const transcript& fullt: full_txs)
+	{
+		if (fullt.exons.size() <= 1) continue;
+		size_t fullt_hashing = fullt.get_intron_chain_hashing();
+		if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
+		
+		const vector<PI32>& fullt_chain = fullt.get_intron_chain();
+
+		for(const transcript& partt: part_txs)
+		{
+			if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
+			const vector<PI32>& part_chain = partt.get_intron_chain();
+
+			vector<PI32> intersected;
+			set_intersection(fullt_chain.begin(), fullt_chain.end(), part_chain.begin(), part_chain.end(), back_inserter(intersected));
+			if (intersected.size() >= fullt_chain.size() * min_chain_overlap_ratio)
+			{
+				transcript t(fullt);
+
+				if (will_change_gt) t.transform_gt(partt.gt);
+				else assert(!gt_conflict(fullt.gt, partt.gt));
+				
+				recovered.push_back(t);
+				recovered_hasing.insert(fullt_hashing);
+				break;
+			}
+		}
+	}
+
+	assert(recovered.size() == recovered_hasing.size());
+	return recovered;
 }

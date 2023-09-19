@@ -42,6 +42,8 @@ private:
 	double qlen;
 	vector< vector<transcript> > trsts;
 	vector< vector<transcript> > nonfull_trsts;
+	vector<transcript> recovered_allele1;
+	vector<transcript> recovered_allele2;
 
 public:
 	int assemble();

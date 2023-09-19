@@ -184,6 +184,7 @@ extern bool FILTER_BY_COV;
 extern bool phasing_profile_only;
 extern bool decompose_as_neighor;
 extern bool use_filter;
+extern double recover_partial_tx_min_overlap_with_full_tx;
 
 // for debugging
 extern bool DEBUG_MODE_ON;

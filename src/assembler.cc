@@ -136,6 +136,12 @@ int assembler::assemble()
 		nonfull_trsts[i] = ft1.trs;
 	}	
 
+	if(recover_partial_tx_min_overlap_with_full_tx > 0)
+	{
+		recovered_allele1 = transcript::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], recover_partial_tx_min_overlap_with_full_tx, true);
+		recovered_allele2 = transcript::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], recover_partial_tx_min_overlap_with_full_tx, true);
+	}
+
 	write();
 	
 	return 0;
@@ -431,6 +437,15 @@ int assembler::write()
 			ofstream fout1((output_file1 + "." + allele_name_fix + ".gvf").c_str());
 			if(!fout1.fail()) for(const transcript &t : nonfull_trsts[a]) t.write_gvf(fout1);
 			fout1.close();
+		}
+
+		// write recovered partial transcripts
+		if(recover_partial_tx_min_overlap_with_full_tx > 0 && a != 0)
+		{
+			ofstream frecov((output_file1 + ".re." + allele_name_fix + "re.gvf").c_str());
+			const vector<transcript>& v = (a == 1)? recovered_allele1 : recovered_allele2;
+			if(!frecov.fail()) for(const transcript &t : v) t.write_gvf(frecov);
+			frecov.close();
 		}
 	}
 	return 0;

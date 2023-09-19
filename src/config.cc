@@ -141,6 +141,7 @@ bool FILTER_BY_COV = false;
 bool phasing_profile_only = false;
 bool decompose_as_neighor = false;
 bool use_filter = true;
+double recover_partial_tx_min_overlap_with_full_tx = -1;
 
 // for debugging
 bool DEBUG_MODE_ON = false;
@@ -538,6 +539,11 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--not_use_filter")
 		{
 			use_filter = false;
+		}
+		else if(string(argv[i]) == "--recover_partial_tx_min_overlap_with_full_tx")
+		{
+			recover_partial_tx_min_overlap_with_full_tx = atof(argv[i + 1]);
+			i++;
 		}
 		// for debug
 		else if(string(argv[i]) == "--DEBUG")

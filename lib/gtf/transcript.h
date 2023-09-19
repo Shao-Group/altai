@@ -70,6 +70,7 @@ public:
 	int length() const;
 	int make_non_specific();
 	int assign_gt(genotype g);
+	bool transform_gt(genotype g);
 	PI32 get_bounds() const;
 	// PI32 get_first_intron() const;
 	size_t get_intron_chain_hashing() const;
@@ -87,6 +88,8 @@ public:
 	
 
 	static int reverse_complement_DNA(string &, const string);
+	static vector<transcript>& recover_full_from_partial_transcripts
+		(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio = 0.5, bool will_change_gt = true);
 };
 
 #endif
