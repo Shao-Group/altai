@@ -161,20 +161,20 @@ int transcript_set::add(const transcript_set &ts, int mode1, int mode2)
 	return 0;
 }
 
-int transcript_set::filter(int min_count)
-{
-	for(auto &x: mt)
-	{
-		vector<trans_item> v;
-		for(auto &z: x.second)
-		{
-			if(z.count < min_count) continue;
-			v.push_back(z);
-		}
-		x.second = std::move(v);
-	}
-	return 0;
-}
+// int transcript_set::filter(int min_count)
+// {
+// 	for(auto &x: mt)
+// 	{
+// 		vector<trans_item> v;
+// 		for(auto &z: x.second)
+// 		{
+// 			if(z.count < min_count) continue;
+// 			v.push_back(z);
+// 		}
+// 		x.second = std::move(v);
+// 	}
+// 	return 0;
+// }
 
 // int transcript_set::increase_count(int count)
 // {
