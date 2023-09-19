@@ -399,6 +399,7 @@ filter::filter(const vector<transcript> &v)
 } 
 */
 
+/*
 int filter::keep_as_transcripts_only()
 {
 	vector<transcript> v;
@@ -430,6 +431,7 @@ int filter::keep_as_transcripts_only()
 	}
 	return 0;
 }
+*/
 
 int filter::filter_length_coverage()
 {
@@ -463,7 +465,7 @@ int filter::filter_length_coverage()
 	return 0;
 }
 
-int filter::remove_nested_transcripts()	//TODO: not used, to make AS compatible
+int filter::remove_nested_transcripts()
 {
 	set<int> s;
 	for(int i = 0; i < trs.size(); i++)
@@ -515,7 +517,7 @@ int filter::join_single_exon_transcripts()
 	return 0;
 }
 
-bool filter::join_transcripts()  //TODO:make AS compatible
+bool filter::join_transcripts()
 {
 	sort(trs.begin(), trs.end(), transcript_cmp);
 	//print();
@@ -543,7 +545,7 @@ bool filter::join_transcripts()  //TODO:make AS compatible
 		assert(trs[kj].exons.size() == 1);
 		as_pos32 p1 = trs[ki].get_bounds().second;
 		as_pos32 p2 = trs[kj].get_bounds().second;
-		trs[ki].add_exon(p1, p2); // TODO:make AS some seq before p2 may have allele
+		trs[ki].add_exon(p1, p2);
 		trs[kj].sort();
 		trs[ki].shrink();
 		trs.erase(trs.begin() + kj);
@@ -554,7 +556,7 @@ bool filter::join_transcripts()  //TODO:make AS compatible
 		assert(trs[ki].exons.size() == 1);
 		as_pos32 p1 = trs[ki].get_bounds().first;
 		as_pos32 p2 = trs[kj].get_bounds().first;
-		trs[kj].add_exon(p1, p2); // TODO:make AS some seq before p2 may have allele
+		trs[kj].add_exon(p1, p2);
 		trs[kj].sort();
 		trs[kj].shrink();
 		trs.erase(trs.begin() + ki);
@@ -566,7 +568,7 @@ bool filter::join_transcripts()  //TODO:make AS compatible
 		assert(trs[kj].exons.size() == 1);
 		as_pos32 p1 = trs[ki].get_bounds().first;
 		as_pos32 p2 = trs[kj].get_bounds().first;
-		trs[kj].add_exon(p1, p2); // TODO:make AS some seq before p2 may have allele
+		trs[kj].add_exon(p1, p2);
 		trs[kj].sort();
 		trs[kj].shrink();
 		double cov = 0;
@@ -593,16 +595,27 @@ int filter::locate_next_transcript(int t)
 		assert(a <= b);
 		if(a == b) return a;
 		int k = (a + b) / 2;
-		if(trs[k].get_bounds().first.samepos(p.second)) return k;				// TODO: AS compatible
-		if(trs[k].get_bounds().first.leftsameto(p.second)) a = k + 1;			// TODO: AS compatible
-		if(trs[k].get_bounds().first.rightto(p.second)) b = k;					// TODO: AS compatible
+		if(trs[k].get_bounds().first.samepos(p.second)) return k;
+		if(trs[k].get_bounds().first.leftsameto(p.second)) a = k + 1;
+		if(trs[k].get_bounds().first.rightto(p.second)) b = k;
 	}
 	assert(false);
 	return -1;
 }
 
-int filter::merge_single_exon_transcripts(vector<transcript> &trs0) 		// FIXME: TODO: don't merge transcripts from two alleles
+int filter::merge_single_exon_transcripts(vector<transcript> &trs0)
 {
+	// must be the same gt in order to merge
+	genotype g = UNPHASED;
+	for(const transcript & t: trs0)
+	{
+		if(t.gt == ALLELE1 || t.gt == ALLELE2)
+		{
+			assert(! gt_conflict(g, t.gt));
+			g = t.gt;
+		}
+	}
+
 	typedef pair<PI32, int> PPI;
 	vector<PPI> vv;
 	for(int i = 0; i < trs0.size(); i++)
