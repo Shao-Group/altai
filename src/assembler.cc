@@ -420,7 +420,8 @@ int assembler::write()
 		if(fasta_input != "") 
 		{
 			ofstream faout((outname_prefix + ".fa").c_str());	
-			if(!faout.fail()) for(const transcript &t : trsts_of_allele) t.write_fasta(faout, 60, fai);
+			// if(!faout.fail()) for(const transcript &t : trsts_of_allele) t.write_fasta(faout, 60, fai);
+			cerr << "fasta output is not implemented yet." << endl; //TODO:
 			faout.close();
 		}			
 
