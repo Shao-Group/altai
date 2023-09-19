@@ -29,9 +29,15 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	refine_allelic_graphs();
 	split_hs();
 	assemble_allelic_scallop(); 
+	assign_transcripts_gt();
 }
 
-// init ewrt1/2, countbg1/2, normalize ratiobg1/2
+
+/*
+*	init ewrt1/2, countbg1/2, normalize ratiobg1/2
+*
+*   NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
+*/
 int phaser::init()
 {
 	pgr1->clear();
@@ -117,9 +123,6 @@ int phaser::init()
 		cout << "phaser ratio bg" << ewrtbg1 << "--" << ewrtbg2 << "--";
 		cout << ewrtratiobg1 << "--" << ewrtratiobg2 << endl;
 	}	
-
-	//TODO: what if only one allele is expressed?
-	// if (countbg1 == 0 || countbg2 == 0){;} {	// return one empty graph}	
 
 	return 0;
 }
@@ -540,6 +543,13 @@ int phaser::assemble_allelic_scallop()
 	trsts2 = sc2.trsts;
 	non_full_trsts1 = sc1.non_full_trsts;
 	non_full_trsts2 = sc2.non_full_trsts;
+
+	if(verbose >= 2)
+	{
+		printf("Collected %d transcripts from allele1, %d transcripts from allel2, of splice graph %s\n", 
+				trsts1.size(), trsts2.size(), sc.gr.gid.c_str());
+	}
+
 	return 0;
 }
 
@@ -610,4 +620,21 @@ pair<double, double> phaser::normalize_epsilon(double x, double y)
 	double z = (x + epsilon) / (x + y + 2 * epsilon);
 	assert(z > 0 && z < 1);
 	return {z, 1.0 - z};
+}
+
+/*
+*	Transcripts will be assigned gt w.r.t. allelic scallop where whey were assembled
+*	Nonspecific transcripts will be picked in transcript_set/filter
+*/
+int phaser::assign_transcripts_gt()
+{
+	for(transcript& t: trsts1) t.assign_gt(ALLELE1);
+	for(transcript& t: trsts2) t.assign_gt(ALLELE2);
+	for(transcript& t: non_full_trsts1) t.assign_gt(ALLELE1);
+	for(transcript& t: non_full_trsts2) t.assign_gt(ALLELE2);
+	if(verbose >= 2)
+	{
+		printf("Assigned genotypes for the above collected transcripts.\n");
+	}
+	return 0;
 }

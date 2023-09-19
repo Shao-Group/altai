@@ -20,6 +20,7 @@ See LICENSE for licensing.
 *   phaser takes scallop object as an input and does:
 *   1. split it into two allelic scallop instances (objects splitted: sc, gr, hs);
 *   2. assemble allelic scallop instances (sc1, sc2)
+*       2.1 assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
 *   3. transcripts and non-full-length transcripts are stored as public, and will be collected + processed in assembler class
 */
 class phaser
@@ -72,6 +73,7 @@ private:
     int split_hs();
     int assemble_allelic_scallop();     
     int allelic_transform(scallop& sc, splice_graph* pgr, MEE& x2y);
+    int assign_transcripts_gt();
 
 private:
     pair<double, double> get_as_ratio(int i);
