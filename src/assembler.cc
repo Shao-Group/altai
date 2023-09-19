@@ -395,6 +395,7 @@ int assembler::write()
 
 		vector<transcript> & trsts_of_allele = trsts[a];
 		
+		// write gtf w/o variants
 		if (output_file != "")
 		{
 			ofstream fout((outname_prefix + ".gtf").c_str());
@@ -402,13 +403,19 @@ int assembler::write()
 			fout.close();
 		}
 		
-		if (output_file != "")
+		// write gvf w/ variants
+		if (output_file != "" || a == 0)
 		{
 			ofstream gvfout((outname_prefix + ".gvf").c_str());
-			if(!gvfout.fail()) for(const transcript &t : trsts_of_allele) t.write_gvf(gvfout);
+			if(!gvfout.fail()) 
+			{
+				gvfout << "#allele \"ALLELE1/2\" correspondes to the first/second allele of \"GT\" field in the vcf file input." << endl;
+				for(const transcript &t : trsts_of_allele) t.write_gvf(gvfout);
+			}
 			gvfout.close();
 		}
 		
+		// write fasta w/ variants
 		if(fasta_input != "") 
 		{
 			ofstream faout((outname_prefix + ".fa").c_str());	
@@ -416,6 +423,7 @@ int assembler::write()
 			faout.close();
 		}			
 
+		// write non-full-length gvf w/ variants
 		if(output_file1 != "")
 		{
 			ofstream fout1((output_file1 + "." + allele_name_fix + ".gvf").c_str());
