@@ -140,6 +140,8 @@ string version = "v0.0.1";
 bool FILTER_BY_COV = false;
 bool phasing_profile_only = false;
 bool decompose_as_neighor = false;
+bool skip_resolve_hyper_edge = true;
+bool skip_resolve_smallest = true;
 bool use_filter = true;
 double recover_partial_tx_min_overlap_with_full_tx = -1;
 
@@ -535,6 +537,14 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--decompose_as_neighor")
 		{
 			decompose_as_neighor = true;
+		}
+		else if(string(argv[i]) == "--not_skip_resolve_hyper_edge")
+		{
+			skip_resolve_hyper_edge == false;
+		}
+		else if(string(argv[i]) == "--not_skip_resolve_smallest")
+		{
+			skip_resolve_smallest = false;
 		}
 		else if(string(argv[i]) == "--not_use_filter")
 		{

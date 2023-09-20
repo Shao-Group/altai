@@ -27,6 +27,7 @@ scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool 
 	: gr(*g), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
 	assert(!keep_as);
+	assert(!keep_as_nodes);
 	round = 0;
 	gr.edge_integrity_examine();
 	gr.get_edge_indices(i2e, e2i);
@@ -144,16 +145,17 @@ int scallop::assemble(bool is_allelic)
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
 		if(b == true) continue;
 
-		b = resolve_hyper_edge(2);
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) b = resolve_hyper_edge(2);
 		if(b == true) continue;
 
-		b = resolve_hyper_edge(1);
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) b = resolve_hyper_edge(1);
 		if(b == true) continue;
 
-		b = resolve_smallest_edges(DBL_MAX);
+		if (!keep_as_nodes || !skip_resolve_smallest) b = resolve_smallest_edges(DBL_MAX);
 		if(b == true) continue;
 
-		b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		// don't decompose trivial vertices until last round of scallop
+		if (!keep_as_nodes) b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
 		if(b == true) continue;
 
 		break;
