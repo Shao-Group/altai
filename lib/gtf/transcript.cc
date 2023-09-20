@@ -667,6 +667,7 @@ vector<transcript>& transcript::recover_full_from_partial_transcripts
 			if (intersected.size() >= fullt_chain.size() * min_chain_overlap_ratio)
 			{
 				transcript t(fullt);
+				t.coverage = partt.coverage;
 
 				if (will_change_gt) t.transform_gt(partt.gt);
 				else assert(!gt_conflict(fullt.gt, partt.gt));
