@@ -442,7 +442,7 @@ int assembler::write()
 		// write recovered partial transcripts
 		if(recover_partial_tx_min_overlap_with_full_tx > 0 && a != 0)
 		{
-			ofstream frecov((output_file1 + ".re." + allele_name_fix + "re.gvf").c_str());
+			ofstream frecov((output_file1 + ".re." + allele_name_fix + ".gvf").c_str());
 			const vector<transcript>& v = (a == 1)? recovered_allele1 : recovered_allele2;
 			if(!frecov.fail()) for(const transcript &t : v) t.write_gvf(frecov);
 			frecov.close();
