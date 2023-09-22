@@ -151,6 +151,7 @@ bool debug_bundle_only = false;
 bool print_vcf = false;
 bool print_hit = false;
 bool print_region_detail = false;
+bool print_bundle_detail = false;
 bool print_phaser_detail = false;
 bool print_scallop_detail = false;
 
@@ -575,6 +576,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--print_region_detail")
 		{
 			print_region_detail = true;			
+		}
+		else if(string(argv[i]) == "--print_bundle_detail")
+		{
+			print_bundle_detail = true;			
 		}
 		else if(string(argv[i]) == "--print_phaser_detail")
 		{

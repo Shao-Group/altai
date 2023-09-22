@@ -1511,9 +1511,8 @@ int bundle::build_hyper_set()
 		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
 		else m[v] += fr.cnt;
 	}
-
 	
-	// note by Qimin, bridge umi-linked fragments into one single long path
+	// note by Qimin, bridge umi-linked fragments into one single long path  //TODO:
 	for(int k = 0; k < br.umiLink.size(); k++)
 	{
 		vector<int> v;
@@ -1623,5 +1622,8 @@ int bundle::build_hyper_set()
 		int c = it->second;
 		if(v.size() >= 2) hs.add_node_list(v, c);
 	}
+
+	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "build_hyper_set completed. print hs." << endl; hs.print();}
+
 	return 0;
 }
