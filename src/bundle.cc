@@ -158,8 +158,12 @@ int bundle::build_partial_exons()
 			r.rebuild(&fmap); 
 			for(int k = 0; k < r.pexons.size(); k++)
 			{
-				partial_exon &pe = r.pexons[k];
+				partial_exon& rpe = r.pexons[k];
+				partial_exon pe (rpe);
+				rpe.rid = i;
+				rpe.rid2 = k;
 				pe.rid = i;
+				pe.rid2 = k;
 				pexons.push_back(pe);
 			}
 		}
@@ -197,8 +201,10 @@ int bundle::build_partial_exons()
 			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
 			pe.assign_as_cov(r.ave, r.max, r.dev);
 			pe.rid = i;
+			pe.rid2 = 0;
 			pe.type = 0;  // assert not EMPTY_VERTEX
 			r.pexons.push_back(pe);
+			assert(r.pexons.size() == 1);
 			pexons.push_back(pe);
 		}
 	}
@@ -212,6 +218,17 @@ int bundle::build_partial_exons()
 		if((pe.lpos != bb.lpos || pe.rpos != bb.rpos) && (pe.ltype & START_BOUNDARY) && (pe.rtype & END_BOUNDARY)) 
 			regional.push_back(true);
 		else regional.push_back(false);		
+		// region.pexons and bundle.pexons should have the same rid, rid2, pid
+		assert(pe.rid >= 0 && pe.rid < regions.size());
+		assert(pe.rid2 >= 0 && pe.rid2 < regions[pe.rid].pexons.size());
+		partial_exon& rpe = regions[pe.rid].pexons[pe.rid2];
+		assert(pe.lpos == rpe.lpos);
+		assert(pe.rpos == rpe.rpos);
+		assert(rpe.pid == -1);
+		assert(rpe.rid == pe.rid);
+		assert(rpe.rid2 == pe.rid2);
+		if(i >= 1) assert(pe.lpos.p32 >= pexons[i-1].lpos);
+		rpe.pid = i;
 	}
 
 	/*

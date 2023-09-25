@@ -30,6 +30,7 @@ public:
 	genotype gt;
 
 	int rid;						// parental region id
+	int rid2;						// parental region's pexon index 
 	int pid;						// index in the bundle pexons
 	int type;						// label
 	double ave;						// average abundance

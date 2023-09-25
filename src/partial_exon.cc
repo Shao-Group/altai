@@ -17,13 +17,14 @@ partial_exon::partial_exon(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtyp
 {
 	type = 0;
 	rid = -1;
+	rid2 = -1;
 	pid = -1;
 }
 
 int partial_exon::print(int index) const
 {
-	printf("partial_exon %d: [%d%s-%d%s), rid = %d, pid = %d, type = (%d, %d), length = %d, ave-abd = %.1lf, max-abd = %.1lf, std-abd = %.1lf, gt=%s\n",
-			index, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), rid, pid, ltype, rtype, rpos - lpos, ave, max, dev, gt_str(gt));
+	printf("partial_exon %d: [%d%s-%d%s), rid = %d.%d, pid = %d, type = (%d, %d), length = %d, ave-abd = %.1lf, max-abd = %.1lf, std-abd = %.1lf, gt=%s\n",
+			index, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), rid, rid2, pid, ltype, rtype, rpos - lpos, ave, max, dev, gt_str(gt));
 	return 0;
 }
 
