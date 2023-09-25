@@ -137,7 +137,6 @@ int bundle::build_intervals()
 
 int bundle::build_partial_exons()
 {
-	//TODO: remove insufficiently supported AS exons, break phasing paths of such AS exons
 	pexons.clear();
 	regional.clear();
 
@@ -229,6 +228,13 @@ int bundle::build_partial_exons()
 		assert(rpe.rid2 == pe.rid2);
 		if(i >= 1) assert(pe.lpos.p32 >= pexons[i-1].lpos);
 		rpe.pid = i;
+	}
+
+	if(DEBUG_MODE_ON)
+	{
+		for(const region& r: regions)
+			for(const partial_exon& pe: r.pexons)
+				assert(pe.pid >= 0 && pe.pid <= pexons.size());
 	}
 
 	/*
@@ -466,6 +472,13 @@ vector<int> bundle::align_hit(hit &h)
 	vector<int> sp2;
 	vector<int> v = decode_vlist(h.vlist);
 
+	if(DEBUG_MODE_ON && print_bundle_detail)
+	{
+		cout << "align_hit, decode list v " ;
+		for(int i: v) cout << i <<  " ";
+		cout << endl;
+	}
+
 	if(v.size() == 0) return sp2;
 
 	for(int k = 0; k < v.size(); k++)
@@ -491,6 +504,14 @@ vector<int> bundle::align_fragment(fragment &fr)
 	bool b = true;
 	vector<int> sp2;
 	vector<int> v = br.get_splices_region_index(fr);
+
+	if(DEBUG_MODE_ON && print_bundle_detail)
+	{
+		cout << "align_fragment, decode list v " ;
+		for(int i: v) cout << i <<  " ";
+		cout << endl;
+	}
+
 
 	if(v.size() == 0) return sp2;
 
@@ -1505,7 +1526,6 @@ int bundle::print(int index)
 int bundle::build_hyper_set()
 {
 	map<vector<int>, int> m;
-	//FIXME: break phasing paths for nonspecific fragments, check phasing paths no gt conflict
 
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
@@ -1631,6 +1651,24 @@ int bundle::build_hyper_set()
 		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, 1));
 		else m[v] += 1;
 	}
+
+	/*
+	if(DEBUG_MODE_ON && print_bundle_detail) 
+	{
+		cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		for(const auto & mvii:m)
+		{
+			const vector<int>& vi = mvii.first;
+			int i = mvii.second;
+			cout << "\t";
+			for(int j: vi)
+			{
+				cout << j << ", ";
+			}
+			cout << ": " << i << ";" <<  endl;
+		}
+	}
+	*/
 
 	hs.clear();
 	for(map<vector<int>, int>::iterator it = m.begin(); it != m.end(); it++)
