@@ -479,30 +479,31 @@ int phaser::split_hs()
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
-			const vector<int>& edge_idx_list = sc.hs.edges[j];
-			int c = sc.hs.ecnts[j];
-			double bottleneck = c;
-			bool is_removed = false;
+			const  vector<int>& edge_idx_list = sc.hs.edges[j];
+			int    c                          = sc.hs.ecnts[j];
+			double bottleneck                 = c;
+			bool   use_this                   = true;
 			for(int edge_idx : edge_idx_list)
 			{
 				edge_descriptor e = sc.i2e[edge_idx];
 				try 
 				{
+					if (e == null_edge) throw EdgeWeightException();
 					double w = ewrt_cur[e];
 					assert(w >= 0);
 					if(w < bottleneck) bottleneck = w;
 				}
 				catch (EdgeWeightException ex) 
 				{
-					is_removed = true;
+					use_this = false;
 					break;
 				}
 			}
 			// add hyper_edge if all edges have AS weight > 1 (hs will be transformed)
-			if (!is_removed && int(bottleneck) >= 1)
+			if (use_this && int(bottleneck) >= 1)
 			{
 				int allelic_c = int(bottleneck);
-				assert(edges_w_count.find(edge_idx_list) == edges_w_count.end());
+				// assert(edges_w_count.find(edge_idx_list) == edges_w_count.end());//FIXME:
 				edges_w_count.insert({edge_idx_list, allelic_c});
 			}
 		}

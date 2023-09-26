@@ -71,6 +71,7 @@ int hyper_set::add_edge_list(const MVII& s)
 
 /* 
 **  transform original-indexed hs to new-indexed hs
+**  original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
 */
 int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
 {
@@ -78,33 +79,48 @@ int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE
 	assert(edges.size() == 0);
 	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
 	
-	// original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
-	for(VVI::iterator it = edges_to_transform.begin(); it != edges_to_transform.end(); ++it)
+	/* if (DEBUG_MODE_ON) for(const auto& es: edges_to_transform) {for(int i: es) cout << i2e_old[i] <<" "; cout <<endl;} */
+	
+	vector<int> ecnts_transformed;	
+	for(int i = 0; i < edges_to_transform.size(); i++)
 	{
-		const vector<int> &vv = *it;
+		const vector<int> & vv =  edges_to_transform[i];
 		vector<int> ve;
+		bool keep_vv = true;
 
-		for(int k = 0; k < vv.size(); k++)
+		for(int k : vv)
 		{
-			edge_descriptor e_old = i2e_old[k];				// index ---> original edge_descriptor
+			assert(k >= 0 && k < i2e_old.size());
+			auto e_old = i2e_old[k]; 				// index ---> original edge_descriptor
+			assert(e_old != null_edge);
 			
-			auto x2yit  = x2y.find(e_old);			  		// original edges descriptor ---> new edge descriptor
+			auto x2yit = x2y.find(e_old);  			// original edges descriptor ---> new edge descriptor
 			assert(x2yit != x2y.end());
-			edge_descriptor e_new = x2yit->second; 
-			assert(pgr->edge(e_new).second);				// e_new exists in pgr
 
-			auto e2iit = e2i_new.find(e_new);		  		// new edge descriptor ---> new index
-			assert(e2iit != e2i_new.end());
-			int i_new = e2iit->second;
-			ve.push_back(i_new);
+			auto e_new = x2yit->second;
+			auto e2iit = e2i_new.find(e_new);  		// new edge descriptor ---> new index			
+
+			if(pgr->edge(e_new).second && e2iit != e2i_new.end()) 
+			{
+				ve.push_back(e2iit->second);
+			}
+			else
+			{
+				keep_vv = false;
+			}
 		}
-		assert(vv.size() == ve.size());
-		edges.push_back(ve);
-	}
 
-	assert(edges.size() == edges_to_transform.size());
-	assert(edges.size() == ecnts.size());
+		if(keep_vv)
+		{
+			assert(vv.size() == ve.size());
+			edges.push_back(ve);
+			ecnts_transformed.push_back(ecnts[i]);
+		}
+	}
+	ecnts = ecnts_transformed;
 	edges_to_transform.clear();
+
+	assert(edges.size() == ecnts.size());
 	return 0;
 }
 
