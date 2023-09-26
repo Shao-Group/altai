@@ -535,10 +535,6 @@ vector<int> bundle::align_fragment(fragment &fr)
 
 int bundle::build_splice_graph(int mode)
 {
-	//FIXME: break non-specific phasing paths at variant sites before assembling to avoid bias to AS egdes' counts -- is it necessary? Since AS nodes are decomposited last, it may be ok for now
-	//TODO:  "store original NS phasing paths and connect its ends after decomposing NS nodes, no assuming allele of such paths. 
-	//					 Should be solvable with linear programming?
-	//					 previous AS phasing paths should also help when assigning edges");
 	//FIXME: only two as vertices at the same sites. no "*" no "N", must be in reference, at most two.
 	
 	// build graph
