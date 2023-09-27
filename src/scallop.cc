@@ -48,7 +48,6 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 		edge_descriptor e1 = i.first;
 		vector<int> vertices_in_super_edge = i.second;
 		if (e1 == null_edge) continue;
-		if (vertices_in_super_edge.size() == 0) continue;
 
 		// transform edge
 		auto e2_iterator = x2y.find(e1);
