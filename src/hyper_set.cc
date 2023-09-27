@@ -698,7 +698,6 @@ bool hyper_set::right_dominate(int e)
 
 int hyper_set::print()
 {
-	//printf("PRINT HYPER_SET\n");
 	for(MVII::iterator it = nodes.begin(); it != nodes.end(); it++)
 	{
 		const vector<int> &v = it->first;
@@ -708,10 +707,16 @@ int hyper_set::print()
 		printf(")\n");
 	}
 
-
 	for(int i = 0; i < edges.size(); i++)
 	{
 		printf("hyper-edge (edges) %d: ( ", i);
+		printv(edges[i]);
+		printf(")\n");
+	}
+
+	for(int i = 0; i < edges_to_transform.size(); i++)
+	{
+		printf("hyper-edge (edges_to_transform) %d: ( ", i);
 		printv(edges[i]);
 		printf(")\n");
 	}
