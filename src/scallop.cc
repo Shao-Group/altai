@@ -63,6 +63,9 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 
 	hs.transform(pgr, i2e_old, x2y, e2i);
 	hs.build_index();
+
+	if(DEBUG_MODE_ON && print_scallop_detail) {cout <<"hs transformed" << endl; hs.print();}
+
 	return 0;
 }
 
@@ -77,6 +80,7 @@ scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
 	round = 0;
 	gr.get_edge_indices(i2e, e2i);
 	hs.build(gr, e2i);
+	if(DEBUG_MODE_ON && print_scallop_detail) {cout << "hs before scallop decomp" << endl; hs.print();}
 	init_super_edges();
 	init_vertex_map();
 	init_inner_weights();
@@ -109,6 +113,12 @@ int scallop::assemble(bool is_allelic)
 		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
 	}
 
+	if(DEBUG_MODE_ON) {
+		cout << "print hs before decomposition" << endl;
+		hs.print();
+	}
+
+
 	while(true)
 	{	
 		if(gr.num_vertices() > max_num_exons) break;
@@ -116,55 +126,84 @@ int scallop::assemble(bool is_allelic)
 		bool b = false;
 
 		b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		if(!assert_debug()) cout << "assert debug failed 1" << endl;
 		if(b == true) continue;
 
 		b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		if(!assert_debug()) cout << "assert debug failed 2" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
+		if(!assert_debug()) cout << "assert debug failed 3" << endl;
 		if(b == true) continue;
 		
 		b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
+		if(!assert_debug()) cout << "assert debug failed 4" << endl;
 		if(b == true) continue;
 
 		b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
+		if(!assert_debug()) cout << "assert debug failed 5" << endl;		
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
+		if(!assert_debug()) cout << "assert debug failed 6" << endl;
 		if(b == true) continue;
 
 		b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
+		if(!assert_debug()) cout << "assert debug failed 7" << endl;
 		if(b == true) continue;
 
 		b = resolve_splittable_vertex(SPLITTABLE_SIMPLE, 1, max_decompose_error_ratio[SPLITTABLE_SIMPLE]);
+		if(!assert_debug()) cout << "assert debug failed 8" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
+		if(!assert_debug()) cout << "assert debug failed 9" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
+		if(!assert_debug()) cout << "assert debug failed 10" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
+		if(!assert_debug()) cout << "assert debug failed 11" << endl;
 		if(b == true) continue;
 
-		if (!keep_as_nodes || !skip_resolve_hyper_edge) b = resolve_hyper_edge(2);
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
+		{
+			b = resolve_hyper_edge(2);
+			if(!assert_debug()) cout << "assert debug failed 12" << endl;
+		}
 		if(b == true) continue;
 
-		if (!keep_as_nodes || !skip_resolve_hyper_edge) b = resolve_hyper_edge(1);
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
+		{
+			b = resolve_hyper_edge(1); 
+			if(!assert_debug()) cout << "assert debug failed 13" << endl;
+		}
 		if(b == true) continue;
 
-		if (!keep_as_nodes || !skip_resolve_smallest) b = resolve_smallest_edges(DBL_MAX);
+		if (!keep_as_nodes || !skip_resolve_smallest) 
+		{
+			b = resolve_smallest_edges(DBL_MAX);
+			if(!assert_debug()) cout << "assert debug failed 14" << endl;
+		}
 		if(b == true) continue;
 
 		// don't decompose trivial vertices until last round of scallop
-		if (!keep_as_nodes) b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		if (!keep_as_nodes) 
+		{
+			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+			if(!assert_debug()) cout << "assert debug failed 15" << endl;
+		}
+		
 		if(b == true) continue;
 
 		break;
 	}
 
 	collect_existing_st_paths();
+	if(!assert_debug()) cout << "assert debug failed 16" << endl;
 
 	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
 	{
@@ -179,6 +218,8 @@ int scallop::assemble(bool is_allelic)
 	
 	
 	greedy_decompose();
+	if(!assert_debug()) cout << "assert debug failed 17" << endl;
+	
 	trsts.clear();
 	non_full_trsts.clear();
 	gr.output_transcripts1(trsts, non_full_trsts, paths);
@@ -1553,4 +1594,104 @@ int scallop::draw_splice_graph(const string &file)
 	vector<int> tp = topological_sort();
 	gr.draw(file, mis, mes, 4.5, tp);
 	return 0;
+}
+
+
+bool scallop::assert_hs_edges_uniq()
+{
+	vector<vector<int> > kk;
+	for(auto edge : hs.edges)
+	{
+		vector<int> v; 
+		bool b = true;
+		for(int i: edge) 
+		{
+			if(i == -1) 
+			{
+				b = false; 
+				break;
+			}
+		}
+		if(b) kk.push_back(edge); 
+	}
+
+	size_t i = kk.size();
+	size_t j = set<vector<int> >(kk.begin(), kk.end()).size();
+
+	if (i != j)
+	{
+		cout << "DEBUG scallop::assert_hs_edges_uniq failed, printing hs (w/o v containing -1)" << endl;
+		for(auto k: kk) {printv(k); cout << endl;}
+		hs.print();
+	}
+	else
+	{
+		cout << "DEBUG scallop::assert_hs_edges_uniq passed, but still print" << endl;
+		hs.print();
+	}
+
+	return (i == j);
+}
+
+bool scallop::assert_mev_gr_edge_descriptor_bijection()
+{
+	size_t i = mev.size();
+	size_t j = gr.num_edges();
+	
+	set<edge_descriptor> mev_edges;
+	set<edge_descriptor> gr_edges;
+	
+	PEEI gr_peei = gr.edges();
+	for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+	for (pair<edge_descriptor, vector<int> > ev: mev) mev_edges.insert(ev.first);
+
+	if(i != j || gr_edges != mev_edges)
+	{
+		cout << "scallop mev edges != gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cout << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cout << "gr edge " << e << endl;
+	}
+
+	return (gr_edges == mev_edges && i == j);
+}
+
+bool scallop::assert_mev_super_set_gr_edge_descriptor()
+{
+	size_t i = mev.size();
+	size_t j = gr.num_edges();
+	
+	set<edge_descriptor> mev_edges;
+	set<edge_descriptor> gr_edges;
+	
+	PEEI gr_peei = gr.edges();
+	for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+	for (pair<edge_descriptor, vector<int> > ev: mev) mev_edges.insert(ev.first);
+
+	bool b = false;
+	for(edge_descriptor e: gr_edges)
+	{
+		if (mev_edges.find(e) == mev_edges.end()) b = true;
+	}
+
+	if(i < j || b)
+	{
+		cout << "scallop mev edges is not superset of gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cout << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cout << "gr edge " << e << endl;
+	}
+
+	return (!b && (i >= j));
+}
+
+bool scallop::assert_debug()
+{
+	if (! DEBUG_MODE_ON) return true;
+	
+	// return assert_hs_edges_uniq();
+	assert_hs_edges_uniq();
+
+	if (keep_as_nodes) 
+		return assert_mev_gr_edge_descriptor_bijection();
+	else 
+		return assert_mev_super_set_gr_edge_descriptor();
 }

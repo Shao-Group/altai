@@ -98,6 +98,12 @@ private:
 	int compute_length(const path &p);
 	int greedy_decompose();
 
+	// debug
+	bool assert_debug();
+	bool assert_hs_edges_uniq();
+	bool assert_mev_gr_edge_descriptor_bijection();
+	bool assert_mev_super_set_gr_edge_descriptor();
+
 	// stats, print, and draw
 	int print();
 	int stats();
