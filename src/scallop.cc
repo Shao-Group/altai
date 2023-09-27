@@ -1114,10 +1114,10 @@ int scallop::remove_edge(int e)
 	int s = ee->source();
 	int t = ee->target();
 
+	mev.erase(ee);
 	e2i.erase(ee);
 	i2e[e] = null_edge;
 	gr.remove_edge(ee);
-	mev.erase(ee);
 
 	return 0;
 }
@@ -1435,9 +1435,9 @@ int scallop::collect_path(int e)
 	}
 
 	gr.remove_edge(i2e[e]);
+	mev.erase(i2e[e]);
 	e2i.erase(i2e[e]);
 	i2e[e] = null_edge;
-	mev.erase(i2e[e]);
 
 	return 0;
 }
