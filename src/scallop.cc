@@ -1597,42 +1597,6 @@ int scallop::draw_splice_graph(const string &file)
 }
 
 
-bool scallop::assert_hs_edges_uniq()
-{
-	vector<vector<int> > kk;
-	for(auto edge : hs.edges)
-	{
-		vector<int> v; 
-		bool b = true;
-		for(int i: edge) 
-		{
-			if(i == -1) 
-			{
-				b = false; 
-				break;
-			}
-		}
-		if(b) kk.push_back(edge); 
-	}
-
-	size_t i = kk.size();
-	size_t j = set<vector<int> >(kk.begin(), kk.end()).size();
-
-	if (i != j)
-	{
-		cout << "DEBUG scallop::assert_hs_edges_uniq failed, printing hs (w/o v containing -1)" << endl;
-		for(auto k: kk) {printv(k); cout << endl;}
-		hs.print();
-	}
-	else
-	{
-		cout << "DEBUG scallop::assert_hs_edges_uniq passed, but still print" << endl;
-		hs.print();
-	}
-
-	return (i == j);
-}
-
 bool scallop::assert_mev_gr_edge_descriptor_bijection()
 {
 	size_t i = mev.size();
@@ -1686,9 +1650,6 @@ bool scallop::assert_mev_super_set_gr_edge_descriptor()
 bool scallop::assert_debug()
 {
 	if (! DEBUG_MODE_ON) return true;
-	
-	// return assert_hs_edges_uniq();
-	assert_hs_edges_uniq();
 
 	if (keep_as_nodes) 
 		return assert_mev_gr_edge_descriptor_bijection();
