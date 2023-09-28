@@ -573,10 +573,9 @@ int phaser::split_hs()
 */
 int phaser::assemble_scallop0(scallop& sc)
 {
-	sc.keep_as_nodes = false;
 	if (DEBUG_MODE_ON) sc.gr.edge_integrity_examine();
 
-	sc.assemble(is_allelic);
+	sc.assemble_continue(is_allelic);
 
 	trsts1 = sc.trsts;
 	trsts2 = sc.trsts;

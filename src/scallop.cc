@@ -69,6 +69,17 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 	return 0;
 }
 
+/*
+** after scallop.assemble() is paused
+** continue to assemble everything (incld. as and non-as transcripts)
+** and collect transcripts
+*/
+int scallop::assemble_continue(bool is_allelic)
+{
+	keep_as_nodes = false;
+	init_nonzeroset(false);
+	assemble(is_allelic);
+}
 
 /*
 **	sc0 w. both alleles

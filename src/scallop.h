@@ -36,6 +36,7 @@ public:
 
 public:
 	int assemble(bool is_allelic);
+	int assemble_continue(bool is_allelic);
 	int transform(splice_graph* pgr, const VE& old_i2e, const MEE& x2y);  // allelic transform
 
 public:
