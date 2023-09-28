@@ -78,10 +78,10 @@ int phaser::init()
 	vwrtbg2 = 0;
 	ewrtbg1 = 0;       
     ewrtbg2 = 0;
-	for(int i = 0; i < gr.vinf.size(); i++)
+	for(int i = 0; i < gr.num_vertices(); i++)
 	{ 
 		// cout << "inside for loop: " << i << gt_str(gr.vinf[i].gt) << endl;
-		if (gr.vinf[i].gt == ALLELE1)
+		if (gr.get_vertex_info(i).gt == ALLELE1)
 		{
 			// cout << "inside if1 statement" << endl;
 			PEEI in = gr.in_edges(i);
@@ -103,7 +103,7 @@ int phaser::init()
 			}
 			vwrtbg1 += gr.get_vertex_weight(i);
 		}
-		else if (gr.vinf[i].gt == ALLELE2)
+		else if (gr.get_vertex_info(i).gt == ALLELE2)
 		{
 			// cout << "inside if2 statement" << endl;
 			PEEI in = gr.in_edges(i);
@@ -125,7 +125,7 @@ int phaser::init()
 			}
 			vwrtbg2 += gr.get_vertex_weight(i);
 		}
-		else assert(!gr.vinf[i].is_as_vertex() || gr.vinf[i].gt == UNPHASED);
+		else assert(!gr.get_vertex_info(i).is_as_vertex() || gr.get_vertex_info(i).gt == UNPHASED);
 	}
 	pair<double, double> r1r2 = normalize_epsilon(ewrtbg1, ewrtbg2);
 	ewrtratiobg1 = r1r2.first;
@@ -194,6 +194,13 @@ int phaser::assign_gt()
 			assert(nsnodes.find(i) != nsnodes.end());
 			nsnodes.erase(i);
 		}
+	}
+	while(nsnodes.size() >= 1)
+	{
+		int i = *nsnodes.begin();
+		split_global(i);
+		assert(nsnodes.find(i) != nsnodes.end());
+		nsnodes.erase(i);
 	}
 	assert(nsnodes.size() == 0);
 
@@ -319,6 +326,13 @@ bool phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio
 	vwrt2[v] = gr.get_vertex_weight(v) * (1 - ratio_allele1);
 	for (auto e = in.first; e!= in.second; e++)	
 	{
+		if(DEBUG_MODE_ON)
+		{
+			assert(gr.ewrt.find(*e) != gr.ewrt.end());
+			assert(ewrt1.find(*e) != ewrt1.end());
+			assert(ewrt2.find(*e) != ewrt2.end());
+		}
+
 		double w = gr.ewrt[*e];
 		if(ewrt1[*e] < 0)
 		{
@@ -331,6 +345,13 @@ bool phaser::split_by_ratio(int v, const PEEI& in, const PEEI& out, double ratio
 	}
 	for (auto e = out.first; e!= out.second; e++)
 	{
+		if(DEBUG_MODE_ON)
+		{
+			assert(gr.ewrt.find(*e) != gr.ewrt.end());
+			assert(ewrt1.find(*e) != ewrt1.end());
+			assert(ewrt2.find(*e) != ewrt2.end());
+		}
+
 		double w = gr.ewrt[*e];
 		if(ewrt1[*e] < 0)
 		{
