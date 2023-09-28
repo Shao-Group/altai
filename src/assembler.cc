@@ -277,12 +277,16 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			{
 				ts_nonfull[0].add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 			}
-			if(!is_allelic || sc.asnonzeroset.size() <= 0) 
-			{
-				assert(sc.asnonzeroset.size() <= 0);
-				assert(sc.nsnonzeroset.size() <= 0);
-				continue;
-			}
+			// FIXME: add: non-specific transcript to allele1, allele2
+			// for(int i = 0; i < sc.trsts.size(); i++)
+			// {
+			// 	ts_full[0].add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);)
+			// }
+			// for(int i = 0; i < sc.non_full_trsts.size(); i++)
+			// {
+			// 	ts_nonfull[0].add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			// }
+			if(!is_allelic && sc.asnonzeroset.size() <= 0 && sc.nsnonzeroset.size() <= 0) continue;
 			
 			// assemble alleles in seperate splice graphs/ scallops
 			phaser ph(sc, is_allelic);				
@@ -301,7 +305,6 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
 			}
 			*/
-
 			// add transcripts to corresponding transcript_set
 			for(const transcript& _t: trsts1)
 			{
@@ -325,6 +328,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			}
 
 			// also add those to NONSPECIFIC transcript_set; coverage should add for both alleles
+			// FIXME: TODO: need to think what sample id & what mode to choose, maybe we need another transcript_set before adding them to ts_full[]
 			for(const transcript& _t: trsts1)
 			{
 				transcript t(_t);
