@@ -1474,6 +1474,7 @@ int scallop::collect_path(int e)
 		paths.push_back(p);
 	}
 
+	hs.remove(e);
 	gr.remove_edge(i2e[e]);
 	mev.erase(i2e[e]);
 	e2i.erase(i2e[e]);
