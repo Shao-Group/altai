@@ -25,7 +25,10 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 
 	init();
 
-	if(ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && ewrtbg2 >= -0.01 && ewrtbg1 <= 0.01) 
+	if (ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && 
+		ewrtbg2 >= -0.01 && ewrtbg2 <= 0.01 &&
+		ewrtbg1 + ewrtbg2 < 0.01 && 
+		ewrtbg1 + ewrtbg2 > -0.01 ) 
 	{
 		assemble_scallop0(_sc);  // non-const sc0
 	}
