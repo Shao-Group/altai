@@ -24,30 +24,34 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	phs1 = &hs1;
 	phs2 = &hs2;
 
-	init();
-
-	if (ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && 
-		ewrtbg2 >= -0.01 && ewrtbg2 <= 0.01 &&
-		ewrtbg1 + ewrtbg2 < 0.01 && 
-		ewrtbg1 + ewrtbg2 > -0.01 ) 
+	if(sc.asnonzeroset.size() == 0) 
 	{
-		assemble_scallop0(_sc);  // non-const sc0
+		assemble_scallop0(_sc);			// non-const sc0
 	}
 	else
 	{
-		assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
-		assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
-		assert(ewrtratiobg1 >= 0);
-		assert(ewrtratiobg2 >= 0);
-		
-		assign_gt();
-		split_gr();
-		refine_allelic_graphs();
-		//FIXME: revise graph
-		split_hs();
-		assemble_allelic_scallop(); 
-		assign_transcripts_gt();
-	}
+		init();	
+
+		if (ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && ewrtbg2 >= -0.01 && ewrtbg2 <= 0.01 && ewrtbg1 + ewrtbg2 < 0.01 && ewrtbg1 + ewrtbg2 > -0.01)
+		{
+			assemble_scallop0(_sc); 	 // non-const sc0
+		}
+		else
+		{
+			assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
+			assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
+			assert(ewrtratiobg1 >= 0);
+			assert(ewrtratiobg2 >= 0);
+			
+			assign_gt();
+			split_gr();
+			refine_allelic_graphs();
+			//FIXME: revise graph
+			split_hs();
+			assemble_allelic_scallop(); 
+			assign_transcripts_gt();
+		}
+	} 
 }
 
 
