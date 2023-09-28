@@ -468,6 +468,18 @@ int phaser::refine_allelic_graphs()
 */
 int phaser::split_hs()
 {
+	if(DEBUG_MODE_ON && print_phaser_detail)
+	{
+		cout << "sc hs edge before phaser: ";
+		auto && edges = sc.hs.edges;
+		for(int i = 0; i < edges.size(); i++)
+		{
+			printf("hyper-edge (edges) %d: ( ", i);
+			printv(edges[i]);
+			printf(")\n");
+		}
+	}
+
 	for (int i = 0; i < 2; i++)
 	{
 		// only two potential alleles 
@@ -485,15 +497,22 @@ int phaser::split_hs()
 			bool   use_this                   = true;
 			for(int edge_idx : edge_idx_list)
 			{
+				if(edge_idx == -1) continue;
+
+				assert(edge_idx >= 0 && edge_idx < sc.i2e.size());
 				edge_descriptor e = sc.i2e[edge_idx];
-				try 
+				if (e == null_edge) continue;
+				
+				if(ewrt_cur.find(e) == ewrt_cur.end())
 				{
-					if (e == null_edge) throw EdgeWeightException();
-					double w = ewrt_cur[e];
-					assert(w >= 0);
-					if(w < bottleneck) bottleneck = w;
+					use_this = false;
+					break;
 				}
-				catch (EdgeWeightException ex) 
+				double w = ewrt_cur[e];
+				assert(w >= 0);
+				if(w < bottleneck) bottleneck = w;
+				
+				if(int(bottleneck < 0.999)) 
 				{
 					use_this = false;
 					break;
@@ -503,8 +522,15 @@ int phaser::split_hs()
 			if (use_this && int(bottleneck) >= 1)
 			{
 				int allelic_c = int(bottleneck);
-				// assert(edges_w_count.find(edge_idx_list) == edges_w_count.end());//FIXME:
-				edges_w_count.insert({edge_idx_list, allelic_c});
+				auto it = edges_w_count.find(edge_idx_list);
+				if (it == edges_w_count.end())
+				{
+					edges_w_count.insert({edge_idx_list, allelic_c});
+				}
+				else		// it may happen if one edge is a subset of another 
+				{
+					it->second = it->second + allelic_c;
+				}
 			}
 		}
 		phs->clear();
@@ -518,9 +544,10 @@ int phaser::split_hs()
 		{
 			cout << "phs_" << phs << "\t";
 			cout << "edges.size=" << phs->edges.size() << "\t";
-			cout << "edges2tf.size" << phs->edges_to_transform.size() << endl; 
+			cout << "edges2tf.size" << phs->edges_to_transform.size() << endl;
+			for(const auto& es: phs->edges_to_transform) {printv(es); cout << endl;}
+			for(const auto& es: phs->edges_to_transform) {for(int i: es) cout << sc.i2e[i] <<" "; cout <<endl;}
 		}
-		
 	}
 	return 0;
 }
@@ -560,9 +587,16 @@ int phaser::assemble_allelic_scallop()
 */
 int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 {	
+	// FIXME: assert before transform the edges are also corresponding to each other
 	scallop* psc = &sc1;
 	if(DEBUG_MODE_ON && print_phaser_detail)
 	{	
+		set<edge_descriptor> sc_edges;
+		set<edge_descriptor> gr_edges;
+		set<edge_descriptor> mev_edges;
+		PEEI sc_peei = psc->gr.edges();
+		PEEI gr_peei = pgr->edges();
+
 		cout << "DEBUG phaser::allelic_transform" << endl;
 		cout << "pgr addr-" << pgr << endl;
 		cout << "x2y size=" << x2y.size() << " print" << endl;
@@ -571,6 +605,24 @@ int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 			cout << "\t" << xypair.first << "\t" << xypair.second << endl;
 		}
 		cout << "finished printing x2y" << endl;
+
+		for (auto i = sc_peei.first; i != sc_peei.second; ++i) sc_edges.insert(*i);
+		for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edges.insert(ev.first);
+
+		assert(sc_edges == gr_edges);
+		
+		// hs_edges is a subset of sc_edges
+		// sc_edges is a subset of mev_edges. The latter one contains edges removed in allelic_graph_refine
+		if(print_phaser_detail)
+		{
+			cout << "mev edges before transform" << endl;
+			for(auto e: mev_edges) cout << e << endl;
+			cout << "sc edges before transform" << endl;
+			for(auto e: sc_edges) cout << e << endl;
+		}
+
+
 	}
 
 	psc->transform(pgr, sc.i2e, x2y);  // hs.transform called in sc
@@ -579,29 +631,38 @@ int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 	{
 		psc->gr.edge_integrity_examine();
 
-		set<edge_descriptor> sc_edegs;
-		set<edge_descriptor> gr_edegs;
-		set<edge_descriptor> mev_edegs;
+		set<edge_descriptor> sc_edges;
+		set<edge_descriptor> gr_edges;
+		set<edge_descriptor> mev_edges;
 		PEEI sc_peei = psc->gr.edges();
 		PEEI gr_peei = pgr->edges();
-		for (auto i = sc_peei.first; i != sc_peei.second; ++i) sc_edegs.insert(*i);
-		for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edegs.insert(*j);
-		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edegs.insert(ev.first);
+		for (auto i = sc_peei.first; i != sc_peei.second; ++i) sc_edges.insert(*i);
+		for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+		for (pair<edge_descriptor, vector<int> > ev: psc->mev) mev_edges.insert(ev.first);
 
-		assert(sc_edegs == gr_edegs);
+		assert(sc_edges == gr_edges);
 		
 		// hs_edges is a subset of sc_edges
 		for (auto es : psc->hs.e2s) 
 		{
 			edge_descriptor hs_edge = psc->i2e[es.first];
-			assert(sc_edegs.find(hs_edge) != sc_edegs.end());
+			assert(sc_edges.find(hs_edge) != sc_edges.end());
 		}
 
 		// sc_edges is a subset of mev_edges. The latter one contains edges removed in allelic_graph_refine
-		for (edge_descriptor e : sc_edegs) assert (mev_edegs.find(e) != mev_edegs.end()); 
+		if(print_phaser_detail)
+		{
+			cout << "mev edges after transfrom" << endl;
+			for(auto e: mev_edges) cout << e << endl;
+			cout << "sc edges after transfrom" << endl;
+			for(auto e: sc_edges) cout << e << endl;
+		}
+
+		for (edge_descriptor e : sc_edges) assert (mev_edges.find(e) != mev_edges.end()); 
 	
 		cout << "DEBUG: phaser::allelic_transform is completed and all edge_descriptor are properly transformed" << endl;
 	}
+
 	return 0;
 }
 

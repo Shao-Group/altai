@@ -77,7 +77,7 @@ int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE
 {
 	assert(nodes.size() == 0);  // transform is only compatible w. add_edge_list, where nodes are never used
 	assert(edges.size() == 0);
-	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
+	assert(edges_to_transform.size() == ecnts.size());
 	
 	/* if (DEBUG_MODE_ON) for(const auto& es: edges_to_transform) {for(int i: es) cout << i2e_old[i] <<" "; cout <<endl;} */
 	
@@ -90,6 +90,12 @@ int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE
 
 		for(int k : vv)
 		{
+			if (k == -1)
+			{
+				ve.push_back(-1);
+				continue;
+			}
+
 			assert(k >= 0 && k < i2e_old.size());
 			auto e_old = i2e_old[k]; 				// index ---> original edge_descriptor
 			assert(e_old != null_edge);
@@ -117,6 +123,10 @@ int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE
 			ecnts_transformed.push_back(ecnts[i]);
 		}
 	}
+
+	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
+	if(edges.size() == 0 && edges_to_transform.size() != 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set becomes empty after transforming!" << endl;
+
 	ecnts = ecnts_transformed;
 	edges_to_transform.clear();
 
