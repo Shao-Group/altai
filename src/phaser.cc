@@ -543,7 +543,7 @@ int phaser::split_hs()
 				}
 				else		// it may happen if one edge is a subset of another 
 				{
-					it->second = it->second + allelic_c;
+					it->second = (it->second > allelic_c)? it->second: allelic_c;
 				}
 			}
 		}
