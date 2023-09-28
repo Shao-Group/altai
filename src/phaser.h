@@ -81,10 +81,12 @@ private:
     vector<int> sort_nodes_by_currecnt_mae(const set<int>& s);
     bool split_local(int i);
     bool split_global(int i);
+    bool split_global(edge_descriptor e);
     bool split_by_ratio(int v, const PEEI& in, const PEEI& out, double r1);                  // split edges of vertex v, by ratio 
     int split_by_phasing(int v, const PEEI& in, const PEEI& out, double r1);                // split edges of vertex v, by phasing path
     int split_by_min_parsimony(int v, const PEEI& in, const PEEI& out, double r1);          // split edges of vertex v, by parsimony
     pair<double, double> normalize_epsilon(double x, double y);                             // adjustment to allele ratio. new_r1 = (r1+eps) / (r1+r2+2*eps). returns<-1, -1> if both input are 0
+    
 
 };
 

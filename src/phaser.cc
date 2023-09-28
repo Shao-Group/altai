@@ -15,6 +15,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	: sc(_sc), gr(_sc.gr), is_allelic(_is_allelic)
 {
 	assert(sc.asnonzeroset.size() != 0); // throw runtime_error("does not have AS nodes");
+	sc.gr.edge_integrity_examine();
 
 	splice_graph gr1, gr2;
 	hyper_set hs1, hs2;
@@ -186,23 +187,18 @@ int phaser::assign_gt()
 	// split global
 	while(nsnodes.size() >= 1)
 	{
-		// split nsnodes wrt descending AS ratio
-		vector<int> vi = sort_nodes_by_currecnt_mae(nsnodes);
-		for(int i : vi)
-		{
-			split_global(i);
-			assert(nsnodes.find(i) != nsnodes.end());
-			nsnodes.erase(i);
-		}
-	}
-	while(nsnodes.size() >= 1)
-	{
 		int i = *nsnodes.begin();
 		split_global(i);
 		assert(nsnodes.find(i) != nsnodes.end());
 		nsnodes.erase(i);
 	}
+	
 	assert(nsnodes.size() == 0);
+
+	for(const auto & ed: gr.ewrt)
+	{
+		split_global(ed.first);
+	}
 
 	return 0;
 }
@@ -314,6 +310,32 @@ bool phaser::split_global(int i)
 	}
 }
 
+bool phaser::split_global(edge_descriptor e)
+{
+	if(strategy != "split_by_ratio") assert (0);
+
+	if(DEBUG_MODE_ON)
+	{
+		assert(gr.ewrt.find(e) != gr.ewrt.end());
+		assert(ewrt1.find(e) != ewrt1.end());
+		assert(ewrt2.find(e) != ewrt2.end());
+	}
+
+	double ratio_allele1 = ewrtratiobg1;
+	double w = gr.ewrt[e];
+	assert(w >= 0);
+	assert((ewrt1[e] < 0 && ewrt2[e] < 0) || (ewrt1[e] >= 0 && ewrt2[e] >= 0));
+
+	if(ewrt1[e] < 0)
+	{
+		ewrt1[e] = w * ratio_allele1;
+	} 
+	if(ewrt2[e] < 0)
+	{
+		ewrt2[e] = w * (1 - ratio_allele1);
+	} 
+	return true;
+}
 
 //	split edges of vertex v, by ratio.
 //  directly modify ewrt1, ewrt2, if ewrt1[e] or ewrt2[e] <= -1 (not assigned)
@@ -388,6 +410,7 @@ int phaser::split_gr()
 	if(DEBUG_MODE_ON) 
 	{	
 		gr0_ewrt_copy = gr.ewrt;
+		for (auto && ei0: gr0_ewrt_copy) assert(ei0.second >= 0);
 		for (auto && ei1: ewrt1) assert(ei1.second >= 0);
 		for (auto && ei2: ewrt2) assert(ei2.second >= 0);
 	}
@@ -605,6 +628,14 @@ int phaser::assemble_scallop0(scallop& sc)
 	trsts2 = sc.trsts;
 	non_full_trsts1 = sc.non_full_trsts;
 	non_full_trsts2 = sc.non_full_trsts;
+
+	if (DEBUG_MODE_ON)
+	{
+		for(const transcript& t: trsts1) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);
+		for(const transcript& t: trsts2) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);
+		for(const transcript& t: non_full_trsts1) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);
+		for(const transcript& t: non_full_trsts2) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);
+	}
 	
 	if(verbose >= 2)
 	{
