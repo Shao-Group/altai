@@ -24,12 +24,26 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	phs2 = &hs2;
 
 	init();
-	assign_gt();
-	split_gr();
-	refine_allelic_graphs();
-	split_hs();
-	assemble_allelic_scallop(); 
-	assign_transcripts_gt();
+
+	if(ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && ewrtbg2 >= -0.01 && ewrtbg1 <= 0.01) 
+	{
+		assemble_scallop0(_sc);  // non-const sc0
+	}
+	else
+	{
+		assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
+		assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
+		assert(ewrtratiobg1 >= 0);
+		assert(ewrtratiobg2 >= 0);
+		
+		assign_gt();
+		split_gr();
+		refine_allelic_graphs();
+		//FIXME: revise graph
+		split_hs();
+		assemble_allelic_scallop(); 
+		assign_transcripts_gt();
+	}
 }
 
 
@@ -113,10 +127,6 @@ int phaser::init()
 	pair<double, double> r1r2 = normalize_epsilon(ewrtbg1, ewrtbg2);
 	ewrtratiobg1 = r1r2.first;
 	ewrtratiobg2 = r1r2.second;
-	assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
-	assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
-	assert(ewrtratiobg1 >= 0);
-	assert(ewrtratiobg2 >= 0);
 
 	if(DEBUG_MODE_ON && print_phaser_detail)
 	{
@@ -277,6 +287,10 @@ bool phaser::split_local(int i)
 bool phaser::split_global(int i)
 {
 	// vertex_info v = gr.get_vertex_info(i);
+	assert(ewrtratiobg1 >= 0);
+	assert(ewrtratiobg2 >= 0);
+	assert(ewrtratiobg1 + ewrtratiobg2 > 0);
+
 	const PEEI in = gr.in_edges(i);
 	const PEEI out = gr.out_edges(i);
 	if (strategy == "split_by_ratio")
@@ -553,6 +567,32 @@ int phaser::split_hs()
 }
 
 /*
+** when there is no variants phased in sc0
+** 1. do not split
+** 2. assemble sc0 and collect transcripts to both container
+*/
+int phaser::assemble_scallop0(scallop& sc)
+{
+	sc.keep_as_nodes = false;
+	if (DEBUG_MODE_ON) sc.gr.edge_integrity_examine();
+
+	sc.assemble(is_allelic);
+
+	trsts1 = sc.trsts;
+	trsts2 = sc.trsts;
+	non_full_trsts1 = sc.non_full_trsts;
+	non_full_trsts2 = sc.non_full_trsts;
+	
+	if(verbose >= 2)
+	{
+		printf("Collected %d transcripts from non-specific splice graph with no variants%s\n", 
+				trsts1.size(), sc.gr.gid.c_str());
+	}
+
+	return 0;
+}
+
+/*
 ** populate & build & assemble sc1, sc2; transform hs1, hs2;
 ** at the end, sc1, sc2 are ready to assemble
 */
@@ -677,7 +717,7 @@ pair<double, double> phaser::normalize_epsilon(double x, double y)
 	assert(x >= 0);
 	assert(y >= 0);
 	
-	if(x+y<= 0) return {-1,-1}; // neighbors not splitted yet
+	if(x+y<= 0) return {-1,-1};  // neighbors not splitted yet
 
 	double z = (x + epsilon) / (x + y + 2 * epsilon);
 	assert(z > 0 && z < 1);

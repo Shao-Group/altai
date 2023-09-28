@@ -67,6 +67,7 @@ private:
 
 private:
     int init();
+    int assemble_scallop0(scallop& sc);
     int assign_gt();
     int split_gr();
     int refine_allelic_graphs();
