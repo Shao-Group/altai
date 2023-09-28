@@ -124,7 +124,9 @@ int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE
 		}
 	}
 
+	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cout << "hyper_set is empty when transforming!" << endl;
 	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
+	if(edges.size() == 0 && edges_to_transform.size() != 0 && DEBUG_MODE_ON && verbose >= 3) cout << "hyper_set becomes empty after transforming!" << endl;
 	if(edges.size() == 0 && edges_to_transform.size() != 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set becomes empty after transforming!" << endl;
 
 	ecnts = ecnts_transformed;
