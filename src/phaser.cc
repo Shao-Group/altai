@@ -600,6 +600,7 @@ int phaser::split_hs()
 		}
 		phs->clear();
 		phs->add_edge_list(edges_w_count);
+		if(DEBUG_MODE_ON) if(edges_w_count.size() > 0) assert(phs->edges_to_transform.size() == edges_to_transform);
 	}
 
 	if(DEBUG_MODE_ON && print_phaser_detail)
