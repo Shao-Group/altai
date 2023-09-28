@@ -357,7 +357,7 @@ int transcript::intron_chain_compare(const transcript &t) const
 
 int transcript::compare1(const transcript &t, double single_exon_overlap) const
 {
-	assert(gt_implicit_same(gt, t.gt));
+	assert(!gt_conflict(gt, t.gt));
 	if(exons.size() < t.exons.size()) return +1;
 	if(exons.size() > t.exons.size()) return -1;
 
