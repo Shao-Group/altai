@@ -137,67 +137,67 @@ int scallop::assemble(bool is_allelic)
 		bool b = false;
 
 		b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
-		if(!assert_debug()) cout << "assert debug failed 1" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 1" << endl;
 		if(b == true) continue;
 
 		b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-		if(!assert_debug()) cout << "assert debug failed 2" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 2" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
-		if(!assert_debug()) cout << "assert debug failed 3" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 3" << endl;
 		if(b == true) continue;
 		
 		b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
-		if(!assert_debug()) cout << "assert debug failed 4" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 4" << endl;
 		if(b == true) continue;
 
 		b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-		if(!assert_debug()) cout << "assert debug failed 5" << endl;		
+		if(!assert_debug()) cerr << "assert debug failed 5" << endl;		
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
-		if(!assert_debug()) cout << "assert debug failed 6" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 6" << endl;
 		if(b == true) continue;
 
 		b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
-		if(!assert_debug()) cout << "assert debug failed 7" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 7" << endl;
 		if(b == true) continue;
 
 		b = resolve_splittable_vertex(SPLITTABLE_SIMPLE, 1, max_decompose_error_ratio[SPLITTABLE_SIMPLE]);
-		if(!assert_debug()) cout << "assert debug failed 8" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 8" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
-		if(!assert_debug()) cout << "assert debug failed 9" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 9" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
-		if(!assert_debug()) cout << "assert debug failed 10" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 10" << endl;
 		if(b == true) continue;
 
 		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
-		if(!assert_debug()) cout << "assert debug failed 11" << endl;
+		if(!assert_debug()) cerr << "assert debug failed 11" << endl;
 		if(b == true) continue;
 
 		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
 		{
 			b = resolve_hyper_edge(2);
-			if(!assert_debug()) cout << "assert debug failed 12" << endl;
+			if(!assert_debug()) cerr << "assert debug failed 12" << endl;
 		}
 		if(b == true) continue;
 
 		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
 		{
 			b = resolve_hyper_edge(1); 
-			if(!assert_debug()) cout << "assert debug failed 13" << endl;
+			if(!assert_debug()) cerr << "assert debug failed 13" << endl;
 		}
 		if(b == true) continue;
 
 		if (!keep_as_nodes || !skip_resolve_smallest) 
 		{
 			b = resolve_smallest_edges(DBL_MAX);
-			if(!assert_debug()) cout << "assert debug failed 14" << endl;
+			if(!assert_debug()) cerr << "assert debug failed 14" << endl;
 		}
 		if(b == true) continue;
 
@@ -205,7 +205,7 @@ int scallop::assemble(bool is_allelic)
 		if (!keep_as_nodes) 
 		{
 			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(!assert_debug()) cout << "assert debug failed 15" << endl;
+			if(!assert_debug()) cerr << "assert debug failed 15" << endl;
 		}
 		
 		if(b == true) continue;
@@ -214,7 +214,7 @@ int scallop::assemble(bool is_allelic)
 	}
 
 	collect_existing_st_paths();
-	if(!assert_debug()) cout << "assert debug failed 16" << endl;
+	if(!assert_debug()) cerr << "assert debug failed 16" << endl;
 
 	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
 	{
@@ -229,7 +229,7 @@ int scallop::assemble(bool is_allelic)
 	
 	
 	greedy_decompose();
-	if(!assert_debug()) cout << "assert debug failed 17" << endl;
+	if(!assert_debug()) cerr << "assert debug failed 17" << endl;
 	
 	trsts.clear();
 	non_full_trsts.clear();
@@ -1623,9 +1623,9 @@ bool scallop::assert_mev_gr_edge_descriptor_bijection()
 
 	if(i != j || gr_edges != mev_edges)
 	{
-		cout << "scallop mev edges != gr edges" << endl;
-		for (edge_descriptor e: mev_edges) cout << "mev edge " << e << endl;
-		for (edge_descriptor e: gr_edges) cout << "gr edge " << e << endl;
+		cerr << "scallop mev edges != gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cerr << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cerr << "gr edge " << e << endl;
 	}
 
 	return (gr_edges == mev_edges && i == j);
@@ -1651,9 +1651,9 @@ bool scallop::assert_mev_super_set_gr_edge_descriptor()
 
 	if(i < j || b)
 	{
-		cout << "scallop mev edges is not superset of gr edges" << endl;
-		for (edge_descriptor e: mev_edges) cout << "mev edge " << e << endl;
-		for (edge_descriptor e: gr_edges) cout << "gr edge " << e << endl;
+		cerr << "scallop mev edges is not superset of gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cerr << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cerr << "gr edge " << e << endl;
 	}
 
 	return (!b && (i >= j));
