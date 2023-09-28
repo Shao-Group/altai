@@ -61,7 +61,7 @@ int hyper_set::add_edge_list(const MVII& s)
 	edges_to_transform.clear();
 	for(auto i = s.begin(); i != s.end(); ++i)
 	{
-		vector<int>& edge_idx_list = i->first;
+		const vector<int>& edge_idx_list = i->first;
 		int c = i->second;
 		edges_to_transform.push_back(edge_idx_list);
 		ecnts.push_back(c);
