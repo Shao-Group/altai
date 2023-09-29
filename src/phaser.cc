@@ -14,8 +14,8 @@ See LICENSE for licensing.
 phaser::phaser(scallop& _sc, bool _is_allelic)
 	: sc(_sc), gr(_sc.gr), is_allelic(_is_allelic)
 {
-	assert(sc.asnonzeroset.size() != 0); // throw runtime_error("does not have AS nodes");
 	sc.gr.edge_integrity_examine();
+	sc.gr.edge_integrity_enforce();
 
 	splice_graph gr1, gr2;
 	hyper_set hs1, hs2;
