@@ -42,6 +42,8 @@ splice_graph::splice_graph(const splice_graph &gr)
 */
 int splice_graph::edge_integrity_examine() const
 {
+	if(!DEBUG_MODE_ON) return 0;
+
 	assert(se.size() == ewrt.size());
 	assert(se.size() == einf.size());
 	PEEI ei = edges();
@@ -53,6 +55,30 @@ int splice_graph::edge_integrity_examine() const
 		assert(ew->second >= 0);
 		assert(einf.find(e) != einf.end());
 	}
+	return 0;
+}
+
+
+/* 
+*	make edges(), ewrt, einf all have exactly the same edge_descriptors
+* 	remove e from ewrt and einf if gr.edge(e).second is false
+*/
+int splice_graph::edge_integrity_enforce()
+{
+	for(auto it = ewrt.begin(); it != ewrt.end();  )	// note: it++ NOT in for header
+	{
+		edge_descriptor e = it->first;
+		if (edge(e).second) ++it;
+		else  it = ewrt.erase(it);
+	}
+	for(auto it = einf.begin(); it != einf.end();  )	// note: it++ NOT in for header
+	{
+		edge_descriptor e = it->first;
+		if (edge(e).second) ++it;
+		else it = einf.erase(it);
+	}
+
+	edge_integrity_examine();
 	return 0;
 }
 
