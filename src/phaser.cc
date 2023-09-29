@@ -167,38 +167,44 @@ int phaser::assign_gt()
 	assert(asnodes.size() >= 1);
 	assert(nsnodes.size() >= 1);
 
-	// split local
+	// split local; split nsnodes wrt descending AS ratio
 	if (nsnodes.size() + asnodes.size() < max_num_exons)
 	{
 		while(nsnodes.size() >= 1)
 		{
-			// split nsnodes wrt descending AS ratio
 			vector<int> vi = sort_nodes_by_currecnt_mae(nsnodes);
-			// if(DEBUG_MODE_ON) cout << "returned sort_nodes_by_currecnt_mae" << endl;
+			if(vi.size() == 0) break;
+			bool b = false;
+
 			for(int i : vi)
 			{
-				// if(DEBUG_MODE_ON) cout << i << " " << endl;
 				if(split_local(i))
 				{
 					assert(nsnodes.find(i) != nsnodes.end());
 					nsnodes.erase(i);
 				} 
-				else break;
+				else 
+				{
+					b = true;
+					break;
+				}
 			}
+			if (b) break;
 		}
 	}
 	
-	// split global
+	// split global by vertex
 	while(nsnodes.size() >= 1)
 	{
-		int i = *nsnodes.begin();
+		int i = *(nsnodes.begin());
 		split_global(i);
 		assert(nsnodes.find(i) != nsnodes.end());
 		nsnodes.erase(i);
 	}
-	
 	assert(nsnodes.size() == 0);
 
+	// split global by edge
+	// in rare cases some edges are left b/c their nodes are isolated or edges remained while incidental nodes removed
 	for(const auto & ed: gr.ewrt)
 	{
 		split_global(ed.first);
@@ -225,7 +231,7 @@ vector<int> phaser::sort_nodes_by_currecnt_mae(const set<int>& s)
 	for(auto i = nodes_mae.end(); i != nodes_mae.begin(); i--)
 	{
 		auto j = prev(i, 1);
-		if(i!= nodes_mae.end()) 
+		if(DEBUG_MODE_ON) if(i!= nodes_mae.end()) 
 		{
 			cout << j->second << " " << j->first << " " << i->second  << " " << i->first << endl;
 			assert(j->first <= i->first);
