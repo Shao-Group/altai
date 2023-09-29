@@ -410,6 +410,7 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 // split sg into two pairs of sg1/hs1 and sg2/hs2
 int phaser::split_gr()
 {	
+	sc.gr.edge_integrity_examine();
 	MED gr0_ewrt_copy;
 	if(DEBUG_MODE_ON) 
 	{	
@@ -498,7 +499,7 @@ int phaser::refine_allelic_graphs()
 			}
 			if(b == false) break;
 		}
-
+		pgr->edge_integrity_enforce();
 	}
 	
 	if(DEBUG_MODE_ON && print_phaser_detail) 
@@ -686,7 +687,6 @@ int phaser::assemble_allelic_scallop()
 */
 int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 {	
-	// FIXME: assert before transform the edges are also corresponding to each other
 	scallop* psc = &sc1;
 	if(DEBUG_MODE_ON && print_phaser_detail)
 	{	
@@ -720,8 +720,6 @@ int phaser::allelic_transform(scallop& sc1, splice_graph* pgr, MEE& x2y)
 			cout << "sc edges before transform" << endl;
 			for(auto e: sc_edges) cout << e << endl;
 		}
-
-
 	}
 
 	psc->transform(pgr, sc.i2e, x2y);  // hs.transform called in sc
