@@ -145,9 +145,8 @@ int assembler::assemble()
 	if(recover_partial_tx_min_overlap_with_full_tx > 0)
 	{
 		double f = recover_partial_tx_min_overlap_with_full_tx;
-		//FIXME: address boundary error
-		// recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
-		// recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
+		recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
+		recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
 	}
 
 	write();
