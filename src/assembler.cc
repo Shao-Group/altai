@@ -42,13 +42,6 @@ assembler::assembler()
 	trsts.resize(3);
 	nonfull_trsts.resize(3);
 	specific_full_trsts.resize(3);
-	if(DEBUG_MODE_ON)
-	{
-		assert(trsts.size() == 3);
-		assert(nonfull_trsts.size() == 3);
-		for(const auto & i: trsts) assert(i.size() == 0);
-		for(const auto & i: nonfull_trsts) assert(i.size() == 0);
-	}
 }
 
 assembler::~assembler()
