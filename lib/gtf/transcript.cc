@@ -129,29 +129,18 @@ int transcript::shrink()
 		PI32 q = exons[i];
 		if(p.second.samepos(q.first))
 		{
-			if (q.second.ale != "$" || p.second.ale != "$" )
+			if(DEBUG_MODE_ON)
 			{
-				extern faidx_t* fai;
-				int seqlen1, seqlen2;
-				char * s  = faidx_fetch_seq(fai, seqname.c_str(), p.first.p32, p.second.p32-1, &seqlen1);	//both [seq_begin, seq_end] included
-				char * s2 = faidx_fetch_seq(fai, seqname.c_str(), q.first.p32, q.second.p32-1, &seqlen2);
-				if (seqlen1 < 0 || seqlen2 < 0) 
-					;//TODO: when seq N/A
-				string seq;
-				seq += s;
-				seq += s2;
-				free(s);
-				free(s2);
-				cout << "shrink triggered" << seq << endl;
-				p.second.p32 = q.second.p32;
-				p.second.ale = seq;
-				p.first.ale = seq;
+				assert(q.first.ale == "$"); 
+				assert(q.second.ale == "$"); 
+				assert(p.first.ale == "$");			
+				assert(p.second.ale == "$");
 			}
-			else p.second.p32 = q.second.p32;
+			p.second= q.second;
 		}
 		else
 		{
-			//assert(p.second < q.first);
+			// assert(p.second < q.first);
 			v.push_back(p);
 			p = q;
 		}
@@ -241,14 +230,6 @@ PI32 transcript::get_bounds() const
 	return PI32(p, q);
 }
 
-// PI32 transcript::get_first_intron() const
-// {
-// 	if(exons.size() <= 1) return PI32(-1, -1);
-// 	as_pos32 p = exons[0].second;
-// 	as_pos32 q = exons[1].first;
-// 	return PI32(p, q);
-// }
-
 vector<PI32> transcript::get_intron_chain() const
 {
 	vector<PI32> v;
@@ -288,21 +269,6 @@ size_t transcript::get_intron_chain_hashing() const
 	return vector_hash(vv) + 1;
 }
 
-// bool transcript::intron_chain_match(const transcript &t) const
-// {
-// 	if(exons.size() != t.exons.size()) return false;
-// 	if(exons.size() <= 1) return false;
-// 	int n = exons.size() - 1;
-// 	if(exons[0].second != (t.exons[0].second)) return false;
-// 	if(exons[n].first != (t.exons[n].first)) return false;
-// 	for(int k = 1; k < n - 1; k++)
-// 	{
-// 		if(exons[k].first != (t.exons[k].first)) return false;
-// 		if(exons[k].second != (t.exons[k].second)) return false;
-// 	}
-// 	return true;
-// }
-
 int transcript::intron_chain_compare(const transcript &t) const
 {
 	assert(!gt_conflict(gt, t.gt));
@@ -326,38 +292,6 @@ int transcript::intron_chain_compare(const transcript &t) const
 	if(exons[n].first > t.exons[n].first) return -1;
 	return 0;
 }
-
-// bool transcript::equal1(const transcript &t, double single_exon_overlap) const
-// {
-// 	if(exons.size() != t.exons.size()) return false;
-
-// 	if(seqname != t.seqname) return false;
-// 	if(strand == '+' && t.strand == '-') return false;
-// 	if(strand == '-' && t.strand == '+') return false;
-
-// 	if(exons.size() == 1)
-// 	{
-// 		// single exon transcripts have no allele info
-// 		int32_t p1 = exons[0].first < t.exons[0].first ? exons[0].first.p32 : t.exons[0].first.p32;
-// 		int32_t p2 = exons[0].first < t.exons[0].first ? t.exons[0].first.p32 : exons[0].first.p32;
-// 		int32_t q1 = exons[0].second > t.exons[0].second ? exons[0].second.p32 : t.exons[0].second.p32;
-// 		int32_t q2 = exons[0].second > t.exons[0].second ? t.exons[0].second.p32 : exons[0].second.p32;
-
-// 		int32_t overlap = q2 - p2;
-// 		if(overlap >= single_exon_overlap * length()) return true;
-// 		if(overlap >= single_exon_overlap * t.length()) return true;
-// 		return false;
-
-// 		/*
-// 		double overlap = (q2 - p2) * 1.0 / (q1 - p1);
-// 		if(overlap < 0.8) return false;
-// 		else return true;
-// 		*/
-// 	}
-
-// 	return intron_chain_match(t);
-// }
-
 
 int transcript::compare1(const transcript &t, double single_exon_overlap) const
 {
@@ -407,14 +341,6 @@ int transcript::extend_bounds(const transcript &t)
 	if(t.exons.back().second > exons.back().second) exons.back().second = t.exons.back().second;
 	return 0;
 }
-
-// string transcript::label() const
-// {
-// 	char buf[10240];
-// 	PI32 p = get_bounds();
-// 	sprintf(buf, "%s:%d-%d", seqname.c_str(), p.first.p32, p.second.p32);
-// 	return string(buf);
-// }
 
 int transcript::write(ostream &fout, double cov2, int count) const
 {
