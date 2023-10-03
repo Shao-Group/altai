@@ -42,6 +42,7 @@ private:
 	double qlen;
 	vector< vector<transcript> > trsts;
 	vector< vector<transcript> > nonfull_trsts;
+	vector< vector<transcript> > specific_full_trsts; // 0: nonspecific; 1: ALLELE1 spec; 2: ALLELE2 spec
 	vector<transcript> recovered_allele1;
 	vector<transcript> recovered_allele2;
 

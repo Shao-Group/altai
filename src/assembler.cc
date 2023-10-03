@@ -41,6 +41,7 @@ assembler::assembler()
 	vmap_chrm = "";  // reset vcf pointers from previewer
 	trsts.resize(3);
 	nonfull_trsts.resize(3);
+	specific_full_trsts.resize(3);
 	if(DEBUG_MODE_ON)
 	{
 		assert(trsts.size() == 3);
@@ -136,10 +137,17 @@ int assembler::assemble()
 		nonfull_trsts[i] = ft1.trs;
 	}	
 
+	// get specific MULTI-exon trsts; single-exon transcripts are all discarded
+	specific_full_trsts[0] = specific_trsts::intersection_of(trsts[1], trsts[2]);
+	specific_full_trsts[1] = specific_trsts::exclusive_of_1(trsts[1], trsts[2]);
+	specific_full_trsts[2] = specific_trsts::exclusive_of_1(trsts[2], trsts[1]);
+
 	if(recover_partial_tx_min_overlap_with_full_tx > 0)
 	{
-		recovered_allele1 = transcript::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], recover_partial_tx_min_overlap_with_full_tx, true);
-		recovered_allele2 = transcript::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], recover_partial_tx_min_overlap_with_full_tx, true);
+		double f = recover_partial_tx_min_overlap_with_full_tx;
+		//FIXME: address boundary error
+		// recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
+		// recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
 	}
 
 	write();
@@ -391,37 +399,36 @@ int assembler::write()
 	for(int a = 0; a < trsts.size(); a++)
 	{
 		assert(a >= 0 && a <= 3);
-		string allele_name_fix = "merged";
+		string allele_name_fix;
+		if (a == 0) allele_name_fix = "merged";
 		if (a == 1) allele_name_fix = "allele1";
 		if (a == 2) allele_name_fix = "allele2";
 		string outname_prefix = output_file + "." + allele_name_fix;
 
 		if(verbose >= 2) 
 		{
-			if (a == 0) printf("\tWriting outputs for all transcripts of merged alleles.\n");
+			if (a == 0) printf("\tWriting outputs for all transcripts of merged/non-specific alleles.\n");
 			if (a == 1) printf("\tWriting outputs for all transcripts of allele 1.\n");
 			if (a == 2) printf("\tWriting outputs for all transcripts of allele 2.\n");
 			assert(a <= 2);
 		}
-
-		vector<transcript> & trsts_of_allele = trsts[a];
 		
-		// write gtf w/o variants
+		// write gtf
 		if (output_file != "")
 		{
 			ofstream fout((outname_prefix + ".gtf").c_str());
-			if(!fout.fail()) for(const transcript &t : trsts_of_allele) t.write(fout);
+			if(!fout.fail()) for(const transcript &t : trsts[a]) t.write(fout);
 			fout.close();
 		}
 		
 		// write gvf w/ variants
-		if (output_file != "" || a == 0)
+		if (output_file != "")
 		{
 			ofstream gvfout((outname_prefix + ".gvf").c_str());
 			if(!gvfout.fail()) 
 			{
 				gvfout << "#allele \"ALLELE1/2\" correspondes to the first/second allele of \"GT\" field in the vcf file input." << endl;
-				for(const transcript &t : trsts_of_allele) t.write_gvf(gvfout);
+				for(const transcript &t : trsts[a]) t.write_gvf(gvfout);
 			}
 			gvfout.close();
 		}
@@ -434,6 +441,17 @@ int assembler::write()
 			cerr << "fasta output is not implemented yet." << endl; //TODO:
 			faout.close();
 		}			
+
+		// write specific transcritps' gvf
+		if (output_file != "")
+		{
+			if (a == 0) outname_prefix = output_file + "." + "nonspec.multi-exon";
+			if (a == 1) outname_prefix = output_file + "." + "allele1spec.multi-exon";
+			if (a == 2) outname_prefix = output_file + "." + "allele2spec.multi-exon";
+			ofstream gvfout((outname_prefix + ".gvf").c_str());
+			if(!gvfout.fail())	for(const transcript &t : specific_full_trsts[a]) t.write_gvf(gvfout);
+			gvfout.close();
+		}
 
 		// write non-full-length gvf w/ variants
 		if(output_file1 != "")

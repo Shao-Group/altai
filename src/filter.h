@@ -11,6 +11,14 @@ See LICENSE for licensing.
 
 #include "gene.h"
 
+namespace specific_trsts {
+    vector<transcript> intersection_of(vector<transcript>& v1, vector<transcript>& v2);
+    vector<transcript> exclusive_of_1(vector<transcript>& v1, vector<transcript>& v2);
+	vector<transcript> union_of(vector<transcript>& v1, vector<transcript>& v2);
+	vector<transcript> recover_full_from_partial_transcripts
+		(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio, bool will_change_gt);
+}
+
 class filter
 {
 public:
@@ -20,10 +28,6 @@ public:
 	vector<transcript> trs;
 
 public:
-	// int simple_phase_set_by_coverage();
-	// int simple_phase_set_by_variant_number();
-	// int keep_as_transcripts_only();
-
 	int join_single_exon_transcripts();
 	int filter_length_coverage();
 	int remove_nested_transcripts();

@@ -91,6 +91,8 @@ int transcript::clear()
 
 int transcript::add_exon(as_pos32 s, as_pos32 t)
 {
+	assert(s.ale == "$");
+	assert(t.ale == "$");
 	exons.push_back(PI32(s, t));
 	return 0;
 }
@@ -104,6 +106,8 @@ int transcript::add_exon(const item &e)
 
 int transcript::add_as_exons(as_pos32 s, as_pos32 t)
 {
+	assert(s.ale != "$");
+	assert(t.ale != "$");
 	as_exons.push_back(PI32(s, t));
 	return 0;
 }
@@ -633,52 +637,4 @@ int transcript::reverse_complement_DNA(string &rc, const string s)
 		rc += c;
 	}
 	return 0;
-}
-
-/*
-*	recovers full transcripts from partial transcripts, if >50% match
-*	only works for multi-exon transcripts
-*	@return a copy of recovered transcripts
-*/
-vector<transcript>& transcript::recover_full_from_partial_transcripts
-	(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio, bool will_change_gt)
-{
-	vector<transcript> recovered;
-	set<int> recovered_hasing;
-
-	if (min_chain_overlap_ratio <= 0 || full_txs.size() == 0 || part_txs.size() == 0) return recovered;
-	assert(min_chain_overlap_ratio > 0 && min_chain_overlap_ratio <= 1);
-
-	for(const transcript& fullt: full_txs)
-	{
-		if (fullt.exons.size() <= 1) continue;
-		size_t fullt_hashing = fullt.get_intron_chain_hashing();
-		if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
-		
-		const vector<PI32>& fullt_chain = fullt.get_intron_chain();
-
-		for(const transcript& partt: part_txs)
-		{
-			if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
-			const vector<PI32>& part_chain = partt.get_intron_chain();
-
-			vector<PI32> intersected;
-			set_intersection(fullt_chain.begin(), fullt_chain.end(), part_chain.begin(), part_chain.end(), back_inserter(intersected));
-			if (intersected.size() >= fullt_chain.size() * min_chain_overlap_ratio)
-			{
-				transcript t(fullt);
-				t.coverage = partt.coverage;
-
-				if (will_change_gt) t.transform_gt(partt.gt);
-				else assert(!gt_conflict(fullt.gt, partt.gt));
-				
-				recovered.push_back(t);
-				recovered_hasing.insert(fullt_hashing);
-				break;
-			}
-		}
-	}
-
-	assert(recovered.size() == recovered_hasing.size());
-	return recovered;
 }

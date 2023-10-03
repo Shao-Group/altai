@@ -8,10 +8,139 @@ See LICENSE for licensing.
 
 #include "filter.h"
 #include "config.h"
-// #include "gurobi_c++.h"
 #include <cassert>
 #include <algorithm>
 #include "as_pos32.hpp"
+
+// return MULTI-exon trsts in intersection of v1, v2
+vector<transcript> specific_trsts::intersection_of(vector<transcript>& v1, vector<transcript>& v2)
+{
+	vector<transcript> v0;
+	if(v1.size() == 0 || v2.size() == 0) return v0;
+
+	set<int> v2_hasing;
+	for(const transcript& t2: v2)
+	{
+		if (t2.exons.size() <= 1) continue;
+		size_t t2_hashing = t2.get_intron_chain_hashing();
+		v2_hasing.insert(t2_hashing);
+	}
+
+	for(const transcript& t1: v1)
+	{
+		if (t1.exons.size() <= 1) continue;
+		size_t t1_hashing = t1.get_intron_chain_hashing();
+		if (v2_hasing.find(t1_hashing) == v2_hasing.end()) continue;
+		v0.push_back(t1);
+	}
+
+	return v0;
+}
+
+// return MULTI-exon trsts present in only v1 
+vector<transcript> specific_trsts::exclusive_of_1(vector<transcript>& v1, vector<transcript>& v2)
+{
+	vector<transcript> v0;
+	if(v1.size() == 0) return v0;
+
+	set<int> v2_hasing;
+	for(const transcript& t2: v2)
+	{
+		if (t2.exons.size() <= 1) continue;
+		size_t t2_hashing = t2.get_intron_chain_hashing();
+		v2_hasing.insert(t2_hashing);
+	}
+
+	for(const transcript& t1: v1)
+	{
+		if (t1.exons.size() <= 1) continue;
+		size_t t1_hashing = t1.get_intron_chain_hashing();
+		if (v2_hasing.find(t1_hashing) != v2_hasing.end()) continue;
+		v0.push_back(t1);
+	}
+
+	return v0;
+}
+
+// return MULTI-exon trsts in unions of v1, v2
+// TODO: mark which allele the trst is from
+vector<transcript> specific_trsts::union_of(vector<transcript>& v1, vector<transcript>& v2)
+{
+	vector<transcript> v0;
+	if(v1.size() == 0 && v2.size() == 0) return v0;
+
+	set<int> hashing;
+	for(const transcript& t1: v1)
+	{
+		if (t1.exons.size() <= 1) continue;
+		size_t t1_hashing = t1.get_intron_chain_hashing();
+		if (hashing.find(t1_hashing) != hashing.end()) continue;
+		
+		v0.push_back(t1);
+		hashing.insert(t1_hashing);
+	}
+
+
+	for(const transcript& t2: v2)
+	{
+		if (t2.exons.size() <= 1) continue;
+		size_t t2_hashing = t2.get_intron_chain_hashing();
+		if (hashing.find(t2_hashing) != hashing.end()) continue;
+
+		v0.push_back(t2);
+		hashing.insert(t2_hashing);
+	}
+
+	return v0;
+}
+
+/*
+*	recovers full transcripts from partial transcripts, if >50% match
+*	only works for multi-exon transcripts
+*	@return a copy of recovered transcripts
+*/
+vector<transcript> specific_trsts::recover_full_from_partial_transcripts
+	(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio, bool will_change_gt)
+{
+	vector<transcript> recovered;
+	set<int> recovered_hasing;
+
+	if (min_chain_overlap_ratio <= 0 || full_txs.size() == 0 || part_txs.size() == 0) return recovered;
+	assert(min_chain_overlap_ratio > 0 && min_chain_overlap_ratio <= 1);
+
+	for(const transcript& fullt: full_txs)
+	{
+		if (fullt.exons.size() <= 1) continue;
+		size_t fullt_hashing = fullt.get_intron_chain_hashing();
+		if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
+		
+		const vector<PI32>& fullt_chain = fullt.get_intron_chain();
+
+		for(const transcript& partt: part_txs)
+		{
+			if (recovered_hasing.find(fullt_hashing) != recovered_hasing.end()) continue;
+			const vector<PI32>& part_chain = partt.get_intron_chain();
+
+			vector<PI32> intersected;
+			set_intersection(fullt_chain.begin(), fullt_chain.end(), part_chain.begin(), part_chain.end(), back_inserter(intersected));
+			if (intersected.size() >= fullt_chain.size() * min_chain_overlap_ratio)
+			{
+				transcript t(fullt);
+				t.coverage = partt.coverage;
+
+				if (will_change_gt) t.transform_gt(partt.gt);
+				else assert(!gt_conflict(fullt.gt, partt.gt));
+				
+				recovered.push_back(t);
+				recovered_hasing.insert(fullt_hashing);
+				break;
+			}
+		}
+	}
+
+	assert(recovered.size() == recovered_hasing.size());
+	return recovered;
+}
 
 filter::filter(const vector<transcript> &v)
 	:trs(v)
