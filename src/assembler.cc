@@ -418,7 +418,7 @@ int assembler::write()
 			faout.close();
 		}			
 
-		// write specific transcritps' gvf
+		// write specific transcritps' gtf and gvf
 		if (output_file != "")
 		{
 			if (a == 0) outname_prefix = output_file + "." + "nonspec.multi-exon";
@@ -427,6 +427,9 @@ int assembler::write()
 			ofstream gvfout((outname_prefix + ".gvf").c_str());
 			if(!gvfout.fail())	for(const transcript &t : specific_full_trsts[a]) t.write_gvf(gvfout);
 			gvfout.close();
+			ofstream gtfout((outname_prefix + ".gtf").c_str());
+			if(!gtfout.fail())	for(const transcript &t : specific_full_trsts[a]) t.write(gtfout);
+			gtfout.close();
 		}
 
 		// write non-full-length gvf w/ variants
