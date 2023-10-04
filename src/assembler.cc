@@ -247,6 +247,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 		if(determine_regional_graph(gr_alias)) continue;
 
 		if(gr_alias.num_edges() <= 0) continue;
+
 		if(debug_bundle_only) continue; //debug parameter to build bundle only and skip assembly, default: false
 		
 		for(int r = 0; r < assemble_duplicates; r++)
