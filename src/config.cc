@@ -541,7 +541,7 @@ int parse_arguments(int argc, const char ** argv)
 		}
 		else if(string(argv[i]) == "--not_skip_resolve_hyper_edge")
 		{
-			skip_resolve_hyper_edge == false;
+			skip_resolve_hyper_edge = false;
 		}
 		else if(string(argv[i]) == "--not_skip_resolve_smallest")
 		{
