@@ -13,7 +13,7 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 
 // return MULTI-exon trsts in intersection of v1, v2
-vector<transcript> specific_trsts::intersection_of(vector<transcript>& v1, vector<transcript>& v2)
+vector<transcript> specific_trsts::intersection_of(const vector<transcript>& v1, const vector<transcript>& v2)
 {
 	vector<transcript> v0;
 	if(v1.size() == 0 || v2.size() == 0) return v0;
@@ -38,7 +38,7 @@ vector<transcript> specific_trsts::intersection_of(vector<transcript>& v1, vecto
 }
 
 // return MULTI-exon trsts present in only v1 
-vector<transcript> specific_trsts::exclusive_of_1(vector<transcript>& v1, vector<transcript>& v2)
+vector<transcript> specific_trsts::exclusive_of_1(const vector<transcript>& v1, const vector<transcript>& v2)
 {
 	vector<transcript> v0;
 	if(v1.size() == 0) return v0;
@@ -64,7 +64,7 @@ vector<transcript> specific_trsts::exclusive_of_1(vector<transcript>& v1, vector
 
 // return MULTI-exon trsts in unions of v1, v2
 // TODO: mark which allele the trst is from
-vector<transcript> specific_trsts::union_of(vector<transcript>& v1, vector<transcript>& v2)
+vector<transcript> specific_trsts::union_of(const vector<transcript>& v1, const vector<transcript>& v2)
 {
 	vector<transcript> v0;
 	if(v1.size() == 0 && v2.size() == 0) return v0;

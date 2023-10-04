@@ -12,9 +12,9 @@ See LICENSE for licensing.
 #include "gene.h"
 
 namespace specific_trsts {
-    vector<transcript> intersection_of(vector<transcript>& v1, vector<transcript>& v2);
-    vector<transcript> exclusive_of_1(vector<transcript>& v1, vector<transcript>& v2);
-	vector<transcript> union_of(vector<transcript>& v1, vector<transcript>& v2);
+    vector<transcript> intersection_of(const vector<transcript>& v1, const vector<transcript>& v2);
+    vector<transcript> exclusive_of_1 (const vector<transcript>& v1, const vector<transcript>& v2);
+	vector<transcript> union_of		  (const vector<transcript>& v1, const vector<transcript>& v2);
 	vector<transcript> recover_full_from_partial_transcripts
 		(const vector<transcript>& full_txs, const vector<transcript>& part_txs, double min_chain_overlap_ratio, bool will_change_gt);
 }
