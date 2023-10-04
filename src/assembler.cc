@@ -252,34 +252,35 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 		
 		for(int r = 0; r < assemble_duplicates; r++)
 		{
+			transcript_set fl_add_0(chrm, 0.9);		// full length allele 0, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD := count is always 1, cov +=
+			transcript_set fl_add_1(chrm, 0.9);		// full length allele 1, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
+			transcript_set fl_add_2(chrm, 0.9);		// full length allele 2, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
+
+			transcript_set nf_add_0(chrm, 0.9);		// nonfull len allele 0, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
+			transcript_set nf_add_1(chrm, 0.9);		// nonfull len allele 1, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
+			transcript_set nf_add_2(chrm, 0.9);		// nonfull len allele 2, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
+
+
 			splice_graph gr = gr_alias;  // graph copy for different duplicates, copy constructor used, not move
 			string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
 			gr.gid = gid;
 
 			// partial decomp of non-AS nodes
 			scallop sc(gr, hs, r == 0 ? false : true, true);
-			sc.assemble(is_allelic);  
-
-			if(verbose >=3 && DEBUG_MODE_ON) for(auto& i: sc.paths) i.print(index);
+			sc.assemble(is_allelic);
 			
-			for(int i = 0; i < sc.trsts.size(); i++)
+			for(const transcript& _t: sc.trsts)
 			{
-				ts_full[0].add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				fl_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
-			for(int i = 0; i < sc.non_full_trsts.size(); i++)
+			for(const transcript& _t: sc.non_full_trsts)
 			{
-				ts_nonfull[0].add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				nf_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				nf_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				nf_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
-			// FIXME: add: non-specific transcript to allele1, allele2
-			// for(int i = 0; i < sc.trsts.size(); i++)
-			// {
-			// 	ts_full[0].add(sc.trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);)
-			// }
-			// for(int i = 0; i < sc.non_full_trsts.size(); i++)
-			// {
-			// 	ts_nonfull[0].add(sc.non_full_trsts[i], 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-			// }
-			if(!is_allelic && sc.asnonzeroset.size() <= 0 && sc.nsnonzeroset.size() <= 0) continue;
 			
 			// assemble alleles in seperate splice graphs/ scallops
 			phaser ph(sc, is_allelic);				
@@ -301,51 +302,39 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			// add transcripts to corresponding transcript_set
 			for(const transcript& _t: trsts1)
 			{
-				transcript t(_t);
-				ts_full[1].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
+				transcript t0(_t);
+				t0.make_non_specific();
+				fl_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 			for(const transcript& _t: non_full_trsts1)
 			{
-				transcript t(_t);
-				ts_nonfull[1].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t0(_t);
+				t0.make_non_specific();
+				nf_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				nf_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 			for(const transcript& _t: trsts2)
 			{
-				transcript t(_t);
-				ts_full[2].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t0(_t);
+				t0.make_non_specific();
+				fl_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 			for(const transcript& _t: non_full_trsts2)
 			{
-				transcript t(_t);
-				ts_nonfull[2].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+				transcript t0(_t);
+				t0.make_non_specific();
+				nf_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				nf_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 
-			// also add those to NONSPECIFIC transcript_set; coverage should add for both alleles
-			// FIXME: TODO: need to think what sample id & what mode to choose, maybe we need another transcript_set before adding them to ts_full[]
-			for(const transcript& _t: trsts1)
-			{
-				transcript t(_t);
-				t.make_non_specific();
-				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);				
-			}
-			for(const transcript& _t: non_full_trsts1)
-			{
-				transcript t(_t);
-				t.make_non_specific();
-				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-			}
-			for(const transcript& _t:trsts2)
-			{
-				transcript t(_t);
-				t.make_non_specific();
-				ts_full[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-			}
-			for(const transcript& _t: non_full_trsts2)
-			{
-				transcript t(_t);
-				t.make_non_specific();
-				ts_nonfull[0].add(t, 1, 0, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
-			}
+			ts_full[0].add(fl_add_0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			ts_full[1].add(fl_add_1, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			ts_full[2].add(fl_add_2, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			ts_nonfull[0].add(nf_add_0, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			ts_nonfull[1].add(nf_add_1, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
+			ts_nonfull[2].add(nf_add_2, TRANSCRIPT_COUNT_ADD_COVERAGE_MIN, TRANSCRIPT_COUNT_ADD_COVERAGE_ADD);
 		}
 	}
 	return 0;

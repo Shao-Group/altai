@@ -67,6 +67,40 @@ int trans_item::merge(const trans_item &ti, int mode)
 	{
 		count += ti.count;
 	}
+	else if (mode == TRANSCRIPT_COUNT_ONE_COVERAGE_ADD)		// for combining nonspec w. allele-spec
+	{
+		trst.coverage += ti.trst.coverage;
+
+		trst.extend_bounds(ti.trst);
+
+		assert(samples.size() <= 1);
+		assert(ti.samples.size() <= 1);
+		assert(samples.begin()->first == ti.samples.begin()->first);
+		assert(count == 1);
+
+		for(auto &x : ti.samples)
+		{
+			if(samples.find(x.first) == samples.end()) samples.insert(x);
+			else if(samples[x.first] < x.second) samples[x.first] = x.second;
+		}
+	}
+	else if (mode == TRANSCRIPT_COUNT_ONE_COVERAGE_MAX)		// for combining nonspec w. allele-spec
+	{
+		if(trst.coverage < ti.trst.coverage) trst.coverage = ti.trst.coverage;
+
+		trst.extend_bounds(ti.trst);
+
+		assert(samples.size() <= 1);
+		assert(ti.samples.size() <= 1);
+		assert(samples.begin()->first == ti.samples.begin()->first);
+		assert(count == 1);
+
+		for(auto &x : ti.samples)
+		{
+			if(samples.find(x.first) == samples.end()) samples.insert(x);
+			else if(samples[x.first] < x.second) samples[x.first] = x.second;
+		}
+	}
 	else assert(false);
 
 	return 0;
