@@ -79,6 +79,7 @@ int scallop::assemble_continue(bool is_allelic)
 	keep_as_nodes = false;
 	init_nonzeroset(false);
 	assemble(is_allelic);
+	return 0;
 }
 
 /*
