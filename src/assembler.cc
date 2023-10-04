@@ -131,9 +131,10 @@ int assembler::assemble()
 	}	
 
 	// get specific MULTI-exon trsts; single-exon transcripts are all discarded
-	specific_full_trsts[0] = specific_trsts::intersection_of(trsts[1], trsts[2]);
 	specific_full_trsts[1] = specific_trsts::exclusive_of_1(trsts[1], trsts[2]);
 	specific_full_trsts[2] = specific_trsts::exclusive_of_1(trsts[2], trsts[1]);
+	specific_full_trsts[0] = specific_trsts::intersection_of(trsts[1], trsts[2]);
+	for(transcript& t: specific_full_trsts[0]) t.make_non_specific();
 
 	if(recover_partial_tx_min_overlap_with_full_tx > 0)
 	{
@@ -188,14 +189,14 @@ int assembler::process(int n)
 		bd.build(2, true);
 		bd.print(index++);				
 		assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
-
+		
 
 		
 		// retrieve and filter transcripts
 		// i = {0, 1, 2}, corresponds to NONSPECIFIC/UNPHASED, ALLELE1, ALLELE2
 		for(int i = 0; i < 3; i++)
 		{
-			if (DEBUG_MODE_ON)	assert(trsts.size() == 3 && nonfull_trsts.size() == 3);
+			if (DEBUG_MODE_ON)	assert(trsts.size() == 3 && nonfull_trsts.size() == 3 && specific_full_trsts.size() == 3);
 			
 			int sdup = assemble_duplicates / 1 + 1;
 			int mdup = assemble_duplicates / 2 + 0;
@@ -236,6 +237,7 @@ int assembler::process(int n)
 
 int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic, vector<transcript_set> &ts_full, vector<transcript_set> &ts_nonfull)
 {
+	string chrm = gr0.chrm;
 	super_graph sg(gr0, hs0);
 	sg.build();
 
