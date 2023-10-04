@@ -236,14 +236,6 @@ int assembler::process(int n)
 
 int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_allelic, vector<transcript_set> &ts_full, vector<transcript_set> &ts_nonfull)
 {
-	if(DEBUG_MODE_ON)
-	{
-		for (int i = 0  ;  i < gr0.vinf.size(); i++)
-		{
-			cout << "gr0 bef scallop first round: " << i << " " << gt_str(gr0.vinf[i].gt) << endl;
-		}
-	}
-
 	super_graph sg(gr0, hs0);
 	sg.build();
 
