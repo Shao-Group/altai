@@ -274,14 +274,14 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			for(const transcript& _t: sc.trsts)
 			{
 				fl_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
-				fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
-				fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				if(ALLELE2 != _t.gt) fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				if(ALLELE1 != _t.gt) fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 			for(const transcript& _t: sc.non_full_trsts)
 			{
 				nf_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
-				nf_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
-				nf_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				if(ALLELE2 != _t.gt) nf_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
+				if(ALLELE1 != _t.gt) nf_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
 			
 			// assemble alleles in seperate splice graphs/ scallops
