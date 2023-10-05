@@ -24,20 +24,31 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	phs1 = &hs1;
 	phs2 = &hs2;
 
-	if(sc.asnonzeroset.size() == 0) 
+	if (!is_allelic)
 	{
+		if(verbose >= 1)  printf("splice graph is not allelic, assembly of which is fully completed\n");
+	}
+	else if(sc.asnonzeroset.size() == 0) 
+	{
+		if(verbose >= 1)  printf("splice graph no longer has allelic vertices, assembly of which is resumed\n");
 		assemble_scallop0(_sc);			// non-const sc0
 	}
 	else
 	{
 		init();	
-
+		
 		if (ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && ewrtbg2 >= -0.01 && ewrtbg2 <= 0.01 && ewrtbg1 + ewrtbg2 < 0.01 && ewrtbg1 + ewrtbg2 > -0.01)
 		{
+			if(verbose >= 1)  printf("splice graph no longer has allelic edges, assembly of which is resumed\n");
 			assemble_scallop0(_sc); 	 // non-const sc0
 		}
 		else
 		{
+			if(verbose >= 1)  
+			{
+				printf("partition graph %s to two allelic splice graphs, AS-vertices = %lu, overall allele frequency (%.2lf, %.2lf)\n", 
+						gr.gid.c_str(), sc.asnonzeroset.size(), ewrtratiobg1, ewrtratiobg2);
+			}
 			assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
 			assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
 			assert(ewrtratiobg1 >= 0);
