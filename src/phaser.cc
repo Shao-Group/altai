@@ -665,7 +665,7 @@ int phaser::assemble_scallop0(scallop& sc)
 	
 	if(verbose >= 2)
 	{
-		printf("Collected %d transcripts from non-specific splice graph with no variants%s\n", 
+		printf("Collected %ld transcripts from non-specific splice graph with no variants%s\n", 
 				trsts1.size(), sc.gr.gid.c_str());
 	}
 
@@ -694,7 +694,7 @@ int phaser::assemble_allelic_scallop()
 
 	if(verbose >= 2)
 	{
-		printf("Collected %d transcripts from allele1, %d transcripts from allel2, of splice graph %s\n", 
+		printf("Collected  %ld transcripts from allele1, %ld transcripts from allel2, of splice graph %s\n", 
 				trsts1.size(), trsts2.size(), sc.gr.gid.c_str());
 	}
 
