@@ -539,10 +539,10 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			decompose_as_neighor = true;
 		}
-		else if(string(argv[i]) == "--not_skip_resolve_hyper_edge")
-		{
-			skip_resolve_hyper_edge = false;
-		}
+		// else if(string(argv[i]) == "--not_skip_resolve_hyper_edge") //FIXME: unsafe to use
+		// {
+		// 	skip_resolve_hyper_edge = false;
+		// }
 		else if(string(argv[i]) == "--not_skip_resolve_smallest")
 		{
 			skip_resolve_smallest = false;
