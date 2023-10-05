@@ -1418,7 +1418,7 @@ bool bundle::tackle_false_boundaries()
 			}
 			if(py.ltype == START_BOUNDARY) 
 			{
-				if(verbose >= 2) printf("break starting vertex %d, pos = %d\n", v[i + 1], py.lpos.p32, py.lpos.ale.c_str());
+				if(verbose >= 2) printf("break starting vertex %d, pos = %d%s\n", v[i + 1], py.lpos.p32, py.lpos.ale.c_str());
 				points[v[i + 1]] += 1;
 			}
 		}
