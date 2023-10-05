@@ -271,6 +271,14 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			scallop sc(gr, hs, r == 0 ? false : true, true);
 			sc.assemble(is_allelic);
 			
+		
+			if(verbose >= 2)
+			{
+				printf("assembly with r = %d; %lu transcripts in partial decomposition of merged splice graph\n", r, sc.trsts.size());
+				// for(int i = 0; i < trsts1.size(); i++) trsts1[i].write(cout);
+			}
+		
+
 			for(const transcript& _t: sc.trsts)
 			{
 				fl_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
@@ -283,7 +291,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 				if(ALLELE2 != _t.gt) nf_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 				if(ALLELE1 != _t.gt) nf_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
-			
+
 			// assemble alleles in seperate splice graphs/ scallops
 			phaser ph(sc, is_allelic);				
 			vector<transcript>& trsts1 = ph.trsts1;
@@ -292,15 +300,14 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			vector<transcript>& non_full_trsts2 = ph.non_full_trsts2;
 
 			// collect transcripts 
-			/*
 			if(verbose >= 2)
 			{
-				printf("assembly with r = %d, total %lu transcripts in ALLELE1:\n", r, trsts1.size());
-				for(int i = 0; i < trsts1.size(); i++) trsts1[i].write(cout);
-				printf("assembly with r = %d, total %lu transcripts in ALLELE2:\n", r, trsts2.size());
-				for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
+				printf("assembly with r = %d; another %lu transcripts in splice graph of ALLELE1\n", r, trsts1.size());
+				// for(int i = 0; i < trsts1.size(); i++) trsts1[i].write(cout)
+				printf("assembly with r = %d; another %lu transcripts in splice graph of ALLELE2\n", r, trsts2.size());
+				// for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
 			}
-			*/
+
 			// add transcripts to corresponding transcript_set
 			for(const transcript& _t: trsts1)
 			{
