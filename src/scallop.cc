@@ -76,6 +76,12 @@ int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
 */
 int scallop::assemble_continue(bool is_allelic)
 {
+	paths.clear();
+	trsts.clear();
+	non_full_trsts.clear();
+	nsnonzeroset.clear();
+	asnonzeroset.clear();
+	
 	keep_as_nodes = false;
 	init_nonzeroset(false);
 	assemble(is_allelic);

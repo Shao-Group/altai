@@ -634,6 +634,9 @@ int phaser::assemble_scallop0(scallop& sc)
 {
 	if (DEBUG_MODE_ON) sc.gr.edge_integrity_examine();
 
+	sc.paths.clear();
+	sc.trsts.clear();
+	sc.non_full_trsts.clear();
 	sc.assemble_continue(is_allelic);
 
 	trsts1 = sc.trsts;
