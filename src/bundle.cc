@@ -753,7 +753,6 @@ int bundle::build_splice_graph(int mode)
 
 
 }
-}
 
 bool bundle::remove_intron_contamination()
 {

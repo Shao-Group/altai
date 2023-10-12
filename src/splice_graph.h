@@ -96,8 +96,6 @@ public:
 	bool remove_small_exons();
 	bool remove_inner_boundaries();
 	bool remove_intron_contamination();
-	bool remove_false_boundaries();
-	bool tackle_false_boundaries();
 
 	// read, write, and simulate splice graph
 	int build(const string &file);
