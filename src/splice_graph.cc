@@ -388,6 +388,55 @@ edge_descriptor splice_graph::compute_maximum_edge_w()
 	return max_edge;
 }
 
+
+VE splice_graph::compute_maximal_edges()
+{
+	typedef pair<double, edge_descriptor> PDE;
+	vector<PDE> ve;
+
+	undirected_graph ug;
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(int i = 0; i < num_vertices(); i++) ug.add_vertex();
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		edge_descriptor e = (*it1);
+		double w = get_edge_weight(e);
+		int s = e->source();
+		int t = e->target();
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		ug.add_edge(s, t);
+		ve.push_back(PDE(w, e));
+	}
+
+	vector<int> vv = ug.assign_connected_components();
+
+	sort(ve.begin(), ve.end());
+
+	for(int i = 1; i < ve.size(); i++) assert(ve[i - 1].first <= ve[i].first);
+
+	VE x;
+	set<int> sc;
+	for(int i = ve.size() - 1; i >= 0; i--)
+	{
+		edge_descriptor e = ve[i].second;
+		double w = get_edge_weight(e);
+		if(w < 1.5) break;
+		int s = e->source();
+		int t = e->target();
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		int c1 = vv[s];
+		int c2 = vv[t];
+		assert(c1 == c2);
+		if(sc.find(c1) != sc.end()) continue;
+		x.push_back(e);
+		sc.insert(c1);
+	}
+	return x;
+}
+
 int splice_graph::revise_splice_graph()
 {
 	bool b = false;
