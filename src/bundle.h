@@ -74,9 +74,9 @@ public:
 	vector<int> align_hit(hit &h);
 	vector<int> align_fragment(fragment &f);
 
-	// revise splice graph // moved to splice_graph
+	// revise splice graph 
 	// VE compute_maximal_edges();
-	// int revise_splice_graph();
+	int revise_splice_graph();
 	// int refine_splice_graph();
 	// bool keep_surviving_edges();
 	// bool extend_boundaries();
@@ -86,8 +86,8 @@ public:
 	// bool remove_small_exons();
 	// bool remove_inner_boundaries();
 	// bool remove_intron_contamination();
-	// bool remove_false_boundaries();
-	// bool tackle_false_boundaries();
+	bool remove_false_boundaries();
+	bool tackle_false_boundaries();
 	
 	// hyper set
 	int build_hyper_set();
