@@ -396,7 +396,7 @@ int bundle_bridge::align_hits_transcripts()
 		align_transcript(m1, ref_trsts[i], ref_phase[i]);
 	}
 
-	if (verbose >= 3)
+	/*if (verbose >= 3 && DEBUG_MODE_ON)
 	{
 		for (auto&& h : bb.hits)
 		{
@@ -406,7 +406,7 @@ int bundle_bridge::align_hits_transcripts()
 			cout << "]" << endl;
 		}
 		for (auto && r: regions) r.print(123);
-	}
+	}*/
 
 	return 0;
 }
