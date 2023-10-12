@@ -814,8 +814,12 @@ bool bundle::remove_false_boundaries()
 		tlen -= offset1;
 		tlen -= offset2;
 
-		int u1 = gr.locate_vertex(fr.h1->rpos - 1);
-		int u2 = gr.locate_vertex(fr.h2->pos);
+		// int u1 = gr.locate_vertex(fr.h1->rpos - 1);
+		// int u2 = gr.locate_vertex(fr.h2->pos);
+		const vector<int>& u1v = align_hit((*fr.h1));
+		int u1 = u1v.size() > 0? u1v.back(): -1;
+		const vector<int>& u2v = align_hit((*fr.h2));
+		int u2 = u2v.size() > 0? u2v[0]: -1;
 
 		if(u1 < 0 || u2 < 0) continue;
 		if(u1 >= u2) continue;
