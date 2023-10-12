@@ -840,6 +840,48 @@ bool splice_graph::remove_small_exons()
 	return flag;
 }
 
+bool splice_graph::remove_inner_boundaries()
+{
+	bool flag = false;
+	int n = num_vertices() - 1;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		vertex_info vi = get_vertex_info(i);
+		if(vi.type == EMPTY_VERTEX) continue;
+		if(vi.lpos.ale != "$" || vi.rpos.ale != "$" ) continue;
+
+		if(in_degree(i) != 1) continue;
+		if(out_degree(i) != 1) continue;
+
+		PEEI pei = in_edges(i);
+		edge_iterator it1 = pei.first, it2 = pei.second;
+		edge_descriptor e1 = (*it1);
+
+		pei = out_edges(i);
+		it1 = pei.first;
+		it2 = pei.second;
+		edge_descriptor e2 = (*it1);
+
+		int s = e1->source();
+		int t = e2->target();
+
+		if(s != 0 && t != n) continue;
+		if(s != 0 && out_degree(s) == 1) continue;
+		if(t != n && in_degree(t) == 1) continue;
+
+		if(vi.stddev >= 0.01) continue;
+
+		if(verbose >= 2) printf("remove inner boundary: vertex = %d, weight = %.2lf, length = %d, pos = %s-%s\n",
+				i, get_vertex_weight(i), vi.length, vi.lpos.aspos32string(), vi.rpos.p32.aspos32string());
+
+		// clear_vertex(i);
+		vi.type = EMPTY_VERTEX;
+		set_vertex_info(i, vi);
+		flag = true;
+	}
+	return flag;
+}
+
 int splice_graph::build(const string &file)
 {
 	ifstream fin(file.c_str());

@@ -753,46 +753,6 @@ int bundle::build_splice_graph(int mode)
 
 
 }
-
-bool bundle::remove_inner_boundaries()
-{
-	bool flag = false;
-	int n = gr.num_vertices() - 1;
-	for(int i = 1; i < gr.num_vertices() - 1; i++)
-	{
-		vertex_info vi = gr.get_vertex_info(i);
-		if(vi.type == EMPTY_VERTEX) continue;
-		
-		if(gr.in_degree(i) != 1) continue;
-		if(gr.out_degree(i) != 1) continue;
-
-		PEEI pei = gr.in_edges(i);
-		edge_iterator it1 = pei.first, it2 = pei.second;
-		edge_descriptor e1 = (*it1);
-
-		pei = gr.out_edges(i);
-		it1 = pei.first;
-		it2 = pei.second;
-		edge_descriptor e2 = (*it1);
-
-		int s = e1->source();
-		int t = e2->target();
-
-		if(s != 0 && t != n) continue;
-		if(s != 0 && gr.out_degree(s) == 1) continue;
-		if(t != n && gr.in_degree(t) == 1) continue;
-
-		if(vi.stddev >= 0.01) continue;
-
-		if(verbose >= 2) printf("remove inner boundary: vertex = %d, weight = %.2lf, length = %d, pos = %d-%d\n",
-				i, gr.get_vertex_weight(i), vi.length, vi.lpos.p32, vi.rpos.p32);
-
-		// gr.clear_vertex(i);
-		vi.type = EMPTY_VERTEX;
-		gr.set_vertex_info(i, vi);
-		flag = true;
-	}
-	return flag;
 }
 
 bool bundle::remove_intron_contamination()
