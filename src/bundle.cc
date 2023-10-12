@@ -54,8 +54,8 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	if(revise && to_revise_splice_graph) revise_splice_graph();
-	refine_splice_graph();
+	if(revise && to_revise_splice_graph) gr.revise_splice_graph();
+	// refine_splice_graph();
 	build_hyper_set();
 	return 0;
 }
@@ -733,132 +733,6 @@ int bundle::build_splice_graph(int mode)
 	gr.chrm = bb.chrm;
 
 	return 0;
-}
-
-int bundle::revise_splice_graph()
-{
-	bool b = false;
-	while(true)
-	{
-		b = tackle_false_boundaries();
-		if(b == true) continue;
-
-		// b = extend_boundaries();
-		b = remove_false_boundaries();
-		if(b == true) continue;
-
-		b = remove_inner_boundaries();
-		if(b == true) continue;
-
-		b = remove_small_exons();//FIXME:
-		// if(b == true) refine_splice_graph();
-		if(b == true) continue;
-
-		b = remove_intron_contamination();
-		if(b == true) continue;
-
-		b = remove_small_junctions();//FIXME:
-		if(b == true) refine_splice_graph();
-		if(b == true) continue;
-
-		// b = keep_surviving_edges();
-		b = extend_start_boundaries();
-		if(b == true) continue;
-
-		b = extend_end_boundaries();
-		if(b == true) continue;
-
-		b = extend_boundaries();
-		if(b == true) refine_splice_graph();
-		if(b == true) continue;
-
-		// b = remove_intron_contamination();
-		b = keep_surviving_edges();
-		if(b == true) refine_splice_graph();
-		if(b == true) continue;
-
-		break;
-	}
-
-	refine_splice_graph();
-	return 0;
-}
-
-int bundle::refine_splice_graph()
-{
-	while(true)
-	{
-		bool b = false;
-		for(int i = 1; i < gr.num_vertices() - 1; i++)
-		{
-			if(gr.degree(i) == 0) continue;
-			if(gr.in_degree(i) >= 1 && gr.out_degree(i) >= 1) continue;
-			gr.clear_vertex(i);
-			b = true;
-		}
-		if(b == false) break;
-	}
-	return 0;
-}
-
-bool bundle::extend_start_boundaries()
-{
-	bool flag = false;
-	for(int i = 1; i < gr.num_vertices() - 1; i++)
-	{
-		PEB p = gr.edge(0, i);
-		if(p.second == true) continue;
-
-		double wv = gr.get_vertex_weight(i);
-		double we = 0;
-		PEEI pei = gr.in_edges(i);
-		for(edge_iterator it = pei.first; it != pei.second; it++)
-		{
-			we += gr.get_edge_weight(*it);
-		}
-
-		if(wv < we || wv < 10 * we * we + 10) continue;
-
-		edge_descriptor ee = gr.add_edge(0, i);
-		gr.set_edge_weight(ee, wv - we);
-		gr.set_edge_info(ee, edge_info());
-
-		vertex_info vi = gr.get_vertex_info(i);
-		if(verbose >= 2) printf("extend start boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.lpos.p32, vi.lpos.ale.c_str());
-
-		flag = true;
-	}
-	return flag;
-}
-
-bool bundle::extend_end_boundaries()
-{
-	bool flag = false;
-	for(int i = 1; i < gr.num_vertices() - 1; i++)
-	{
-		PEB p = gr.edge(i, gr.num_vertices() - 1);
-		if(p.second == true) continue;
-
-		double wv = gr.get_vertex_weight(i);
-		double we = 0;
-		PEEI pei = gr.out_edges(i);
-		for(edge_iterator it = pei.first; it != pei.second; it++)
-		{
-			we += gr.get_edge_weight(*it);
-		}
-
-		if(wv < we || wv < 10 * we * we + 10) continue;
-
-		edge_descriptor ee = gr.add_edge(i, gr.num_vertices() - 1);
-		gr.set_edge_weight(ee, wv - we);
-		gr.set_edge_info(ee, edge_info());
-
-		vertex_info vi = gr.get_vertex_info(i);
-		if(verbose >= 2) printf("extend end boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.rpos.p32, vi.rpos.ale.c_str());
-
-		flag = true;
-	}
-	return flag;
 }
 
 bool bundle::extend_boundaries()

@@ -388,6 +388,130 @@ edge_descriptor splice_graph::compute_maximum_edge_w()
 	return max_edge;
 }
 
+int splice_graph::revise_splice_graph()
+{
+	bool b = false;
+	while(true)
+	{
+		b = tackle_false_boundaries();
+		if(b == true) continue;
+
+		b = remove_false_boundaries();
+		if(b == true) continue;
+
+		b = remove_inner_boundaries();
+		if(b == true) continue;
+
+		b = remove_small_exons();//FIXME:
+		if(b == true) continue;
+
+		b = remove_intron_contamination();
+		if(b == true) continue;
+
+		b = remove_small_junctions();//FIXME:
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		b = extend_start_boundaries();
+		if(b == true) continue;
+
+		b = extend_end_boundaries();
+		if(b == true) continue;
+
+		b = extend_boundaries();
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		b = keep_surviving_edges();
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		break;
+	}
+
+	refine_splice_graph();
+	
+	return 0;
+}
+
+int splice_graph::refine_splice_graph()
+{
+	while(true)
+	{
+		bool b = false;
+		for(int i = 1; i < num_vertices() - 1; i++)
+		{
+			if(degree(i) == 0) continue;
+			if(in_degree(i) >= 1 && out_degree(i) >= 1) continue;
+			clear_vertex(i);
+			b = true;
+		}
+		if(b == false) break;
+	}
+	return 0;
+}
+bool splice_graph::extend_start_boundaries()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		PEB p = edge(0, i);
+		if(p.second == true) continue;
+		if(get_vertex_info(i).lpos.ale != "$") continue;
+
+		double wv = get_vertex_weight(i);
+		double we = 0;
+		PEEI pei = in_edges(i);
+		for(edge_iterator it = pei.first; it != pei.second; it++)
+		{
+			we += get_edge_weight(*it);
+		}
+
+		if(wv < we || wv < 10 * we * we + 10) continue;
+
+		edge_descriptor ee = add_edge(0, i);
+		set_edge_weight(ee, wv - we);
+		set_edge_info(ee, edge_info());
+
+		vertex_info vi = get_vertex_info(i);
+		if(verbose >= 2) printf("extend start boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.lpos.p32, vi.lpos.ale.c_str());
+
+		flag = true;
+	}
+	return flag;
+
+}
+
+bool splice_graph::extend_end_boundaries()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		PEB p = edge(i, num_vertices() - 1);
+		if(p.second == true) continue;
+		if(get_vertex_info(i).lpos.ale != "$") continue;
+
+		double wv = get_vertex_weight(i);
+		double we = 0;
+		PEEI pei = out_edges(i);
+		for(edge_iterator it = pei.first; it != pei.second; it++)
+		{
+			we += get_edge_weight(*it);
+		}
+
+		if(wv < we || wv < 10 * we * we + 10) continue;
+
+		edge_descriptor ee = add_edge(i, num_vertices() - 1);
+		set_edge_weight(ee, wv - we);
+		set_edge_info(ee, edge_info());
+
+		vertex_info vi = get_vertex_info(i);
+		if(verbose >= 2) printf("extend end boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.rpos.p32, vi.rpos.ale.c_str());
+
+		flag = true;
+	}
+	return flag;
+}
 int splice_graph::build(const string &file)
 {
 	ifstream fin(file.c_str());
