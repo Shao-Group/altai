@@ -748,83 +748,10 @@ int bundle::build_splice_graph(int mode)
 }
 
 
-bool bundle::keep_surviving_edges() //FIXME:
-{
-	set<int> sv1;
-	set<int> sv2;
-	SE se;
-	edge_iterator it1, it2;
-	PEEI pei;
-	for(pei = gr.edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		int s = (*it1)->source();
-		int t = (*it1)->target();
-		double w = gr.get_edge_weight(*it1);
-		int32_t p1 = gr.get_vertex_info(s).rpos;
-		int32_t p2 = gr.get_vertex_info(t).lpos;
-		if(w < min_surviving_edge_weight) continue;
-		se.insert(*it1);
-		sv1.insert(t);
-		sv2.insert(s);
+
 	}
 
-	VE me = compute_maximal_edges();
-	for(int i = 0; i < me.size(); i++)
-	{
-		edge_descriptor ee = me[i];
-		se.insert(ee);
-		sv1.insert(ee->target());
-		sv2.insert(ee->source());
-	}
 
-	while(true)
-	{
-		bool b = false;
-		for(SE::iterator it = se.begin(); it != se.end(); it++)
-		{
-			edge_descriptor e = (*it);
-			int s = e->source(); 
-			int t = e->target();
-			if(sv1.find(s) == sv1.end() && s != 0)
-			{
-				edge_descriptor ee = gr.max_in_edge(s);
-				assert(ee != null_edge);
-				assert(se.find(ee) == se.end());
-				se.insert(ee);
-				sv1.insert(s);
-				sv2.insert(ee->source());
-				b = true;
-			}
-			if(sv2.find(t) == sv2.end() && t != gr.num_vertices() - 1)
-			{
-				edge_descriptor ee = gr.max_out_edge(t);
-				assert(ee != null_edge);
-				assert(se.find(ee) == se.end());
-				se.insert(ee);
-				sv1.insert(ee->target());
-				sv2.insert(t);
-				b = true;
-			}
-			if(b == true) break;
-		}
-		if(b == false) break;
-	}
-
-	VE ve;
-	for(pei = gr.edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-	{
-		if(se.find(*it1) != se.end()) continue;
-		ve.push_back(*it1);
-	}
-
-	for(int i = 0; i < ve.size(); i++)
-	{
-		if(verbose >= 2) printf("remove edge (%d, %d), weight = %.2lf\n", ve[i]->source(), ve[i]->target(), gr.get_edge_weight(ve[i]));
-		gr.remove_edge(ve[i]);
-	}
-
-	if(ve.size() >= 1) return true;
-	else return false;
 }
 
 bool bundle::remove_inner_boundaries()

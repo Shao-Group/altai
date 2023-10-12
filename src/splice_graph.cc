@@ -504,6 +504,88 @@ VE splice_graph::compute_maximal_ordinary_edges()
 	}
 	return x;
 }
+
+bool splice_graph::keep_surviving_edges()
+{
+	set<int> sv1;
+	set<int> sv2;
+	SE se0;
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		int s = (*it1)->source();
+		int t = (*it1)->target();
+		double w = get_edge_weight(*it1);
+		int32_t p1 = get_vertex_info(s).rpos.p32;
+		int32_t p2 = get_vertex_info(t).lpos.p32;
+		bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
+		if(w < min_surviving_edge_weight && !is_as_edge) continue;	// all allelic edges will be added to se0
+		se0.insert(*it1);
+		sv1.insert(t);
+		sv2.insert(s);
+	}
+
+	VE me = compute_maximal_ordinary_edges();
+	for(int i = 0; i < me.size(); i++)
+	{
+		edge_descriptor ee = me[i];
+		se0.insert(ee);
+		sv1.insert(ee->target());
+		sv2.insert(ee->source());
+	}
+
+	while(true)
+	{
+		bool b = false;
+		for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+		{
+			edge_descriptor e = (*it);
+			int s = e->source(); 
+			int t = e->target();
+			if(sv1.find(s) == sv1.end() && s != 0)
+			{
+				edge_descriptor ee = max_in_edge(s);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(s);
+				sv2.insert(ee->source());
+				b = true;
+			}
+			if(sv2.find(t) == sv2.end() && t != num_vertices() - 1)
+			{
+				edge_descriptor ee = max_out_edge(t);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(ee->target());
+				sv2.insert(t);
+				b = true;
+			}
+			if(b == true) break;
+		}
+		if(b == false) break;
+	}
+
+	VE ve;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		if(se0.find(*it1) != se0.end()) continue;
+		ve.push_back(*it1);
+	}
+
+	for(int i = 0; i < ve.size(); i++)
+	{
+		if(verbose >= 2) printf("remove edge (%d, %d), weight = %.2lf\n", ve[i]->source(), ve[i]->target(), get_edge_weight(ve[i]));
+		remove_edge(ve[i]);
+	}
+
+	if(ve.size() >= 1) return true;
+	else return false;
+
+}
+
 bool splice_graph::extend_boundaries()
 {
 	edge_iterator it1, it2;
