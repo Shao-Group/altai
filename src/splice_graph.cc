@@ -882,6 +882,54 @@ bool splice_graph::remove_inner_boundaries()
 	return flag;
 }
 
+// FIXME: won't be removed if retained intron has variants
+bool splice_graph::remove_intron_contamination()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices(); i++)
+	{
+		vertex_info vi = get_vertex_info(i);
+		if(vi.type == EMPTY_VERTEX) continue;
+		
+		if(in_degree(i) != 1) continue;
+		if(out_degree(i) != 1) continue;
+
+		edge_iterator it1, it2;
+		PEEI pei = in_edges(i);
+		it1 = pei.first;
+		edge_descriptor e1 = (*it1);
+		pei = out_edges(i);
+		it1 = pei.first;
+		edge_descriptor e2 = (*it1);
+		int s = e1->source();
+		int t = e2->target();
+		double wv = get_vertex_weight(i);
+
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		if(get_vertex_info(s).rpos != vi.lpos) continue;
+		if(get_vertex_info(t).lpos != vi.rpos) continue;
+
+		PEB p = edge(s, t);
+		if(p.second == false) continue;
+
+		edge_descriptor ee = p.first;
+		double we = get_edge_weight(ee);
+
+		if(wv > we) continue;
+		if(wv > max_intron_contamination_coverage) continue;
+
+		if(verbose >= 2) printf("clear intron contamination %d, weight = %.2lf, length = %d, edge weight = %.2lf\n", i, wv, vi.length, we);
+
+		// clear_vertex(i);
+		vi.type = EMPTY_VERTEX;
+		set_vertex_info(i, vi);
+
+		flag = true;
+	}
+	return flag;
+}
+
 int splice_graph::build(const string &file)
 {
 	ifstream fin(file.c_str());

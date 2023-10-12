@@ -754,53 +754,6 @@ int bundle::build_splice_graph(int mode)
 
 }
 
-bool bundle::remove_intron_contamination()
-{
-	bool flag = false;
-	for(int i = 1; i < gr.num_vertices(); i++)
-	{
-		vertex_info vi = gr.get_vertex_info(i);
-		if(vi.type == EMPTY_VERTEX) continue;
-		
-		if(gr.in_degree(i) != 1) continue;
-		if(gr.out_degree(i) != 1) continue;
-
-		edge_iterator it1, it2;
-		PEEI pei = gr.in_edges(i);
-		it1 = pei.first;
-		edge_descriptor e1 = (*it1);
-		pei = gr.out_edges(i);
-		it1 = pei.first;
-		edge_descriptor e2 = (*it1);
-		int s = e1->source();
-		int t = e2->target();
-		double wv = gr.get_vertex_weight(i);
-
-		if(s == 0) continue;
-		if(t == gr.num_vertices() - 1) continue;
-		if(gr.get_vertex_info(s).rpos != vi.lpos) continue;
-		if(gr.get_vertex_info(t).lpos != vi.rpos) continue;
-
-		PEB p = gr.edge(s, t);
-		if(p.second == false) continue;
-
-		edge_descriptor ee = p.first;
-		double we = gr.get_edge_weight(ee);
-
-		if(wv > we) continue;
-		if(wv > max_intron_contamination_coverage) continue;
-
-		if(verbose >= 2) printf("clear intron contamination %d, weight = %.2lf, length = %d, edge weight = %.2lf\n", i, wv, vi.length, we);
-
-		// gr.clear_vertex(i);
-		vi.type = EMPTY_VERTEX;
-		gr.set_vertex_info(i, vi);
-
-		flag = true;
-	}
-	return flag;
-}
-
 // add by Mingfu -- to use paired-end reads to remove false boundaries
 bool bundle::remove_false_boundaries()
 {
