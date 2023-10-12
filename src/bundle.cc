@@ -54,7 +54,7 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	// if(revise == true) revise_splice_graph(); // FIXME: this might result an error for allelic regions, default true
+	if(revise && to_revise_splice_graph) revise_splice_graph();
 	refine_splice_graph();
 	build_hyper_set();
 	return 0;

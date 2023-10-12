@@ -137,9 +137,8 @@ int batch_bundle_size = 10;
 int verbose = 1;
 int assemble_duplicates = 10;
 string version = "v0.0.1";
-bool FILTER_BY_COV = false;
-bool phasing_profile_only = false;
 bool decompose_as_neighor = false;
+bool to_revise_splice_graph = true;
 bool skip_resolve_hyper_edge = true;
 bool skip_resolve_smallest = true;
 bool use_filter = true;
@@ -517,10 +516,6 @@ int parse_arguments(int argc, const char ** argv)
 			insertsize_ave = atof(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--filter_AS_transcript_by_coverage")
-		{
-			FILTER_BY_COV = true;			
-		}
 		else if(string(argv[i]) == "--min_num_reads_support_variant")
 		{
 			min_num_reads_support_variant  = atoi(argv[i + 1]);
@@ -531,13 +526,13 @@ int parse_arguments(int argc, const char ** argv)
 			chr_exclude = string(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--phasing_profile_only")
-		{
-			phasing_profile_only = true;
-		}
 		else if(string(argv[i]) == "--decompose_as_neighor")
 		{
 			decompose_as_neighor = true;
+		}
+		else if(string(argv[i]) == "--not_revise_splice_graph")
+		{
+			to_revise_splice_graph = false;	
 		}
 		// else if(string(argv[i]) == "--not_skip_resolve_hyper_edge") //FIXME: unsafe to use
 		// {
