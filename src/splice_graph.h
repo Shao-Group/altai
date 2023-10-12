@@ -84,6 +84,21 @@ public:
 	int remove_edge(edge_descriptor e);
 	int remove_edge(int s, int t);
 
+	// revise splice graph
+	VE compute_maximal_edges();
+	int revise_splice_graph();
+	int refine_splice_graph();
+	bool keep_surviving_edges();
+	bool extend_boundaries();
+	bool extend_start_boundaries();
+	bool extend_end_boundaries();
+	bool remove_small_junctions();
+	bool remove_small_exons();
+	bool remove_inner_boundaries();
+	bool remove_intron_contamination();
+	bool remove_false_boundaries();
+	bool tackle_false_boundaries();
+
 	// read, write, and simulate splice graph
 	int build(const string &file);
 	int write(const string &file) const;
@@ -132,10 +147,8 @@ public:
 	int print();
 
 	// output transcripts
-	// int output_transcripts(ofstream &fout, const vector<path> &p) const;
 	int output_transcripts(vector<transcript> &v, const vector<path> &p) const;
 	int output_transcripts1(vector<transcript> &v, vector<transcript> &v1, const vector<path> &p) const;
-	// int output_transcript(ofstream &fout, const path &p, const string &tid) const;
 	int output_transcript(transcript &trst, const path &p, const string &tid) const;
 };
 
