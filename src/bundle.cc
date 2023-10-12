@@ -743,9 +743,7 @@ int bundle::build_splice_graph(int mode)
 
 
 
-	}
 
-}
 
 
 
