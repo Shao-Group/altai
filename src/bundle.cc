@@ -907,55 +907,6 @@ bool bundle::keep_surviving_edges() //FIXME:
 	else return false;
 }
 
-bool bundle::remove_small_exons()
-{
-	bool flag = false;
-	for(int i = 1; i < gr.num_vertices() - 1; i++)
-	{
-		vertex_info vi = gr.get_vertex_info(i);
-		if(vi.type == EMPTY_VERTEX) continue;
-
-		bool b = true;
-		edge_iterator it1, it2;
-		PEEI pei;
-		int32_t p1 = gr.get_vertex_info(i).lpos;
-		int32_t p2 = gr.get_vertex_info(i).rpos;
-
-		if(p2 - p1 >= min_exon_length) continue;
-		if(gr.degree(i) <= 0) continue;
-
-		for(pei = gr.in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			edge_descriptor e = (*it1);
-			int s = e->source();
-			//if(gr.out_degree(s) <= 1) b = false;
-			if(s != 0 && gr.get_vertex_info(s).rpos == p1) b = false;
-			if(b == false) break;
-		}
-		for(pei = gr.out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			edge_descriptor e = (*it1);
-			int t = e->target();
-			//if(gr.in_degree(t) <= 1) b = false;
-			if(t != gr.num_vertices() - 1 && gr.get_vertex_info(t).lpos == p2) b = false;
-			if(b == false) break;
-		}
-
-		if(b == false) continue;
-
-		// only consider boundary small exons
-		if(gr.edge(0, i).second == false && gr.edge(i, gr.num_vertices() - 1).second == false) continue;
-
-		//gr.clear_vertex(i);
-		if(verbose >= 2) printf("remove small exon: length = %d, pos = %d-%d\n", p2 - p1, p1, p2);
-		vi.type = EMPTY_VERTEX;
-		gr.set_vertex_info(i, vi);
-
-		flag = true;
-	}
-	return flag;
-}
-
 bool bundle::remove_small_junctions()
 {
 	SE se;
