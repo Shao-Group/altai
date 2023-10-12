@@ -512,6 +512,7 @@ bool splice_graph::extend_end_boundaries()
 	}
 	return flag;
 }
+// TODO: not able to remove small single exon w. variants inside
 bool splice_graph::remove_small_exons()
 {
 	bool flag = false;
