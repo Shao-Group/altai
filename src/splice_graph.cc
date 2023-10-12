@@ -9,6 +9,7 @@ See LICENSE for licensing.
 */
 
 #include "splice_graph.h"
+#include "undirected_graph.h"
 #include "util.h"
 #include "config.h"
 #include "interval_map.h"
@@ -749,7 +750,7 @@ bool splice_graph::remove_small_junctions()
 				int t = e->target();
 				double w = get_vertex_weight(t);
 				if(t == num_vertices() - 1) continue;
-				if(get_vertex_info(s).lpos.ale != "$") continue;
+				if(get_vertex_info(t).lpos.ale != "$") continue;
 				if(get_vertex_info(t).lpos.p32 != p2) continue;
 				if(w < wt) continue;
 				wt = w;
@@ -872,7 +873,7 @@ bool splice_graph::remove_inner_boundaries()
 		if(vi.stddev >= 0.01) continue;
 
 		if(verbose >= 2) printf("remove inner boundary: vertex = %d, weight = %.2lf, length = %d, pos = %s-%s\n",
-				i, get_vertex_weight(i), vi.length, vi.lpos.aspos32string(), vi.rpos.p32.aspos32string());
+				i, get_vertex_weight(i), vi.length, vi.lpos.aspos32string().c_str(), vi.rpos.aspos32string().c_str());
 
 		// clear_vertex(i);
 		vi.type = EMPTY_VERTEX;
