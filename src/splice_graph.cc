@@ -402,13 +402,13 @@ int splice_graph::revise_splice_graph()
 		b = remove_inner_boundaries();
 		if(b == true) continue;
 
-		b = remove_small_exons();//FIXME:
+		b = remove_small_exons();
 		if(b == true) continue;
 
 		b = remove_intron_contamination();
 		if(b == true) continue;
 
-		b = remove_small_junctions();//FIXME:
+		b = remove_small_junctions();
 		if(b == true) refine_splice_graph();
 		if(b == true) continue;
 
@@ -512,6 +512,102 @@ bool splice_graph::extend_end_boundaries()
 	}
 	return flag;
 }
+
+bool splice_graph::remove_small_junctions()
+{
+	SE se0;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		if(degree(i) <= 0) continue;
+
+		bool b = true;
+		edge_iterator it1, it2;
+		PEEI pei;
+		int32_t p1 = get_vertex_info(i).lpos.p32;
+		int32_t p2 = get_vertex_info(i).rpos.p32;
+		double wi = get_vertex_weight(i);
+
+		// compute max in-adjacent edge
+		if(to_revise_splice_graph) // limit life span of ws
+		{
+			double ws = 0;
+			for(pei = in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int s = e->source();
+				double w = get_vertex_weight(s);
+				if(s == 0) continue;
+				if(get_vertex_info(s).rpos.ale != "$") continue;
+				if(get_vertex_info(s).rpos.p32 != p1) continue;
+				if(w < ws) continue;
+				ws = w;
+			}
+
+			// remove small in-junction
+			for(pei = in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int s = e->source();
+				double w = get_edge_weight(e);
+				if(s == 0) continue;
+				if(get_vertex_info(s).rpos == p1) continue;
+				if(ws < 2.0 * w * w + 18.0) continue;
+				if(wi < 2.0 * w * w + 18.0) continue;
+
+				se0.insert(e);
+			}
+		}
+
+		// compute max out-adjacent edge
+		if(to_revise_splice_graph) // limit life span of wt
+		{
+			double wt = 0;
+			for(pei = out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int t = e->target();
+				double w = get_vertex_weight(t);
+				if(t == num_vertices() - 1) continue;
+				if(get_vertex_info(s).lpos.ale != "$") continue;
+				if(get_vertex_info(t).lpos.p32 != p2) continue;
+				if(w < wt) continue;
+				wt = w;
+			}
+
+			// remove small in-junction
+			for(pei = out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				double w = get_edge_weight(e);
+				int t = e->target();
+				if(t == num_vertices() - 1) continue;
+				if(get_vertex_info(t).lpos == p2) continue;
+				if(wt < 2.0 * w * w + 18.0) continue;
+				if(wi < 2.0 * w * w + 18.0) continue;
+
+				se0.insert(e);
+			}
+		}
+
+	}
+
+	if(se0.size() <= 0) return false;
+
+	for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+	{
+		edge_descriptor e = (*it);
+		if(verbose >= 2) 
+		{
+			vertex_info v1 = get_vertex_info(e->source());
+			vertex_info v2 = get_vertex_info(e->target());
+			printf("remove small junction: length = %d, pos = %d%s-%d%s\n", v2.lpos - v1.rpos, v2.lpos.p32, v2.lpos.ale.c_str(), v1.rpos.p32, v1.rpos.ale.c_str());
+		}
+		remove_edge(e);
+	}
+
+	return true;
+}
+
 // TODO: not able to remove small single exon w. variants inside
 bool splice_graph::remove_small_exons()
 {
