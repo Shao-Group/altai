@@ -735,49 +735,16 @@ int bundle::build_splice_graph(int mode)
 	return 0;
 }
 
-bool bundle::extend_boundaries()
 {
-	edge_iterator it1, it2;
-	PEEI pei;
-	for(pei = gr.edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
 	{
-		edge_descriptor e = (*it1);
-		int s = e->source();
-		int t = e->target();
-		int32_t p = gr.get_vertex_info(t).lpos - gr.get_vertex_info(s).rpos;
-		double we = gr.get_edge_weight(e);
-		double ws = gr.get_vertex_weight(s);
-		double wt = gr.get_vertex_weight(t);
 
-		if(p <= 0) continue;
-		if(s == 0) continue;
-		if(t == gr.num_vertices() - 1) continue;
 
-		bool b = false;
-		if(gr.out_degree(s) == 1 && ws >= 10.0 * we * we + 10.0) b = true;
-		if(gr.in_degree(t) == 1 && wt >= 10.0 * we * we + 10.0) b = true;
 
-		if(b == false) continue;
 
-		if(gr.out_degree(s) == 1)
-		{
-			edge_descriptor ee = gr.add_edge(s, gr.num_vertices() - 1);
-			gr.set_edge_weight(ee, ws);
-			gr.set_edge_info(ee, edge_info());
-		}
-		if(gr.in_degree(t) == 1)
-		{
-			edge_descriptor ee = gr.add_edge(0, t);
-			gr.set_edge_weight(ee, wt);
-			gr.set_edge_info(ee, edge_info());
-		}
 
-		gr.remove_edge(e);
 
-		return true;
 	}
 
-	return false;
 }
 
 VE bundle::compute_maximal_edges()

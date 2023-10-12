@@ -450,6 +450,51 @@ int splice_graph::refine_splice_graph()
 	}
 	return 0;
 }
+bool splice_graph::extend_boundaries()
+{
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		edge_descriptor e = (*it1);
+		int s = e->source();
+		int t = e->target();
+		int32_t p = get_vertex_info(t).lpos - get_vertex_info(s).rpos;
+		double we = get_edge_weight(e);
+		double ws = get_vertex_weight(s);
+		double wt = get_vertex_weight(t);
+
+		if(p <= 0) continue;	//safe for allelic-pseudo junctions
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+
+		bool b = false;
+		if(out_degree(s) == 1 && ws >= 10.0 * we * we + 10.0) b = true;
+		if(in_degree(t) == 1 && wt >= 10.0 * we * we + 10.0) b = true;
+
+		if(b == false) continue;
+
+		if(out_degree(s) == 1)
+		{
+			edge_descriptor ee = add_edge(s, num_vertices() - 1);
+			set_edge_weight(ee, ws);
+			set_edge_info(ee, edge_info());
+		}
+		if(in_degree(t) == 1)
+		{
+			edge_descriptor ee = add_edge(0, t);
+			set_edge_weight(ee, wt);
+			set_edge_info(ee, edge_info());
+		}
+
+		remove_edge(e);
+
+		return true;
+	}
+
+	return false;
+}
+
 bool splice_graph::extend_start_boundaries()
 {
 	bool flag = false;
