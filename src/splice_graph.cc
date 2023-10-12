@@ -442,11 +442,11 @@ int splice_graph::revise_splice_graph()
 	bool b = false;
 	while(true)
 	{
-		b = tackle_false_boundaries();
-		if(b == true) continue;
+		// b = tackle_false_boundaries();
+		// if(b == true) continue;
 
-		b = remove_false_boundaries();
-		if(b == true) continue;
+		// b = remove_false_boundaries();
+		// if(b == true) continue;
 
 		b = remove_inner_boundaries();
 		if(b == true) continue;
@@ -478,8 +478,10 @@ int splice_graph::revise_splice_graph()
 		break;
 	}
 
+	edge_integrity_examine();
 	refine_splice_graph();
-	
+	edge_integrity_examine();
+
 	return 0;
 }
 
