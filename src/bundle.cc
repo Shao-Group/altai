@@ -483,13 +483,13 @@ vector<int> bundle::align_hit(hit &h)
 
 	for(int k = 0; k < v.size(); k++)
 	{
-		region& r = br.regions[v[k]];
+		const region& r = br.regions[v[k]];
 		if(r.pexons.size() == 0) 
 		{
 			b = false;
 			break;
 		}
-		for(const partial_exon pe: r.pexons) sp2.push_back(pe.pid);
+		for(const partial_exon& pe: r.pexons) sp2.push_back(pe.pid);
 	}
 
 	//TODO: min_flank_length filter
@@ -517,13 +517,13 @@ vector<int> bundle::align_fragment(fragment &fr)
 
 	for(int k = 0; k < v.size(); k++)
 	{
-		region& r = br.regions[v[k]];
+		const region& r = br.regions[v[k]];
 		if(r.pexons.size() == 0) 
 		{
 			b = false;
 			break;
 		}
-		for(const partial_exon pe: r.pexons) sp2.push_back(pe.pid);
+		for(const partial_exon& pe: r.pexons) sp2.push_back(pe.pid);
 	}
 
 	//TODO: min_flank_length filter
