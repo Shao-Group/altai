@@ -54,8 +54,8 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	if(revise && to_revise_splice_graph) gr.revise_splice_graph();
-	// refine_splice_graph();
+	if(revise && to_revise_splice_graph) 	revise_splice_graph();
+	
 	build_hyper_set();
 	return 0;
 }
@@ -735,21 +735,52 @@ int bundle::build_splice_graph(int mode)
 	return 0;
 }
 
+int bundle::revise_splice_graph()
 {
+	bool b = false;
+	while(true)
 	{
+		b = tackle_false_boundaries();
+		if(b == true) continue;
 
+		b = remove_false_boundaries();
+		if(b == true) continue;
 
+		b = gr.remove_inner_boundaries();
+		if(b == true) continue;
 
+		b = gr.remove_small_exons();
+		if(b == true) continue;
 
+		b = gr.remove_intron_contamination();
+		if(b == true) continue;
 
+		b = gr.remove_small_junctions();
+		if(b == true) gr.refine_splice_graph();
+		if(b == true) continue;
 
+		b = gr.extend_start_boundaries();
+		if(b == true) continue;
 
+		b = gr.extend_end_boundaries();
+		if(b == true) continue;
 
+		b = gr.extend_boundaries();
+		if(b == true) gr.refine_splice_graph();
+		if(b == true) continue;
 
+		b = gr.keep_surviving_edges();
+		if(b == true) gr.refine_splice_graph();
+		if(b == true) continue;
 
+		break;
 	}
 
+	gr.edge_integrity_examine();
+	gr.refine_splice_graph();
+	gr.edge_integrity_examine();
 
+	return 0;
 }
 
 // add by Mingfu -- to use paired-end reads to remove false boundaries
