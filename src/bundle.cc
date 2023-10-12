@@ -528,6 +528,13 @@ vector<int> bundle::align_fragment(fragment &fr)
 
 	//TODO: min_flank_length filter
 
+	if(DEBUG_MODE_ON && print_bundle_detail)
+	{
+		cout << "align_fragment, aligned pid list  " ;
+		for(int i: sp2) cout << i <<  " ";
+		cout << endl;
+	}
+
 	vector<int> e;
 	if(b == false) return e;
 	else return sp2;
