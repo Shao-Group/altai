@@ -745,6 +745,12 @@ int bundle::build_splice_graph(int mode)
 int bundle::revise_splice_graph()
 {
 	bool b = false;
+	
+	if (! DEBUG_MODE_ON)  // purge potential problems in graph building
+	{
+		gr.refine_splice_graph();
+	}
+
 	while(true)
 	{
 		b = tackle_false_boundaries();
