@@ -85,7 +85,7 @@ public:
 	int remove_edge(int s, int t);
 
 	// revise splice graph
-	VE compute_maximal_ordinary_edges();
+	VE compute_maximal_edges();
 	int revise_splice_graph();
 	int refine_splice_graph();
 	bool keep_surviving_edges();

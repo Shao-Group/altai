@@ -454,7 +454,7 @@ int splice_graph::refine_splice_graph()
 	return 0;
 }
 
-VE splice_graph::compute_maximal_ordinary_edges()
+VE splice_graph::compute_maximal_edges()
 {
 	typedef pair<double, edge_descriptor> PDE;
 	vector<PDE> ve;
@@ -472,8 +472,8 @@ VE splice_graph::compute_maximal_ordinary_edges()
 		if(s == 0) continue;
 		if(t == num_vertices() - 1) continue;
 		ug.add_edge(s, t);
-		bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
-		if(! is_as_edge) 
+		// bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
+		// if(! is_as_edge) 
 		{
 			ve.push_back(PDE(w, e));
 		}
@@ -527,7 +527,7 @@ bool splice_graph::keep_surviving_edges()
 		sv2.insert(s);
 	}
 
-	VE me = compute_maximal_ordinary_edges();
+	VE me = compute_maximal_edges();
 	for(int i = 0; i < me.size(); i++)
 	{
 		edge_descriptor ee = me[i];
