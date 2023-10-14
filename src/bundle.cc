@@ -55,6 +55,7 @@ int bundle::build(int mode, bool revise)
 	build_splice_graph(mode);
 
 	if(revise && to_revise_splice_graph)  revise_splice_graph();
+	else gr.refine_splice_graph();
 	
 	build_hyper_set();
 	return 0;
@@ -684,9 +685,6 @@ int bundle::build_splice_graph(int mode)
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
 
-	bool gr_not_intact = gr.refine_splice_graph();
-	if (DEBUG_MODE_ON) if(gr_not_intact) gr.graphviz("DEBUG_graph_not_intact." +bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
-	
 	return 0;
 }
 
@@ -697,7 +695,9 @@ int bundle::revise_splice_graph()
 	if(DEBUG_MODE_ON && print_bundle_detail && output_graphviz_files) 
 		gr.graphviz(bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
 
-
+	bool gr_not_intact = gr.refine_splice_graph();
+	if (DEBUG_MODE_ON) if(gr_not_intact) gr.graphviz("DEBUG_graph_not_intact." +bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
+	
 	while(true)
 	{
 		b = tackle_false_boundaries();
