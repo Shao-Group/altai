@@ -567,7 +567,7 @@ int bundle::build_splice_graph(int mode)
 
 	if(verbose >= 3) cout << "splice graph build junction edges\n";
 
-	// edges: each junction => and e2w
+	// edges: each junction => and e2w;  including adjacent pexons
 	// vertics: assign as_type
 	set<pair<int, int> > edge_set;
 	for(const auto& jset_item: jset)
@@ -605,7 +605,7 @@ int bundle::build_splice_graph(int mode)
 		}
 	}
 
-	// edges: connecting start/end and pexons, including adjacent pexons
+	// edges: connecting start/end and pexons
 	int ss = 0;
 	int tt = pexons.size() + 1;
 	for(int i = 0; i < pexons.size(); i++)
