@@ -46,7 +46,6 @@ public:
 	
 	vector<partial_exon> pexons;												// partial exons
 	vector<bool> regional;														// if a pe is regional
-	map<pair<as_pos32, as_pos32>, int> pmap;									// partial exon map, save pexon and its index	
 	map<pair<int, int>, pair<int,char> > jset;								    // <pid from, pid to>, <counts, strand>
 	splice_graph gr;															// splice graph
 	hyper_set hs;																// hyper set

@@ -54,7 +54,7 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	if(revise && to_revise_splice_graph) 	revise_splice_graph();
+	if(revise && to_revise_splice_graph)  revise_splice_graph();
 	
 	build_hyper_set();
 	return 0;
@@ -195,7 +195,7 @@ int bundle::build_partial_exons()
 			assert(rtype != -1);
 			assert(r.ave != 0);
 			// cout << "as pexon" << r.lpos.aspos32string() << "-" << r.rpos.aspos32string() <<endl;
-			// assert(r.gt != UNPHASED);  // assuming all var phased //FIXME: not always true, how to handle potential errors
+			// assert(r.gt != UNPHASED);  // assuming all var phased //TODO: not always true, need to handle potential seq errors
 
 			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
 			pe.assign_as_cov(r.ave, r.max, r.dev);
@@ -209,6 +209,7 @@ int bundle::build_partial_exons()
 	}
 
 	// sort, make pe.pid & regional
+	// pexons and regions.pexons are different, but have same pid
 	sort(pexons.begin(), pexons.end());
 	for (int i = 0; i < pexons.size(); i ++)
 	{
@@ -217,6 +218,7 @@ int bundle::build_partial_exons()
 		if((pe.lpos != bb.lpos || pe.rpos != bb.rpos) && (pe.ltype & START_BOUNDARY) && (pe.rtype & END_BOUNDARY)) 
 			regional.push_back(true);
 		else regional.push_back(false);		
+
 		// region.pexons and bundle.pexons should have the same rid, rid2, pid
 		assert(pe.rid >= 0 && pe.rid < regions.size());
 		assert(pe.rid2 >= 0 && pe.rid2 < regions[pe.rid].pexons.size());
@@ -236,38 +238,6 @@ int bundle::build_partial_exons()
 			for(const partial_exon& pe: r.pexons)
 				assert(pe.pid >= 0 && pe.pid <= pexons.size());
 	}
-
-	/*
-	if (DEBUG_MODE_ON)
-	{
-		assert(regional.size() == pexons.size());
-		// assert(pexons.size() >= regions.size()); // not true
-		printf("size of regions %d, size of pexon %d \n", regions.size(), pexons.size());
-		if (verbose >= 3 ) cout << "print pexons:\n";
-
-		for (int i = 0; i< pexons.size(); i++) 
-		{
-			if(verbose >= 3) 
-			{
-				cout <<"regional?" <<regional[i] << "\t" ; 
-				pexons[i].print(i); 
-			}
-			if (i < pexons.size() - 1) 
-			{
-				bool b0 =  pexons[i].is_allelic() && pexons[i+1].is_allelic();
-				bool b1 =  pexons[i].rpos.leftsameto(pexons[i+1].lpos);
-				bool b2 =  b0 && pexons[i].lpos.samepos(pexons[i+1].lpos) && pexons[i].rpos.samepos(pexons[i+1].rpos);
-				assert(b1 || b2);
-
-				// note: regions are also sorted
-				partial_exon& p1 = pexons[i];
-				partial_exon& p2 = pexons[i + 1];
-				cout << p1.rid << " " << p2.rid << ": " << p1.pid << " " << p2.pid << endl;
-				assert(p2.rid > p1.rid || (p2.rid == p1.rid && p2.pid == p1.pid + 1));
-			}
-		}			
-	}
-	*/
 
 	return 0;
 }
@@ -548,6 +518,7 @@ int bundle::build_splice_graph(int mode)
 	gr.clear();
 	if (verbose >= 3) 
 		cout << "splice graph build for bundle " << bb.chrm << ":" << bb.lpos << "-" << bb.rpos << " " <<bb.strand << " strand" << endl;
+	
 	// vertices: start, each region, end
 	gr.add_vertex();
 	vertex_info vi0;
@@ -614,9 +585,6 @@ int bundle::build_splice_graph(int mode)
 		char strand = jset_item.second.second;
 
 		if(lpid< 0 || rpid < 0) continue;
-
-		const partial_exon &x = pexons[lpid];
-		const partial_exon &y = pexons[rpid];
 
 		edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
 		edge_set.insert(make_pair(lpid + 1, rpid + 1));
@@ -739,6 +707,9 @@ int bundle::build_splice_graph(int mode)
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
 
+	bool gr_not_intact = gr.refine_splice_graph();
+	if (DEBUG_MODE_ON) assert(!gr_not_intact);
+	
 	return 0;
 }
 
@@ -746,6 +717,9 @@ int bundle::revise_splice_graph()
 {
 	bool b = false;
 	
+	if(DEBUG_MODE_ON && print_bundle_detail && output_graphviz_files) 
+		gr.graphviz(bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
+
 	if (! DEBUG_MODE_ON)  // purge potential problems in graph building
 	{
 		gr.refine_splice_graph();
@@ -792,6 +766,9 @@ int bundle::revise_splice_graph()
 	gr.edge_integrity_examine();
 	gr.refine_splice_graph();
 	gr.edge_integrity_examine();
+
+	if(DEBUG_MODE_ON && print_bundle_detail && output_graphviz_files) 
+		gr.graphviz(bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".aft_revise.dot");
 
 	return 0;
 }
