@@ -113,7 +113,7 @@ int bundle_bridge::build_junctions()
 	}
 	sort(junctions.begin(), junctions.end());
 	
-	if (verbose >= 3)
+	if (verbose >= 3 && print_bundle_bridge)
 	{
 		cout << "bundle_bridge build_junction: \n junctions size = " << junctions.size() << endl; 
 		for (int i = 0; i < junctions.size(); i ++) junctions[i].print("NA", i);		
@@ -227,7 +227,7 @@ int bundle_bridge::build_regions()
 		pos_splicetypes[r].insert(ALLELIC_RIGHT_SPLICE);
 	}
 
-	if (verbose >= 3)
+	if (verbose >= 3 && print_bundle_bridge)
 	{
 		cout << "bundle_bridge build regions" << endl;
 		for (auto && p: pos_splicetypes)
@@ -316,7 +316,7 @@ int bundle_bridge::build_regions()
 	sort(regions.begin(), regions.end());
 
 	// print & assert
-	if (verbose >= 3)
+	if (verbose >= 3 && print_bundle_bridge)
 	{
 		for (auto&& r: regions) r.print(123);
 	}
@@ -364,7 +364,7 @@ int bundle_bridge::align_hits_transcripts()
 		assert(m1.size() == m2.size());
 		auto it1 = m1.begin();
 		auto it2 = m2.begin();
-		if (verbose >= 3) cout << "bundle_bridge::align_hits_transcripts() m1/m2 size = " << m1.size() << endl;
+		if (verbose >= 3 && print_bundle_bridge) cout << "bundle_bridge::align_hits_transcripts() m1/m2 size = " << m1.size() << endl;
 		for (int a = 0; a < m1.size(); a++)
 		{
 			auto i = *it1;
@@ -373,7 +373,7 @@ int bundle_bridge::align_hits_transcripts()
 			as_pos32 cc = i.second;
 			as_pos32 qq = j.first;
 			as_pos32 dd = j.second;
-			if (verbose >= 3)  
+			if (verbose >= 3 && print_bundle_bridge)  
 			{
 				cout << "bundle_bridge::align_hits_transcripts() m1/m2(region.l/rpos, idx) = " << pp.aspos32string() << " " ;
 				cout << qq.aspos32string() << " " << cc << endl;	
