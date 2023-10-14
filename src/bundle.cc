@@ -635,7 +635,6 @@ int bundle::build_splice_graph(int mode)
 		assert(c >= 1);
 		edge_info ei;
 		ei.weight = c;
-		ei.strand = strand;
 		gr.set_edge_info(p, ei);
 		gr.set_edge_weight(p, c);
 
