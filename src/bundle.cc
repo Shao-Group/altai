@@ -45,7 +45,7 @@ int bundle::prepare()
 	compute_strand();
 	build_intervals();
 	build_partial_exons();
-
+	build_pos_pids_map();
 	pexon_jset(jset);
 	return 0;
 }
@@ -237,6 +237,48 @@ int bundle::build_partial_exons()
 		for(const region& r: regions)
 			for(const partial_exon& pe: r.pexons)
 				assert(pe.pid >= 0 && pe.pid <= pexons.size());
+	}
+
+	return 0;
+}
+
+int bundle::build_pos_pids_map()
+{
+	pos_pids.clear();
+	
+	for(const partial_exon& pe: pexons) 
+	{
+		pair<int32_t, int32_t> pospair {pe.lpos.p32, pe.rpos.p32};
+		auto it = pos_pids.find(pospair);
+		if (it == pos_pids.end()) pos_pids.insert({pospair, {pe.pid}});
+		else it->second.push_back(pe.pid);
+	}
+
+	if(DEBUG_MODE_ON)
+	{
+		int c = 0;
+		int rpos1 = -1;
+		int pid1 = -1;
+		for(const auto& pp: pos_pids)
+		{
+			int32_t lpos2 = pp.first.first;
+			int32_t rpos2 = pp.first.second;
+			const vector<int>& pids = pp.second;
+
+			assert(rpos1 <= lpos2);
+			rpos1 = lpos2;
+			
+			int max_pid = -1;
+			for (int i = 0; i < pids.size(); i++)
+			{	
+				assert(pids[i] > pid1);
+				if (pids[i] > max_pid) max_pid = pids[i];
+			}
+			pid1 = max_pid;
+			c += pids.size();
+			assert(pid1 >= 0);
+			assert(c == pid1 + 1);
+		}
 	}
 
 	return 0;
