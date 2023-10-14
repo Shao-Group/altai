@@ -685,7 +685,7 @@ int bundle::build_splice_graph(int mode)
 	gr.chrm = bb.chrm;
 
 	bool gr_not_intact = gr.refine_splice_graph();
-	if (DEBUG_MODE_ON) assert(!gr_not_intact);
+	if (DEBUG_MODE_ON) if(gr_not_intact) gr.graphviz("DEBUG_graph_not_intact." +bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
 	
 	return 0;
 }
