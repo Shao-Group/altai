@@ -266,7 +266,7 @@ int bundle::build_pos_pids_map()
 			const vector<int>& pids = pp.second;
 
 			assert(rpos1 <= lpos2);
-			rpos1 = lpos2;
+			rpos1 = rpos2;
 			
 			int max_pid = -1;
 			for (int i = 0; i < pids.size(); i++)
