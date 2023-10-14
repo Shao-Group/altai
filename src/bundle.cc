@@ -616,7 +616,7 @@ int bundle::build_splice_graph(int mode)
 		{
 			for(int rpid: pid2s)
 			{
-				assert(0 < lpid);
+				assert(0 <= lpid);
 				assert(lpid < rpid);
 				if(jset.find({lpid, rpid}) != jset.end()) continue;  // threaded by reads, already added
 				
