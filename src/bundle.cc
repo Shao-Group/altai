@@ -194,7 +194,6 @@ int bundle::build_partial_exons()
 			assert(ltype != -1);
 			assert(rtype != -1);
 			assert(r.ave != 0);
-			// cout << "as pexon" << r.lpos.aspos32string() << "-" << r.rpos.aspos32string() <<endl;
 			// assert(r.gt != UNPHASED);  // assuming all var phased //TODO: not always true, need to handle potential seq errors
 
 			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
@@ -565,11 +564,10 @@ int bundle::build_splice_graph(int mode)
 	gr.set_vertex_weight(pexons.size() + 1, 0);
 	gr.set_vertex_info(pexons.size() + 1, vin);
 
-	if(verbose >= 3) cout << "splice graph build junction edges\n";
+	if(verbose >= 3) cout << "splice graph build jset edges\n";
 
-	// edges: each junction => and e2w;  including adjacent pexons
+	// edges: each jset_pair => and e2w;  including adjacent pexons
 	// vertics: assign as_type
-	set<pair<int, int> > edge_set;
 	for(const auto& jset_item: jset)
 	{
 		int  lpid   = jset_item.first.first;
@@ -579,7 +577,6 @@ int bundle::build_splice_graph(int mode)
 		if(lpid< 0 || rpid < 0) continue;
 
 		edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
-		edge_set.insert(make_pair(lpid + 1, rpid + 1));
 
 		assert(c >= 1);
 		edge_info ei;
@@ -601,6 +598,39 @@ int bundle::build_splice_graph(int mode)
 			else if (vy.is_as_vertex())
 			{
 				if (!vx.is_as_vertex()) vx.as_type = AJ_NONVAR;
+			}
+		}
+	}
+
+	// edges: adjacent pexons which are not included in jset
+	for(auto i = pos_pids.begin(), b = prev(pos_pids.end(), 1); i != b ; ++i)
+	{
+		auto j = next(i, 1);
+		int32_t rpos1 = i->first.second;
+		int32_t lpos2 = j->first.first;
+		if (rpos1 != lpos2) continue;
+
+		const vector<int>& pid1s = i->second;
+		const vector<int>& pid2s = j->second;
+		for(int lpid: pid1s)
+		{
+			for(int rpid: pid2s)
+			{
+				assert(0 < lpid);
+				assert(lpid < rpid);
+				if(jset.find({lpid, rpid}) != jset.end()) continue;  // threaded by reads, already added
+				
+				const partial_exon& pe1 = pexons[lpid];
+				const partial_exon& pe2 = pexons[rpid];
+				if(gt_conflict(pe1.gt, pe2.gt)) continue;
+
+				assert(gr.edge(lpid + 1, rpid + 1).second == false); // edge not added
+				edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
+				edge_info ei;
+				double c = min_guaranteed_edge_weight;
+				ei.weight = c;
+				gr.set_edge_info(p, ei);
+				gr.set_edge_weight(p, c);
 			}
 		}
 	}
