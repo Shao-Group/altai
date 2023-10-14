@@ -437,8 +437,9 @@ int splice_graph::revise_splice_graph()
 	return 0;
 }
 
-int splice_graph::refine_splice_graph()
+bool splice_graph::refine_splice_graph()
 {
+	bool flag = false;
 	while(true)
 	{
 		bool b = false;
@@ -448,10 +449,11 @@ int splice_graph::refine_splice_graph()
 			if(in_degree(i) >= 1 && out_degree(i) >= 1) continue;
 			clear_vertex(i);
 			b = true;
+			flag = true;
 		}
 		if(b == false) break;
 	}
-	return 0;
+	return flag;
 }
 
 VE splice_graph::compute_maximal_edges()

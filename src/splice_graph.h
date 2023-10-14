@@ -87,7 +87,7 @@ public:
 	// revise splice graph
 	VE compute_maximal_edges();
 	int revise_splice_graph();
-	int refine_splice_graph();
+	bool refine_splice_graph();
 	bool keep_surviving_edges();
 	bool extend_boundaries();
 	bool extend_start_boundaries();
