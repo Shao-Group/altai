@@ -429,60 +429,6 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 	return 0;
 }
 
-
-int bundle::locate_left_partial_exon(as_pos32 x)
-{
-	throw runtime_error("don't use locate left");
-	/*
-	assert(x.ale == "$");
-	auto it = pmap_na.upper_bound(make_pair(x,x)); // p1>x or p1=x p2>x
-	
-	if (it == pmap_na.begin() ) 
-	{
-		if (it->first.first.p32 != x.p32) return -1;
-	}
-	else if (it == pmap_na.end()) it = prev(it);
-	else if (it->first.first.p32 != x.p32) it = prev(it);
-	
-	assert(it->second >= 1);
-	assert(it->second <= pexons.size());
-	int k = it->second - 1;
-	
-	as_pos32 p1 = it->first.first;
-	as_pos32 p2 = it->first.second;
-	if(p2.leftsameto(x)) return -1;
-	assert(p2.rightto(x));
-	assert(p1.leftsameto(x));
-
-	// if(x - p1.p32 > min_flank_length && p2.p32 - x < min_flank_length) k++;
-	return k;
-	*/
-}
-
-int bundle::locate_right_partial_exon(as_pos32 x)
-{
-	throw runtime_error("don't use locate right");
-	/*
-	assert(x.ale == "$");
-	auto it = pmap_na.upper_bound(make_pair(x,x));
-	if (it == pmap_na.begin()) return -1;
-	it = prev(it);
-
-	assert(it->second >= 1);
-	assert(it->second <= pexons.size());
-	int k = it->second - 1;
-	
-	as_pos32 p1 = it->first.first;
-	as_pos32 p2 = it->first.second;
-	if(p2.leftto(x)) return -1;
-	assert(p2.rightsameto(x));
-	assert(p1.leftto(x));
-
-	// if(x - p1.p32 > min_flank_length && p2.p32 - x < min_flank_length) k++; //TODO: min_flank_length in pmap
-	return k;
-	*/
-}
-
 vector<int> bundle::align_hit(hit &h)
 {
 	bool b = true;
