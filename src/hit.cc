@@ -119,7 +119,6 @@ int hit::build_features(bam1_t *b)
 {
 	// preparation for var 
 	bool do_apos = true;
-	// vector<string> ale_selector {"*", "A", "C", "*", "G", "*", "*", "*", "T"};	// 4-bit int for seq [], error: did not catch ambiguous nt
 	if (vcf_file == "") do_apos = false;
 	if (vmap_chrm != chrm)
 	{
@@ -136,6 +135,14 @@ int hit::build_features(bam1_t *b)
 			vmap_chrm = "";
 			do_apos = false;
 		}
+	}
+	// get vW
+	uint8_t vw = 0;
+	if(mask_WASP)
+	{
+		uint8_t *pw = bam_aux_get(b, "vW");
+		if(pw && (*pw) == 'C') vw = bam_aux2i(pw);
+		if(pw && (*pw) == 'c') vw = bam_aux2i(pw);
 	}
 
 	// fetch query name
@@ -185,8 +192,8 @@ int hit::build_features(bam1_t *b)
 			if (!do_apos) continue;
 			int32_t s = p - bam_cigar_oplen(cigar[k]);
 			int32_t itvm_st = s;
-			int32_t itvm_ed = p;
-						
+			int32_t itvm_ed = p;	
+		
 			// AS related
 			// map<genotype, int> gt_count;
 			auto it = vcf_map_it;
@@ -217,8 +224,17 @@ int hit::build_features(bam1_t *b)
 				if (alerpos > p)
 					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar || bam_cigar_op(cigar[k+1]) != BAM_CDEL)
 						continue;												// the later condition checks whether it is DEL
-				// if (ale == "*") continue; 
-				apos.push_back(as_pos(pack(alelpos, alerpos), ale));
+				
+				// WASP filter, 0:N/A, 1:passed, 2+:failed
+				if(vw == 0 || vw == 1) 
+				{
+					apos.push_back(as_pos(pack(alelpos, alerpos), ale));
+				}
+				else 				   
+				{
+					apos.push_back(as_pos(pack(alelpos, alerpos), "N"));
+					if (verbose >= 2) printf("Read %s failed WASP (vw:%u), its allele is masked as \"N\".", qname.c_str(), vw);
+				}
 			}
 		}
 	}
