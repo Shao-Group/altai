@@ -245,7 +245,7 @@ int bundle::build_partial_exons()
 int bundle::build_pos_pids_map()
 {
 	pos_pids.clear();
-	
+
 	for(const partial_exon& pe: pexons) 
 	{
 		pair<int32_t, int32_t> pospair {pe.lpos.p32, pe.rpos.p32};
@@ -285,8 +285,9 @@ int bundle::build_pos_pids_map()
 }
 
 /*
-**	equivalent to `junctions` and `link_partial_exons`
-**	jset_to_fill := map < (in-idx, out-idx) , count>
+**	equivalent to `junctions` and `link_partial_exons`, but it links pid-pid, not rid-rid
+** 	i.e. adjacent pid(s) are connected if threaded by reads
+**	jset_to_fill := map < (in-pid, out-pid) , count>
 **	computed from fragments' paths/ hits' vlist, which are indices of regions (i.e. jset in bridger)
 **	convert this region index jset to pexon index jset
  */
@@ -296,7 +297,7 @@ int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
 	pexon_jset.clear(); 						// to be filled
 
 	// bridged fragments
-	map<pair<int, int>, vector<hit*>> m;
+	map<pair<int, int>, vector<hit*>> m;		// < <rid1, rid2>, (*hit)s >
 	for(int i = 0; i < br.fragments.size(); i++)
 	{
 		fragment &fr = br.fragments[i];
@@ -348,7 +349,7 @@ int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
 
 	// compute strandness & region index to pexon index
 	// map<pair<int, int>, vector<hit*>> m;
-	if (DEBUG_MODE_ON)
+	if (DEBUG_MODE_ON && print_bundle_detail)
 	{
 		for(auto it = m.begin(); it != m.end(); it++)
 		{
@@ -554,7 +555,7 @@ vector<int> bundle::align_fragment(fragment &fr)
 
 int bundle::build_splice_graph(int mode)
 {
-	//FIXME: only two as vertices at the same sites. no "*" no "N", must be in reference, at most two.
+	//FIXME: only two as vertices at the same sites. no "n" no "N", must be in reference, at most two.
 	
 	// build graph
 	gr.clear();
