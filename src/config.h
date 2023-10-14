@@ -158,8 +158,8 @@ extern string output_file1;
 extern set<string> chrofinterest;
 
 // AS info
-extern bool use_phased_var_only;
-extern int min_num_reads_support_variant;
+extern bool mask_WASP;
+// extern int min_num_reads_support_variant;
 extern string vmap_chrm;
 extern vcf_data asp;
 extern map < string, map <int, map <string, genotype> > >     vcf_map;

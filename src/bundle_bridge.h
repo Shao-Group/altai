@@ -28,7 +28,6 @@ public:
 	set<string> breads;							// bridged reads
 	vector<fragment> fragments;					// to-be-filled fragments
 	vector<junction> junctions;					// splice junctions
-	// vector<junction> allelic_junctions;			// allelic pseudo splice junctions
 	map<as_pos, vector<int> > allelic_itv; 		// allelic aspos intervals and hits containing them
 	vector<region> regions;						// pexons
 	vector<transcript> ref_trsts;				// overlaped genes in reference						// not used

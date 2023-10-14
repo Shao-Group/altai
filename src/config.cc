@@ -117,7 +117,7 @@ string chr_exclude;
 set<string> chrex;
 
 // AS info
-bool use_phased_var_only = true;
+bool mask_WASP = false;
 int min_num_reads_support_variant = 3;
 vcf_data asp;
 string vmap_chrm = "";
@@ -516,11 +516,15 @@ int parse_arguments(int argc, const char ** argv)
 			insertsize_ave = atof(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--min_num_reads_support_variant")
+		else if(string(argv[i]) == "--mask_WASP")
 		{
-			min_num_reads_support_variant  = atoi(argv[i + 1]);
-			i++;
+			mask_WASP = true;
 		}
+		// else if(string(argv[i]) == "--min_num_reads_support_variant")
+		// {
+		// 	min_num_reads_support_variant  = atoi(argv[i + 1]);
+		// 	i++;
+		// }
 		else if(string(argv[i]) == "--chr_exclude")
 		{
 			chr_exclude = string(argv[i + 1]);
