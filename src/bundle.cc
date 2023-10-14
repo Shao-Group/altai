@@ -291,7 +291,7 @@ int bundle::build_pos_pids_map()
 **	computed from fragments' paths/ hits' vlist, which are indices of regions (i.e. jset in bridger)
 **	convert this region index jset to pexon index jset
  */
-int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
+int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 {	
 	const vector<region>& regions = br.regions;
 	pexon_jset.clear(); 						// to be filled
@@ -347,8 +347,7 @@ int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
 		}
 	}
 
-	// compute strandness & region index to pexon index
-	// map<pair<int, int>, vector<hit*>> m;
+	/*
 	if (DEBUG_MODE_ON && print_bundle_detail)
 	{
 		for(auto it = m.begin(); it != m.end(); it++)
@@ -359,20 +358,13 @@ int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
 			cout << "jset m: " << rid1 << "--" << rid2 << ", counts = " << c << endl;
 		}
 	}
+	*/
 
-	map<pair<as_pos32, as_pos32>, int> pmap;
-	for(int i = 0; i < pexons.size(); i++)
-	{
-		const partial_exon& pe = pexons[i];
-		assert(pmap.find({pe.lpos, pe.rpos}) == pmap.end());
-		pmap[{pe.lpos, pe.rpos}] = i;
-	}
-
+	// populate jset, between regions
 	map<pair<int, int>, vector<hit*>>::iterator it;
 	for(it = m.begin(); it != m.end(); it++)
 	{
 		vector<hit*> &v = it->second;
-		if(v.size() < min_splice_boundary_hits) continue;
 
 		int rid1 = it->first.first;
 		int rid2 = it->first.second;
@@ -391,35 +383,47 @@ int bundle::pexon_jset(map<pair<int, int>, pair<int,char> >& pexon_jset)
 		{				
 			const partial_exon& pe1 = pexons1[pexons1.size() - 1];
 			const partial_exon& pe2 = pexons2[0];
-			assert(pmap.find({pe1.lpos, pe1.rpos}) != pmap.end());
-			assert(pmap.find({pe2.lpos, pe2.rpos}) != pmap.end());
-			pid1 = pmap[{pe1.lpos, pe1.rpos}];
-			pid2 = pmap[{pe2.lpos, pe2.rpos}];
-
+			pid1 = pe1.pid;
+			pid2 = pe2.pid;
 			assert(pid1 < pid2);
 			if(!pexons[pid1].rpos.samepos(regions[rid1].rpos)) pid1 = -1;
 			if(!pexons[pid2].lpos.samepos(regions[rid2].lpos)) pid2 = -1;
 		}
 		if (pid1 < 0 || pid2 < 0 )	continue;
 
-		// strandness
-		char strand;		
-		int s0 = 0;
-		int s1 = 0;
-		int s2 = 0;
-		for(int k = 0; k < v.size(); k++)
-		{
-			if(v[k]->xs == '.') s0++;
-			if(v[k]->xs == '+') s1++;
-			if(v[k]->xs == '-') s2++;
-		}
-		if(s1 == 0 && s2 == 0) strand = '.';
-		else if(s1 >= 1 && s2 >= 1) strand = '.';
-		else if(s1 > s2) strand = '+';
-		else strand = '-';
+		assert(pexon_jset.find({pid1, pid2}) == pexon_jset.end());
+		pexon_jset.insert({{pid1, pid2}, v.size()});
+	}
 
-		assert(pexon_jset.find(pair<int, int>{pid1, pid2}) == pexon_jset.end());
-		pexon_jset[{pid1, pid2}] = pair<int, char> {v.size(), strand};
+	// populate jset, within regions 
+	for(it = m.begin(); it != m.end(); it++)
+	{	
+		vector<hit*> &v = it->second;
+
+		int rid1 = it->first.first;
+		assert(rid1 >= 0 && rid1 < regions.size());
+		
+		const vector<partial_exon>& pexons1 = regions[rid1].pexons;
+		for (int i = 0; i < pexons1.size() - 1; i++)
+		{
+			const partial_exon& pe1 = pexons1[i];
+			const partial_exon& pe2 = pexons1[i+1];
+			int p1 = pe1.pid;
+			int p2 = pe2.pid;
+			assert(p1 < p2);
+			if (! pe1.rpos.samepos(pe2.rpos)) continue;
+			
+			auto j = pexon_jset.find({p1, p2}) ;
+			if (j == pexon_jset.end())
+			{
+				pexon_jset.insert({{p1, p2}, v.size()});
+			}
+			else
+			{
+				j->second = j->second + v.size();
+			}
+		}
+
 	}
 
 	return 0;
@@ -624,8 +628,7 @@ int bundle::build_splice_graph(int mode)
 	{
 		int  lpid   = jset_item.first.first;
 		int  rpid   = jset_item.first.second;
-		int  c      = jset_item.second.first;
-		char strand = jset_item.second.second;
+		int  c      = jset_item.second;
 
 		if(lpid< 0 || rpid < 0) continue;
 
@@ -656,7 +659,7 @@ int bundle::build_splice_graph(int mode)
 		}
 	}
 
-	// edges: connecting start/end and pexons
+	// edges: connecting start/end and pexons, including adjacent pexons
 	int ss = 0;
 	int tt = pexons.size() + 1;
 	for(int i = 0; i < pexons.size(); i++)
@@ -701,50 +704,6 @@ int bundle::build_splice_graph(int mode)
 		}
 	}
 
-	// FIXME: given edges are build from bridged paths/aligned_itv all adjacent pexons should already have such edges. Need check
-	// edges: connecting adjacent pexons => e2w 
-	/*
-	for(int i = 0; i < (int)(pexons.size()) - 1; i++)
-	{
-		const partial_exon &x = pexons[i];
-		int k = 1;
-		for (; k < pexons.size() - 1 - i; ++k)
-		{
-			const partial_exon &z = pexons[i + k];
-			if (x.lpos.samepos(z.lpos)) continue;
-			else break;
-		}
-		
-		while (i+k < pexons.size() && x.rpos.samepos(pexons[i+k].lpos))
-		{
-			// TODO: find all k, might be more than one k
-			const partial_exon &y = pexons[i+k]; // y is first non-allele after x
-			assert(!x.lpos.samepos(y.lpos));
-			assert(x.rpos.p32 == y.lpos.p32);
-			
-			int xd = gr.out_degree(i + 1);
-			int yd = gr.in_degree(i + k + 1);
-			// double wt = (xd < yd) ? x.ave : y.ave;
-			double wt = min_guaranteed_edge_weight;
-			if(mode == 1) wt = (xd < yd) ? x.max: y.max;
-			if(mode == 2) wt = (xd < yd) ? x.ave: y.ave;
-			//int32_t xr = compute_overlap(mmap, x.rpos - 1);						
-			//int32_t yl = compute_overlap(mmap, y.lpos);
-			//double wt = xr < yl ? xr : yl;
-			if (edge_set.find(make_pair(i + 1, i + k + 1)) == edge_set.end() ) 		// is edge present in junction
-			{
-				edge_descriptor p = gr.add_edge(i + 1, i + k + 1);
-				// double w = (wt < 1.0) ? 1.0 : wt;
-				double w = (wt < min_guaranteed_edge_weight) ? min_guaranteed_edge_weight : wt;
-				gr.set_edge_weight(p, w);
-				edge_info ei;
-				ei.weight = w;
-				gr.set_edge_info(p, ei);
-			}
-			k++;
-		}
-	}
-	*/
 
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
@@ -762,10 +721,6 @@ int bundle::revise_splice_graph()
 	if(DEBUG_MODE_ON && print_bundle_detail && output_graphviz_files) 
 		gr.graphviz(bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
 
-	if (! DEBUG_MODE_ON)  // purge potential problems in graph building
-	{
-		gr.refine_splice_graph();
-	}
 
 	while(true)
 	{
@@ -1071,9 +1026,8 @@ int bundle::print(int index)
 	{
 		int pid1 = i.first.first;
 		int pid2 = i.first.second;
-		int c = i.second.first;
-		char s = i.second.second;
-		cout << "jset: " << pid1 << "-" << pid2 << " " << s << " strand, counts = " << c << endl;
+		int c = i.second;
+		cout << "jset: " << pid1 << "-" << pid2 << " " << " counts = " << c << endl;
 	}
 
 	printf("\n");
