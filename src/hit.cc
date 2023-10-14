@@ -211,7 +211,7 @@ int hit::build_features(bam1_t *b)
 				int32_t alelpos = it->first; 									// 0-based ref pos, included
 				int32_t qpos = alelpos - p + q;									// 0-based query pos, included
 				
-				string ale = "*";
+				string ale = "n";
 				uint8_t *seq_ptr = bam_get_seq (b);
 				int _len = 1; // assuming ale len = 1
 				// int _nt_int = bam_seqi(seq_ptr, qpos);
