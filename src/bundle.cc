@@ -297,7 +297,8 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 	pexon_jset.clear(); 						// to be filled
 
 	// bridged fragments
-	map<pair<int, int>, vector<hit*>> m;		// < <rid1, rid2>, (*hit)s >
+	map<pair<int, int>, int> m1;   // < <rid1, rid2>, hit-counts >
+	map<int      ,      int> m2;  // < rid, 		 hit-counts >
 	for(int i = 0; i < br.fragments.size(); i++)
 	{
 		fragment &fr = br.fragments[i];
@@ -308,16 +309,13 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 		for(int k = 0; k < vv.size() - 1; k++)
 		{
 			pair<int, int> xy {vv[k], vv[k+1]};
-			if(m.find(xy) == m.end())
-			{
-				vector<hit*> hv;
-				hv.push_back(fr.h1);
-				m.insert({xy, hv});
-			}
-			else
-			{
-				m[xy].push_back(fr.h1);
-			}
+			if(m1.find(xy) == m1.end()) m1.insert({xy, 1});
+			else m1[xy] = m1[xy] + 1;
+		}
+		for(int x: vv)
+		{
+			if(m2.find(x) == m2.end()) m2.insert({x, 1});
+			else m2[x] = m2[x] + 1;
 		}
 	}
 
@@ -334,16 +332,13 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 		for(int k = 0; k < v.size() - 1; k++)
 		{
 			pair<int, int> xy {v[k], v[k+1]};
-			if(m.find(xy) == m.end())
-			{
-				vector<hit*> hv;
-				hv.push_back(&(bb.hits[i]));
-				m.insert({xy, hv});
-			}
-			else
-			{
-				m[xy].push_back(&(bb.hits[i]));
-			}
+			if(m1.find(xy) == m1.end()) m1.insert({xy, 1});
+			else m1[xy] = m1[xy] + 1;
+		}
+		for(int x: v)
+		{
+			if(m2.find(x) == m2.end()) m2.insert({x, 1});
+			else m2[x] = m2[x] + 1;
 		}
 	}
 
@@ -361,10 +356,9 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 	*/
 
 	// populate jset, between regions
-	map<pair<int, int>, vector<hit*>>::iterator it;
-	for(it = m.begin(); it != m.end(); it++)
+	for(auto it = m1.begin(); it != m1.end(); it++)
 	{
-		vector<hit*> &v = it->second;
+		int c = it->second;
 
 		int rid1 = it->first.first;
 		int rid2 = it->first.second;
@@ -392,15 +386,15 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 		if (pid1 < 0 || pid2 < 0 )	continue;
 
 		assert(pexon_jset.find({pid1, pid2}) == pexon_jset.end());
-		pexon_jset.insert({{pid1, pid2}, v.size()});
+		pexon_jset.insert({{pid1, pid2}, c});
 	}
 
 	// populate jset, within regions 
-	for(it = m.begin(); it != m.end(); it++)
+	for(auto it = m2.begin(); it != m2.end(); it++)
 	{	
-		vector<hit*> &v = it->second;
+		int c = it->second;
 
-		int rid1 = it->first.first;
+		int rid1 = it->first;
 		assert(rid1 >= 0 && rid1 < regions.size());
 		
 		const vector<partial_exon>& pexons1 = regions[rid1].pexons;
@@ -414,16 +408,9 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 			if (! pe1.rpos.samepos(pe2.rpos)) continue;
 			
 			auto j = pexon_jset.find({p1, p2}) ;
-			if (j == pexon_jset.end())
-			{
-				pexon_jset.insert({{p1, p2}, v.size()});
-			}
-			else
-			{
-				j->second = j->second + v.size();
-			}
+			if (j == pexon_jset.end()) pexon_jset.insert({{p1, p2}, c});				
+			else j->second = j->second + c;
 		}
-
 	}
 
 	return 0;
