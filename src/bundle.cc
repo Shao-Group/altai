@@ -1154,6 +1154,7 @@ int bundle::build_hyper_set()
 	}
 
 	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "build_hyper_set completed. print hs." << endl; hs.print();}
+	if(DEBUG_MODE_ON && hs.nodes.size() == 0) {cerr << "hyper_set size is 0." << endl;}
 
 	return 0;
 }
