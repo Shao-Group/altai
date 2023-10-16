@@ -532,13 +532,17 @@ int phaser::refine_allelic_graphs()
 			cout << "\t" << i.first << ": " << i.second << " " << endl;
 			gr1edges.insert(i.first);
 		}
+		if (gr1edges.size() == 0 && ewrtbg1 > 0.05) cerr << pgr1->gid << "(ale1) is empty after refining but has non-empty AS weight" << endl;
 
 		cout << "pgr2-refine\tsize" << pgr2->ewrt.size() << "\taddr-" << pgr2 << endl;
+		set<edge_descriptor> gr2edges;
 		for (auto i:pgr2->ewrt) 
 		{
 			cout << "\t" << i.first << ": " << i.second << " " << endl;
 			assert(gr1edges.find(i.first) == gr1edges.end());
+			gr2edges.insert(i.first);
 		}
+		if (gr2edges.size() == 0 && ewrtbg2 > 0.05) cerr << pgr1->gid << "(ale2) is empty after refining but has non-empty AS weight" << endl;
 	}
 
 	return 0;
