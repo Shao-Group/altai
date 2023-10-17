@@ -32,7 +32,7 @@ public:
 	int rid;						// parental region id
 	int rid2;						// parental region's pexon index 
 	int pid;						// index in the bundle pexons
-	int type;						// label
+	int type;						// label 0: normal, -9: EMPTY_VERTEX, -1: pseudo AS pexon
 	double ave;						// average abundance
 	double max;						// maximum abundance
 	double dev;						// standard-deviation of abundance

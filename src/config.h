@@ -60,6 +60,7 @@ using namespace std;
 #define FR_SECOND 2
 
 #define EMPTY_VERTEX -9
+#define PSEUDO_AS_VERTEX -1
 
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_ADD 1
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_NUL 2
