@@ -54,8 +54,16 @@ int bundle::build(int mode, bool revise)
 {
 	build_splice_graph(mode);
 
-	if(revise && to_revise_splice_graph)  revise_splice_graph();
-	else gr.refine_splice_graph();
+	if(revise && to_revise_splice_graph)  
+	{
+		revise_splice_graph();
+	}
+	else 
+	{
+		gr.refine_splice_graph(); 
+		gr.keep_surviving_edges();
+		gr.refine_splice_graph();
+	}
 	
 	build_hyper_set();
 	return 0;
