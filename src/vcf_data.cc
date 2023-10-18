@@ -220,12 +220,19 @@ int vcf_data::print()
 	return 0;
 }
 
-string vcf_data::graphviz_gt_color(genotype gt)
+string vcf_data::graphviz_gt_color_shape(genotype gt, int vertex_type)
 {
-	if (gt == ALLELE1) return "red";
-	else if (gt == ALLELE2) return "green4";
-	else if (gt == NONSPECIFIC) return "gray";
-	else if (gt == UNPHASED) return "black";
+	string color = "";
+	string shape = "";
+	if(vertex_type == EMPTY_VERTEX) shape = "\", shape=\"polygon";
+
+	if 		(vertex_type == PSEUDO_AS_VERTEX && gt == ALLELE1) 	color = "purple1";
+	else if (vertex_type == PSEUDO_AS_VERTEX && gt == ALLELE2) 	color = "lime";
+	else if (gt == ALLELE1) 									color = "red";
+	else if (gt == ALLELE2) 									color = "green4";
+	else if (gt == NONSPECIFIC) 								color = "gray";
+	else if (gt == UNPHASED) 									color = "black";
 	else throw runtime_error("graphviz_gt_color: gt not existing");
-	throw runtime_error("graphviz_gt_color: gt not existing");
+
+	return color + shape;
 }

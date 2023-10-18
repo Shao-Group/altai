@@ -824,7 +824,7 @@ int directed_graph::graphviz(const string &file, const MIS &mis, const MIS &mii,
 
 	// draw file name
 	fout<< "label=\"" << file.c_str() << "\\n" << label <<"\\n";
-	fout << "ALLELE1-red, ALLELE2-green, NONSPECIFIC-gray, UNPHASED-black" << "\"\n";
+	fout << "ALLELE1-red, ALLELE2-green, NONSPECIFIC-gray, UNPHASED-black\\nALLELE1-pseudo-purple, ALLELE2-pseudo-lime\\nEMPTY_VERTEX-polygon shape" << "\"\n";
 	fout<< "labeljust=l" << "\n" << "labelloc=t\n";
 
 	// draw vertices
@@ -842,16 +842,16 @@ int directed_graph::graphviz(const string &file, const MIS &mis, const MIS &mii,
 
 		sprintf(sx, "s%d", i);
 		string s = "";
-		string color = "black";
+		string color_shape = "black";
 		MIS::const_iterator it = mis.find(i);
 		if(it != mis.end()) s = it->second;
 		MIS::const_iterator it2 = mii.find(i);
-		if(it2 != mii.end()) color = it2->second;
+		if(it2 != mii.end()) color_shape = it2->second;
 		
 		fout.precision(0);
 		fout<<fixed;
 
-		fout<< sx << " [label=\"" << i << "\\n" << s.c_str() << "\", color=\"" << color <<"\", penwidth = 3]" << "\n";
+		fout<< sx << " [label=\"" << i << "\\n" << s.c_str() << "\", color=\"" << color_shape <<"\", penwidth = 3]" << "\n";
 	}
 
 	// draw edges

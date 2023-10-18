@@ -37,7 +37,7 @@ private:
 
 public:
 	genotype get_genotype(string chrm, int pos, string ale); // return UNPHASED if not found
-	static string graphviz_gt_color(genotype gt);
+	static string graphviz_gt_color_shape(genotype gt, int vertex_type);
 	static int increse_it(map <int, map <string, genotype> >::iterator &it1, map <int, int >::iterator &it2);
 	int print();
 
