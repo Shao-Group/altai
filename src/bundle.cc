@@ -552,26 +552,36 @@ vector<int> bundle::align_fragment(fragment &fr)
 }
 
 int bundle::build_splice_graph(int mode)
-{
-	//FIXME: only two as vertices at the same sites. no "n" no "N", must be in reference, at most two.
-	
+{	
 	// build graph
 	gr.clear();
 	if (verbose >= 3) 
 		cout << "splice graph build for bundle " << bb.chrm << ":" << bb.lpos << "-" << bb.rpos << " " <<bb.strand << " strand" << endl;
 	
+	build_splice_graph_vertices( mode);
+	build_splice_graph_edges(mode);
+	build_splice_graph_vertices_as_type(mode);
+
+	gr.strand = bb.strand;
+	gr.chrm = bb.chrm;
+
+	return 0;
+}
+
+int bundle::build_splice_graph_vertices(int mode)
+{
 	// vertices: start, each region, end
 	gr.add_vertex();
 	vertex_info vi0;
 	vi0.lpos = bb.lpos;
 	vi0.rpos = bb.lpos;
 	vi0.as_type = START_OR_SINK;
+	vi0.gt = NONSPECIFIC;
 	gr.set_vertex_weight(0, 0);
 	gr.set_vertex_info(0, vi0);
 
-	int n_as = 0;
-
-	for(int i = 0; i < pexons.size(); i++) // vertices for each (partial) exon
+	// vertices: for each (partial) exon, incld PSEUDO_AS_VERTEX
+	for(int i = 0; i < pexons.size(); i++) 
 	{
 		const partial_exon &r = pexons[i];
 		int length = r.rpos.p32 - r.lpos.p32;
@@ -579,29 +589,15 @@ int bundle::build_splice_graph(int mode)
 		gr.add_vertex();
 		if(mode == 1) gr.set_vertex_weight(i + 1, r.max < min_guaranteed_edge_weight ? min_guaranteed_edge_weight : r.max);
 		if(mode == 2) gr.set_vertex_weight(i + 1, r.ave < min_guaranteed_edge_weight ? min_guaranteed_edge_weight : r.ave);
+		if(r.type == PSEUDO_AS_VERTEX) gr.set_vertex_weight(i + 1, min_guaranteed_edge_weight);
 		vertex_info vi;
 		vi.lpos = r.lpos;
 		vi.rpos = r.rpos;
 		vi.length = length;
 		vi.gt = r.gt;
-		
-		// FIXME: not complete enumeration
-		// UHPHASED_MONOVAR vs NS_NONVAR
-		if (gt_as(r.gt))// FIXME: keep all var
-		{
-			vi.as_type = AS_DIPLOIDVAR;
-			n_as += 1;
-		} 
-		else if (r.is_allelic() && r.gt == UNPHASED)
-		{
-			vi.as_type = AS_DIPLOIDVAR;
-			n_as += 1;
-		}
-		else vi.as_type = NS_NONVAR;
-
 		vi.stddev = r.dev;// < 1.0 ? 1.0 : r.dev;
 		vi.regional = regional[i];
-		vi.type = pexons[i].type;
+		vi.type = r.type;
 		gr.set_vertex_info(i + 1, vi);
 	}
 
@@ -610,13 +606,16 @@ int bundle::build_splice_graph(int mode)
 	vin.lpos = bb.rpos;
 	vin.rpos = bb.rpos;
 	vin.as_type = START_OR_SINK;
+	vin.gt = NONSPECIFIC;
 	gr.set_vertex_weight(pexons.size() + 1, 0);
 	gr.set_vertex_info(pexons.size() + 1, vin);
+	
+	return 0;
+}
 
-	if(verbose >= 3) cout << "splice graph build jset edges\n";
-
-	// edges: each jset_pair => and e2w;  including adjacent pexons
-	// vertics: assign as_type
+int bundle::build_splice_graph_edges(int mode)
+{
+	// edges: each jset_pair => and e2w;  including adjacent pexons, excld PSEUDO_AS_VERTEX
 	for(const auto& jset_item: jset)
 	{
 		int  lpid   = jset_item.first.first;
@@ -631,27 +630,34 @@ int bundle::build_splice_graph(int mode)
 		edge_info ei;
 		ei.weight = c;
 		gr.set_edge_info(p, ei);
-		gr.set_edge_weight(p, c);
-
-		// assign as_type
-		// FIXME: not complete enumeration
-		// UHPHASED_MONOVAR vs NS_NONVAR
-		if (!decompose_as_neighor)  // internal explore only, default false
-		{
-			vertex_info& vx = gr.vinf[lpid+1];
-			vertex_info& vy = gr.vinf[rpid+1];
-			if(vx.is_as_vertex())
-			{
-				if (!vy.is_as_vertex()) vy.as_type = AJ_NONVAR;
-			}
-			else if (vy.is_as_vertex())
-			{
-				if (!vx.is_as_vertex()) vx.as_type = AJ_NONVAR;
-			}
-		}
+		gr.set_edge_weight(p, c);		
 	}
 
-	// edges: adjacent pexons which are not included in jset
+	// edges: PSEUDO_AS_VERTEX edges from counter pexon's jset, excld adjacent edges; use highest weight edge if >= 1
+	for(int k = 0; k < pexons.size(); k++)
+	{
+		partial_exon& pse = pexons[k];
+		if(pse.type != PSEUDO_AS_VERTEX) continue;
+		assert(gt_as(pse.gt));
+
+		// get counter_v_id
+		int counter_v_id = -1;
+		vector<int>& pids = pos_pids.at({pse.lpos.p32, pse.rpos.p32});
+		assert(pids.size() >= 2);
+		for(int i: pids) { 
+			if(!gt_conflict(pexons[i].gt, pse.gt)) continue; 
+			counter_v_id = i + 1; 
+			break;
+		}
+		assert(counter_v_id > 0);
+		assert(counter_v_id < gr.num_vertices() - 1);
+
+		add_pseudo_as_in_edge(mode, k, counter_v_id);
+		add_pseudo_as_out_edge(mode, k, counter_v_id);
+	}
+
+
+	// edges: adjacent pexons which are not included in jset, incld PSEUDO_AS_VERTEX
 	for(auto i = pos_pids.begin(), b = prev(pos_pids.end(), 1); i != b ; ++i)
 	{
 		auto j = next(i, 1);
@@ -673,7 +679,8 @@ int bundle::build_splice_graph(int mode)
 				const partial_exon& pe2 = pexons[rpid];
 				if(gt_conflict(pe1.gt, pe2.gt)) continue;
 
-				assert(gr.edge(lpid + 1, rpid + 1).second == false); // edge not added
+				if(gr.edge(lpid + 1, rpid + 1).second == true) continue;; // edge already added
+
 				edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
 				edge_info ei;
 				double c = min_guaranteed_edge_weight;
@@ -694,9 +701,6 @@ int bundle::build_splice_graph(int mode)
 		if(r.ltype == START_BOUNDARY)
 		{
 			edge_descriptor p = gr.add_edge(ss, i + 1);
-			// double w = r.ave;
-			// if(i >= 1 && pexons[i - 1].rpos == r.lpos) w -= pexons[i - 1].ave; 
-			// if(w < 1.0) w = 1.0;
 			double w = min_guaranteed_edge_weight;
 			if(mode == 1) w = r.max;
 			if(mode == 2) w = r.ave;
@@ -713,9 +717,6 @@ int bundle::build_splice_graph(int mode)
 		if(r.rtype == END_BOUNDARY) 
 		{
 			edge_descriptor p = gr.add_edge(i + 1, tt);
-			// double w = r.ave;
-			// if(i < pexons.size() - 1 && pexons[i + 1].lpos == r.rpos) w -= pexons[i + 1].ave; 
-			// if(w < 1.0) w = 1.0;
 			double w = min_guaranteed_edge_weight;
 			if(mode == 1) w = r.max;
 			if(mode == 2) w = r.ave;
@@ -729,10 +730,148 @@ int bundle::build_splice_graph(int mode)
 		}
 	}
 
+	return 0;
+}
 
-	gr.strand = bb.strand;
-	gr.chrm = bb.chrm;
+int bundle::add_pseudo_as_in_edge(int mode, int pse_id, int counter_v_id)
+{
+	int k = pse_id;
 
+	PEEI in = gr.in_edges(counter_v_id);
+	edge_descriptor max_counter_in;
+	double max_counter_in_w = -1;
+	for(auto i = in.first; i != in.second; ++i)
+	{
+		double w = gr.get_edge_weight(*i);
+		if (w <= max_counter_in_w) continue;
+		max_counter_in_w = w;
+		max_counter_in = *i;
+	}
+	if (max_counter_in_w <= 0 || max_counter_in == null_edge) return 0;
+	
+	int s = max_counter_in->source();
+	int t = k + 1;
+
+	// if gt_conflict, find alt pexon at same pos
+	const vertex_info& vi = gr.get_vertex_info(s);
+	const vertex_info& vp = gr.get_vertex_info(t);
+	if(gt_conflict(vi.gt, vp.gt))
+	{
+		const vector<int>& alternative_s = pos_pids.at({vi.lpos.p32, vi.rpos.p32});
+		for(int i: alternative_s) {
+			if(gt_conflict(pexons[i].gt, vp.gt)) continue;					
+			s = i + 1; 
+			break;
+		}
+	}
+	assert(!gt_conflict(gr.get_vertex_info(s).gt, gr.get_vertex_info(t).gt));
+
+	// edge not added OR edge is pseudo edge
+	PEB peb = gr.edge(s, t);
+	if (peb.second == true)
+	{
+		assert(gr.get_edge_weight(peb.first) < min_guaranteed_edge_weight * 1.1);
+		return 0;
+	}
+	
+	edge_descriptor p = gr.add_edge(s, t);
+	edge_info ei;
+	double c = min_guaranteed_edge_weight;
+	ei.weight = c;
+	gr.set_edge_info(p, ei);
+	gr.set_edge_weight(p, c);
+	
+	return 0;
+}
+
+int bundle::add_pseudo_as_out_edge(int mode, int pse_id, int counter_v_id)
+{
+	int k = pse_id;
+
+	PEEI out = gr.out_edges(counter_v_id);
+	edge_descriptor max_counter_out;
+	double max_counter_out_w = -1;
+	for(auto i = out.first; i != out.second; ++i)
+	{
+		double w = gr.get_edge_weight(*i);
+		if (w <= max_counter_out_w) continue;
+		max_counter_out_w = w;
+		max_counter_out = *i;
+	}
+	if (max_counter_out_w <= 0 || max_counter_out == null_edge) return 0;
+	
+	int s = k + 1;
+	int t = max_counter_out->target();
+
+	// if gt_conflict, find alt pexon at same pos
+	const vertex_info& vp = gr.get_vertex_info(s);
+	const vertex_info& vt = gr.get_vertex_info(t);
+	if(gt_conflict(vp.gt, vt.gt))
+	{
+		const vector<int>& alternative_s = pos_pids.at({vt.lpos.p32, vt.rpos.p32});
+		for(int i: alternative_s) {
+			if(gt_conflict(vp.gt, pexons[i].gt)) continue;					
+			t = i + 1; 
+			break;
+		}
+	}
+	assert(!gt_conflict(gr.get_vertex_info(s).gt, gr.get_vertex_info(t).gt));
+
+	// edge not added OR edge is pseudo edge
+	PEB peb = gr.edge(s, t);
+	if (peb.second == true)
+	{
+		assert(gr.get_edge_weight(peb.first) < min_guaranteed_edge_weight * 1.1);
+		return 0;
+	}
+	
+	edge_descriptor p = gr.add_edge(s, t);
+	edge_info ei;
+	double c = min_guaranteed_edge_weight;
+	ei.weight = c;
+	gr.set_edge_info(p, ei);
+	gr.set_edge_weight(p, c);				
+	
+	return 0;
+}
+
+int bundle::build_splice_graph_vertices_as_type(int mode)
+{	
+	// vertices: for each vertex, incld PSEUDO_AS_VERTEX
+	for(int i = 1; i < gr.num_vertices() - 1 ; i++) 
+	{
+		vertex_info vi = gr.get_vertex_info(i);
+		// TODO: not complete enumeration; UHPHASED_MONOVAR vs NS_NONVAR
+		if (gt_as(vi.gt))  vi.as_type = AS_DIPLOIDVAR;
+		else if (vi.is_allelic() && vi.gt == UNPHASED)	vi.as_type = AS_DIPLOIDVAR;
+		else vi.as_type = NS_NONVAR;
+
+		gr.set_vertex_info(i, vi);
+	}
+	
+	// vertics: assign as_type to AS nodes neighbors
+	PEEI peei = gr.edges();
+	for(auto i1 = peei.first, i2 = peei.second; i1 != i2; ++i1)
+	{
+		edge_descriptor e = *i1;
+		int s = e->source();
+		int t = e->target();
+
+		vertex_info vx = gr.get_vertex_info(s);
+		vertex_info vy = gr.get_vertex_info(t);
+		// TODO: not complete enumeration
+		if(vx.is_as_vertex() && !vy.is_as_vertex()) 
+		{
+			vy.as_type = AJ_NONVAR; 
+			gr.set_vertex_info(t, vy);
+		}
+		if(vy.is_as_vertex() && !vx.is_as_vertex()) 
+		{
+			vx.as_type = AJ_NONVAR;
+			gr.set_vertex_info(s, vx);
+		}
+	}
+	
 	return 0;
 }
 
@@ -746,6 +885,9 @@ int bundle::revise_splice_graph()
 	bool gr_not_intact = gr.refine_splice_graph();
 	if (DEBUG_MODE_ON) if(gr_not_intact) gr.graphviz("DEBUG_graph_not_intact." +bb.chrm + "." + to_string(bb.lpos) + "." + to_string(bb.rpos) + ".bef_revise.dot");
 	
+	b = gr.keep_surviving_edges();		// removes non-surviving psuedo as pexon edges
+	if(b == true) gr.refine_splice_graph();
+
 	while(true)
 	{
 		b = tackle_false_boundaries();
