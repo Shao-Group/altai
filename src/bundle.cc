@@ -835,8 +835,8 @@ bool bundle::remove_false_boundaries()
 		if(u1 < 0 || u2 < 0) continue;
 		if(u1 >= u2) continue;
 
-		vertex_info v1 = gr.get_vertex_info(u1);
-		vertex_info v2 = gr.get_vertex_info(u2);
+		const vertex_info v1 = gr.get_vertex_info(u1);
+		const vertex_info v2 = gr.get_vertex_info(u2);
 
 		int types = 0;
 		int32_t lengths = 0;

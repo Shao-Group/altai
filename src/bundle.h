@@ -47,7 +47,7 @@ public:
 	vector<partial_exon> pexons;												// partial exons
 	map<pair<int32_t, int32_t>, vector<int> > pos_pids;							// pos pair to partial exon ids, allelic pexons are put in vector
 	vector<bool> regional;														// if a pe is regional
-	map<pair<int, int>, int > jset;								    // <pid from, pid to>, <counts, strand>
+	map<pair<int, int>, int > jset;											    // < <pid-to-pid, hit-counts>
 	splice_graph gr;															// splice graph
 	hyper_set hs;																// hyper set
 
@@ -69,10 +69,6 @@ public:
 	int build_pseudo_variant_exon();
 	int pexon_jset(map<pair<int, int>, int >& pexon_jset);
 	int build_splice_graph(int mode);
-	int locate_left_partial_exon(as_pos32 x);
-	int locate_right_partial_exon(as_pos32 x);
-	vector<int> align_hit(hit &h);
-	vector<int> align_fragment(fragment &f);
 
 	// revise splice graph 
 	int revise_splice_graph();
@@ -81,6 +77,9 @@ public:
 	
 	// hyper set
 	int build_hyper_set();
+private:
+	vector<int> align_hit(hit &h);
+	vector<int> align_fragment(fragment &f);
 };
 
 #endif
