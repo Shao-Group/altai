@@ -641,6 +641,7 @@ bool splice_graph::extend_start_boundaries()
 	{
 		PEB p = edge(0, i);
 		if(p.second == true) continue;
+		if(degree(i) == 0) continue;
 		if(get_vertex_info(i).lpos.ale != "$") continue;
 
 		double wv = get_vertex_weight(i);
@@ -673,6 +674,7 @@ bool splice_graph::extend_end_boundaries()
 	{
 		PEB p = edge(i, num_vertices() - 1);
 		if(p.second == true) continue;
+		if(degree(i) == 0) continue;
 		if(get_vertex_info(i).lpos.ale != "$") continue;
 
 		double wv = get_vertex_weight(i);
