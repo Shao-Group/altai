@@ -672,7 +672,9 @@ int bundle::build_splice_graph_edges(int mode)
 			for(int rpid: pid2s)
 			{
 				assert(0 <= lpid);
-				assert(lpid < rpid);
+				assert(0 <= rpid);
+				assert(pexons.size() - 1 >= lpid);
+				assert(pexons.size() - 1 >= rpid);
 				if(jset.find({lpid, rpid}) != jset.end()) continue;  // threaded by reads, already added
 				
 				const partial_exon& pe1 = pexons[lpid];
@@ -810,7 +812,7 @@ int bundle::add_pseudo_as_out_edge(int mode, int pse_id, int counter_v_id)
 	{
 		const vector<int>& alternative_s = pos_pids.at({vt.lpos.p32, vt.rpos.p32});
 		for(int i: alternative_s) {
-			if(gt_conflict(vp.gt, pexons[i].gt)) continue;					
+			if(vp.gt != pexons[i].gt) continue;
 			t = i + 1; 
 			break;
 		}
