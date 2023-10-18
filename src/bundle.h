@@ -66,6 +66,7 @@ public:
 	int build_intervals();
 	int build_partial_exons();
 	int build_pos_pids_map();
+	int build_pseudo_variant_exon();
 	int pexon_jset(map<pair<int, int>, int >& pexon_jset);
 	int build_splice_graph(int mode);
 	int locate_left_partial_exon(as_pos32 x);

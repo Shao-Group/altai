@@ -46,6 +46,7 @@ int bundle::prepare()
 	build_intervals();
 	build_partial_exons();
 	build_pos_pids_map();
+	build_pseudo_variant_exon();
 	pexon_jset(jset);
 	return 0;
 }
@@ -289,6 +290,57 @@ int bundle::build_pos_pids_map()
 		}
 	}
 
+	return 0;
+}
+
+/*
+**	At some variation site, only one allele is sequenced due to low sequencing depth
+**	add a pseudo variant pexon for the other allele so that, vertices & edges of this allele can survive
+**	excessive unnecessary pseudo variant pexons should be removed by `keep_surviving_edges`
+** 	edited: 
+**		- pexons, 
+**		- pos_pids, 
+**		- regional
+*/
+int bundle::build_pseudo_variant_exon()
+{
+	// vertices: for each AS pexon position, if absent, add pseudo AS pexon 
+	for(auto it = pos_pids.begin() ; it != pos_pids.end(); ++it) 
+	{
+		pair<int, int> 	pos  = it->first;
+		vector<int>&    pids = it->second;
+		
+		int id1 = -1, id2 = -1;
+		for(int i: pids) 
+		{
+			if(pexons[i].gt == ALLELE1) id1 = i;
+			if(pexons[i].gt == ALLELE2)	id2 = i;
+		}
+		if(id1 < 0 && id2 < 0) continue;	// have neither allele
+		if(id1 > 0 && id2 > 0) continue;	// have both    allele
+		
+		// pe info
+		genotype gt = id1 > id2? ALLELE2: ALLELE1;
+		partial_exon& pe_counter = pexons[id1 > id2? id1: id2];	
+		partial_exon  pe_pseudo(as_pos32(pe_counter.lpos.p32, "n"), as_pos32(pe_counter.rpos.p32, "n"), pe_counter.ltype, pe_counter.rtype, gt);
+		assert(gt_conflict(pe_counter.gt, pe_pseudo.gt));
+
+		pe_pseudo.assign_as_cov(0.01, 0.01, 0);
+		pe_pseudo.rid = -1;
+		pe_pseudo.rid2 =-1;
+		pe_pseudo.type = PSEUDO_AS_VERTEX;
+		pexons.push_back(pe_pseudo);
+		
+		// pid
+		pe_pseudo.pid = pexons.size() - 1;
+		it->second.push_back(pexons.size() - 1);
+
+		// regional // needs work FIXME:
+		if((pe_pseudo.lpos != pe_pseudo.lpos || pe_pseudo.rpos != pe_pseudo.rpos) && 
+		   (pe_pseudo.ltype & START_BOUNDARY) && (pe_pseudo.rtype & END_BOUNDARY)) 
+			regional.push_back(true);
+		else regional.push_back(false);		
+	}
 	return 0;
 }
 
