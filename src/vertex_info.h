@@ -57,6 +57,7 @@ public:
 	unsigned int as_type: 3;
 
 public:
+	bool is_allelic() const;
 	bool is_as_vertex();
 	bool is_adjacent_to_as_vertex();
 	bool is_ordinary_vertex();

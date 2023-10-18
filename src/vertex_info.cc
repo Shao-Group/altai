@@ -63,6 +63,16 @@ vertex_info::vertex_info(const vertex_info &vi)
 	if(DEBUG_MODE_ON) assert(gt == ALLELE1 || gt == ALLELE2 || gt == UNPHASED || gt == NONSPECIFIC);
 }
 
+bool vertex_info::is_allelic() const
+{
+	if (lpos.ale != "$")
+	{
+		assert (rpos.ale == lpos.ale);
+		return true;
+	}
+	else return false;
+}
+
 bool vertex_info::is_as_vertex() {return vertex_info::is_as_vertex(*this);}
 
 bool vertex_info::is_adjacent_to_as_vertex() {return vertex_info::is_adjacent_to_as_vertex(*this);}
