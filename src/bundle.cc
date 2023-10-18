@@ -413,7 +413,8 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 			int p1 = pe1.pid;
 			int p2 = pe2.pid;
 			assert(p1 < p2);
-			if (! pe1.rpos.samepos(pe2.rpos)) continue;
+			assert(pe1.rpos.leftsameto(pe2.lpos));
+			if (! pe1.rpos.samepos(pe2.lpos)) continue;
 			
 			auto j = pexon_jset.find({p1, p2}) ;
 			if (j == pexon_jset.end()) pexon_jset.insert({{p1, p2}, c});				
