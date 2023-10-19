@@ -50,7 +50,7 @@ int region::build_join_interval_map()
 {
 	jmap.clear();
 
-	PSIMI pei = locate_boundary_iterators(*mmap, lpos, rpos); // FIXME: should check returned iterators
+	PSIMI pei = locate_boundary_iterators(*mmap, as_pos32(lpos.p32, "$"), as_pos32(rpos.p32, "$"));
 	SIMI lit = pei.first, rit = pei.second;
 
 	if(lit == mmap->end() || rit == mmap->end()) return 0;
@@ -58,8 +58,6 @@ int region::build_join_interval_map()
 	SIMI it = lit;
 	while(true)
 	{
-		//if(it->second >= 2) 
-		//FIXME: make jmap lpos rpos not exceeding r.lpos r.rpos
 		jmap += make_pair(it->first, 1);
 		if(it == rit) break;
 		it++;
@@ -142,18 +140,28 @@ int region::build_partial_exons()
 
 	//printf("size = %lu, size2 = %lu, [%d, %d), [%d, %d)\n", jmap.size(), distance(jmap.begin(), jmap.end()), lower(jmap.begin()->first), upper(jmap.begin()->first), lpos, rpos);
 
-	if(lower(jmap.begin()->first) == lpos && upper(jmap.begin()->first) == rpos)
+	if(lower(jmap.begin()->first).samepos(lpos) && upper(jmap.begin()->first).samepos(rpos))
 	{
 		partial_exon pe(lpos, rpos, ltype, rtype, gt);
-		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
+		if(! is_allelic()) 
+		{
+			evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
+		}
+		else
+		{
+			pe.ave = ave;
+			pe.dev = dev;
+			pe.max = max;
+		}
 		pexons.push_back(pe);
 		return 0;
 	}
 
+
 	// a region with (ltype & RIGHT_SPLICE || ltype & ALLELIC_RIGHT_SPLICE) > 0) or (rtype & LEFT_SPLICE  || rtype & ALLELIC_LEFT_SPLICE) > 0)
 	// should always have a partial exon
-
-	if((ltype & RIGHT_SPLICE) > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
+	if(((ltype & RIGHT_SPLICE) > 0 || (ltype & ALLELIC_RIGHT_SPLICE) > 0 ) && 
+		jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
 		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY, gt);
 		pe.ave = min_guaranteed_edge_weight;
@@ -168,28 +176,34 @@ int region::build_partial_exons()
 		as_pos32 p2 = upper(it->first);
 		assert(p1 < p2);
 		
-		bool b = empty_subregion(p1, p2);
-
-		//printf(" subregion [%d, %d), empty = %c\n", p1, p2, b ? 'T' : 'F');
-
-		if(p1 == lpos && (ltype & RIGHT_SPLICE || ltype & ALLELIC_RIGHT_SPLICE) > 0) b = false;
-		if(p2 == rpos && (rtype & LEFT_SPLICE  || rtype & ALLELIC_LEFT_SPLICE) > 0) b = false;
-
-		// if(b == true) continue;
-
-		int lt = (p1 == lpos) ? ltype : START_BOUNDARY;
-		int rt = (p2 == rpos) ? rtype : END_BOUNDARY;
+		bool b = false;
+		int lt = (p1.samepos(lpos)) ? ltype : START_BOUNDARY;
+		int rt = (p2.samepos(rpos)) ? rtype : END_BOUNDARY;
 
 		partial_exon pe(p1, p2, lt, rt, gt);
-		// evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev);
+
+		if (! is_allelic())
+		{
+			evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
+	
+			b = empty_subregion(p1, p2);
+			if(p1.samepos(lpos) && ( (ltype & RIGHT_SPLICE) > 0 || (ltype & ALLELIC_RIGHT_SPLICE) > 0) )b = false;
+			if(p2.samepos(rpos) && ( (rtype & LEFT_SPLICE ) > 0 || (rtype & ALLELIC_LEFT_SPLICE ) > 0) )b = false;
+		}
+		else
+		{
+			pe.ave = ave;
+			pe.dev = dev;
+			pe.max = max;
+		}
+
 		if(b == true) pe.type = EMPTY_VERTEX;
 		else pe.type = 0;
-
-		evaluate_rectangle(*mmap, pe.lpos, pe.rpos, pe.ave, pe.dev, pe.max);
 		pexons.push_back(pe);
 	}
 
-	if((rtype & LEFT_SPLICE) > 0 && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
+	if(((rtype & LEFT_SPLICE) > 0 || (rtype & ALLELIC_LEFT_SPLICE) > 0 ) && 
+		jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
 	{
 		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype, gt);
 		pe.ave = min_guaranteed_edge_weight;
