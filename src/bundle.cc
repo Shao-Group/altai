@@ -697,7 +697,7 @@ int bundle::build_splice_graph_edges(int mode)
 	{
 		const partial_exon &r = pexons[i];
 
-		if(r.ltype == START_BOUNDARY)
+		if(r.ltype & START_BOUNDARY)
 		{
 			edge_descriptor p = gr.add_edge(ss, i + 1);
 			double w = min_guaranteed_edge_weight;
@@ -713,7 +713,7 @@ int bundle::build_splice_graph_edges(int mode)
 			gr.set_edge_info(p, ei);
 		}
 
-		if(r.rtype == END_BOUNDARY) 
+		if(r.rtype & END_BOUNDARY) 
 		{
 			edge_descriptor p = gr.add_edge(i + 1, tt);
 			double w = min_guaranteed_edge_weight;
@@ -1093,12 +1093,12 @@ bool bundle::tackle_false_boundaries()
 		{
 			partial_exon &px = pexons[v[i + 0]];
 			partial_exon &py = pexons[v[i + 1]];
-			if(px.rtype == END_BOUNDARY) 
+			if(px.rtype & END_BOUNDARY)
 			{
 				if(verbose >= 2) printf("break ending vertex %d, pos = %d%s\n", v[i], px.rpos.p32, px.rpos.ale.c_str());
 				points[v[i + 0]] += 1;
 			}
-			if(py.ltype == START_BOUNDARY) 
+			if(py.ltype & START_BOUNDARY) 
 			{
 				if(verbose >= 2) printf("break starting vertex %d, pos = %d%s\n", v[i + 1], py.lpos.p32, py.lpos.ale.c_str());
 				points[v[i + 1]] += 1;
