@@ -161,8 +161,8 @@ int region::build_partial_exons()
 
 	// a region with (ltype & RIGHT_SPLICE || ltype & ALLELIC_RIGHT_SPLICE) > 0) or (rtype & LEFT_SPLICE  || rtype & ALLELIC_LEFT_SPLICE) > 0)
 	// should always have a partial exon
-	if(((ltype & RIGHT_SPLICE) > 0 || (ltype & ALLELIC_RIGHT_SPLICE) > 0 ) && 
-		jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
+
+	if((ltype & RIGHT_SPLICE) > 0 && jmap.find(ROI(lpos, lpos + 1)) == jmap.end())
 	{
 		partial_exon pe(lpos, lpos + 1, ltype, END_BOUNDARY, gt);
 		pe.ave = min_guaranteed_edge_weight;
@@ -210,8 +210,7 @@ int region::build_partial_exons()
 		pexons.push_back(pe);
 	}
 
-	if(((rtype & LEFT_SPLICE) > 0 || (rtype & ALLELIC_LEFT_SPLICE) > 0 ) && 
-		jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
+	if((rtype & LEFT_SPLICE) > 0 && jmap.find(ROI(rpos - 1, rpos)) == jmap.end())
 	{
 		partial_exon pe(rpos - 1, rpos, START_BOUNDARY, rtype, gt);
 		pe.ave = min_guaranteed_edge_weight;
