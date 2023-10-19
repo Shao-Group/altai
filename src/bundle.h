@@ -84,6 +84,7 @@ private:
 	int add_pseudo_as_in_edge(int mode, int pse_id, int counter_v_id);
 	int add_pseudo_as_out_edge(int mode, int pse_id, int counter_v_id);
 	int build_splice_graph_vertices_as_type(int mode);
+	int build_regional();
 	vector<int> align_hit(hit &h);
 	vector<int> align_fragment(fragment &f);
 };

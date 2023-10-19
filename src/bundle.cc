@@ -148,7 +148,6 @@ int bundle::build_intervals()
 int bundle::build_partial_exons()
 {
 	pexons.clear();
-	regional.clear();
 
 	set<int32_t> m1, m2; // junction site
 	for (auto&& j: br.junctions)
@@ -218,16 +217,13 @@ int bundle::build_partial_exons()
 		
 	}
 
-	// sort, make pe.pid & regional
+	// sort, make pe.pid
 	// pexons and regions.pexons are different, but have same pid
 	sort(pexons.begin(), pexons.end());
 	for (int i = 0; i < pexons.size(); i ++)
 	{
 		partial_exon& pe = pexons[i];
 		pe.pid = i;
-		if((pe.lpos != bb.lpos || pe.rpos != bb.rpos) && (pe.ltype & START_BOUNDARY) && (pe.rtype & END_BOUNDARY)) 
-			regional.push_back(true);
-		else regional.push_back(false);		
 
 		// region.pexons and bundle.pexons should have the same rid, rid2, pid
 		assert(pe.rid >= 0 && pe.rid < regions.size());
@@ -300,8 +296,7 @@ int bundle::build_pos_pids_map()
 **	excessive unnecessary pseudo variant pexons should be removed by `keep_surviving_edges`
 ** 	edited: 
 **		- pexons, 
-**		- pos_pids, 
-**		- regional
+**		- pos_pids
 */
 int bundle::build_pseudo_variant_exon()
 {
@@ -334,13 +329,7 @@ int bundle::build_pseudo_variant_exon()
 		
 		// pid
 		pe_pseudo.pid = pexons.size() - 1;
-		it->second.push_back(pexons.size() - 1);
-
-		// regional
-		if((pe_pseudo.lpos != pe_pseudo.lpos || pe_pseudo.rpos != pe_pseudo.rpos) && 
-		   (pe_pseudo.ltype & START_BOUNDARY) && (pe_pseudo.rtype & END_BOUNDARY)) 
-			regional.push_back(true);
-		else regional.push_back(false);		
+		it->second.push_back(pexons.size() - 1);	
 	}
 	return 0;
 }
@@ -561,6 +550,7 @@ int bundle::build_splice_graph(int mode)
 	build_splice_graph_vertices( mode);
 	build_splice_graph_edges(mode);
 	build_splice_graph_vertices_as_type(mode);
+	build_regional();
 
 	gr.strand = bb.strand;
 	gr.chrm = bb.chrm;
@@ -596,7 +586,6 @@ int bundle::build_splice_graph_vertices(int mode)
 		vi.length = length;
 		vi.gt = r.gt;
 		vi.stddev = r.dev;// < 1.0 ? 1.0 : r.dev;
-		vi.regional = regional[i];
 		vi.type = r.type;
 		gr.set_vertex_info(i + 1, vi);
 	}
@@ -874,6 +863,36 @@ int bundle::build_splice_graph_vertices_as_type(int mode)
 		}
 	}
 	
+	return 0;
+}
+
+int bundle::build_regional()
+{
+	regional.clear();
+	// vertices: for each (partial) exon, incld PSEUDO_AS_VERTEX
+	for(int i = 0; i < pexons.size(); i++) 
+	{
+		const partial_exon& r = pexons[i];
+		bool b = false;
+		if((r.lpos.p32 != bb.lpos.p32 || r.rpos.p32 != bb.rpos.p32) && (r.ltype & START_BOUNDARY) && (r.rtype & END_BOUNDARY))
+			b = true;
+		else 
+			b = false;
+		regional.push_back(b);
+
+		vertex_info vi = gr.get_vertex_info(i + 1);
+		vi.regional = b;
+		gr.set_vertex_info(i + 1, vi);
+		
+		if (! DEBUG_MODE_ON) continue;
+		assert(vi.lpos == r.lpos);
+		assert(vi.rpos == r.rpos);
+		assert(vi.gt == r.gt);
+		assert(vi.type = r.type);
+		assert(b == regional.back());
+	}
+	assert(regional.size() == pexons.size());
+
 	return 0;
 }
 
