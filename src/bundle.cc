@@ -204,7 +204,6 @@ int bundle::build_partial_exons()
 			assert(ltype != -1);
 			assert(rtype != -1);
 			assert(r.ave != 0);
-			// assert(r.gt != UNPHASED);  // assuming all var phased //TODO: not always true, need to handle potential seq errors
 
 			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
 			pe.assign_as_cov(r.ave, r.max, r.dev);
@@ -553,7 +552,6 @@ vector<int> bundle::align_fragment(fragment &fr)
 
 int bundle::build_splice_graph(int mode)
 {	
-	// build graph
 	gr.clear();
 	if (verbose >= 3) 
 		cout << "splice graph build for bundle " << bb.chrm << ":" << bb.lpos << "-" << bb.rpos << " " <<bb.strand << " strand" << endl;
@@ -681,7 +679,7 @@ int bundle::build_splice_graph_edges(int mode)
 				const partial_exon& pe2 = pexons[rpid];
 				if(gt_conflict(pe1.gt, pe2.gt)) continue;
 
-				if(gr.edge(lpid + 1, rpid + 1).second == true) continue;; // edge already added
+				if(gr.edge(lpid + 1, rpid + 1).second == true) continue; // edge already added
 
 				edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
 				edge_info ei;
@@ -761,7 +759,7 @@ int bundle::add_pseudo_as_in_edge(int mode, int pse_id, int counter_v_id)
 	{
 		const vector<int>& alternative_s = pos_pids.at({vi.lpos.p32, vi.rpos.p32});
 		for(int i: alternative_s) {
-			if(gt_conflict(pexons[i].gt, vp.gt)) continue;					
+			if(vp.gt != pexons[i].gt) continue;			
 			s = i + 1; 
 			break;
 		}
