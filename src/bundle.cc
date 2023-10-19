@@ -687,7 +687,7 @@ int bundle::build_splice_graph_edges(int mode)
 	int tt = pexons.size() + 1;
 	for(int i = 0; i < pexons.size(); i++)
 	{
-		const partial_exon &r = pexons[i];
+		partial_exon &r = pexons[i];
 
 		if(r.ltype & START_BOUNDARY || (r.is_allelic() && gr.in_degree(i + 1) == 0) )
 		{
@@ -876,7 +876,7 @@ int bundle::build_regional()
 	{
 		const partial_exon& r = pexons[i];
 		bool b = false;
-		if((r.lpos.p32 != bb.lpos.p32 || r.rpos.p32 != bb.rpos.p32) && (r.ltype & START_BOUNDARY) && (r.rtype & END_BOUNDARY))
+		if((r.lpos.p32 != bb.lpos || r.rpos.p32 != bb.rpos) && (r.ltype & START_BOUNDARY) && (r.rtype & END_BOUNDARY))
 			b = true;
 		else 
 			b = false;

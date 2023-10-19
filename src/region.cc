@@ -179,7 +179,7 @@ int region::build_partial_exons()
 		if(is_allelic())
 		{
 			throw runtime_error("Should not re-build allelic region for allelic partial-exon!");
-			assert(p1.samepos(lpos), p2.samepos(rpos));
+			assert(p1.samepos(lpos) && p2.samepos(rpos));
 			p1 = lpos;
 			p2 = rpos;
 		}
