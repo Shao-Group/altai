@@ -38,6 +38,7 @@ region::~region()
 
 int region::rebuild(const split_interval_map *_mmap)
 {
+	if (is_allelic()) throw runtime_error("Should not re-build allelic region for allelic partial-exon!");
 	mmap = _mmap; 
 	build_join_interval_map();
 	smooth_join_interval_map();
