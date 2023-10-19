@@ -158,11 +158,11 @@ int bundle::build_partial_exons()
 	}
 
 	vector<region>& regions = br.regions;
-	// add non-AS pexons
+	// add pexons, incld. non-AS, AS pexons, excld PSEUDO_AS_VERTEX
 	for (int i = 0; i < regions.size(); i++)
 	{
 		region& r =  regions[i];
-		if(r.is_allelic()) continue;
+		if(r.is_allelic()) assert(r.pexons.size() == 1);
 		
 		r.rebuild(&fmap); 
 		for(int k = 0; k < r.pexons.size(); k++)
@@ -175,44 +175,6 @@ int bundle::build_partial_exons()
 			pe.rid2 = k;
 			pexons.push_back(pe);
 		}
-	}
-
-	// add AS pexons directly
-	for (int i = 0; i < regions.size(); i++)
-	{
-		region& r =  regions[i];
-		if(! r.is_allelic()) continue;
-		
-		assert(r.pexons.size() == 0);
-		int ltype = -1, rtype = -1;
-
-		// left side is not junction, not var, & (empty vertex or no pexon)  => ltype += START_BOUNDARY;
-		if (m1.find(r.lpos.p32) != m1.end()) ltype = r.ltype;
-		else if (i >= 1 && regions[i-1].is_allelic()) ltype = r.ltype;
-		else if (i >= 1 && regions[i-1].pexons.size() == 0) ltype = START_BOUNDARY;
-		else if (i >= 1 && regions[i-1].pexons[regions[i-1].pexons.size() - 1].type != EMPTY_VERTEX) ltype = r.ltype;
-		else ltype = START_BOUNDARY;
-
-		// right side is not junction, not var, & empty => rtype += END_BOUNDARY;
-		if (m2.find(r.rpos.p32) != m2.end()) rtype = r.rtype;
-		else if (i < regions.size() - 1 && regions[i+1].is_allelic()) rtype = r.rtype;
-		else if (i < regions.size() - 1 && regions[i+1].pexons.size() == 0) rtype = END_BOUNDARY;
-		else if (i < regions.size() - 1 && regions[i+1].pexons[0].type != EMPTY_VERTEX) rtype = r.rtype;
-		else rtype = END_BOUNDARY;
-
-		assert(ltype != -1);
-		assert(rtype != -1);
-		assert(r.ave != 0);
-
-		partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
-		pe.assign_as_cov(r.ave, r.max, r.dev);
-		pe.rid = i;
-		pe.rid2 = 0;
-		pe.type = 0;  // assert not EMPTY_VERTEX
-		r.pexons.push_back(pe);
-		assert(r.pexons.size() == 1);
-		pexons.push_back(pe);
-		
 	}
 
 	// sort, make pe.pid & regional
@@ -333,7 +295,7 @@ int bundle::build_pseudo_variant_exon()
 		pe_pseudo.pid = pexons.size() - 1;
 		it->second.push_back(pexons.size() - 1);
 
-		// regional // needs work FIXME:
+		// regional
 		if((pe_pseudo.lpos != pe_pseudo.lpos || pe_pseudo.rpos != pe_pseudo.rpos) && 
 		   (pe_pseudo.ltype & START_BOUNDARY) && (pe_pseudo.rtype & END_BOUNDARY)) 
 			regional.push_back(true);
