@@ -547,7 +547,7 @@ int bundle::build_splice_graph(int mode)
 	if (verbose >= 3) 
 		cout << "splice graph build for bundle " << bb.chrm << ":" << bb.lpos << "-" << bb.rpos << " " <<bb.strand << " strand" << endl;
 	
-	build_splice_graph_vertices( mode);
+	build_splice_graph_vertices(mode);
 	build_splice_graph_edges(mode);
 	build_splice_graph_vertices_as_type(mode);
 	build_regional();
@@ -689,8 +689,9 @@ int bundle::build_splice_graph_edges(int mode)
 	{
 		const partial_exon &r = pexons[i];
 
-		if(r.ltype & START_BOUNDARY)
+		if(r.ltype & START_BOUNDARY || (r.is_allelic() && gr.in_degree(i + 1) == 0) )
 		{
+			r.ltype = START_BOUNDARY;
 			edge_descriptor p = gr.add_edge(ss, i + 1);
 			double w = min_guaranteed_edge_weight;
 			if(mode == 1) w = r.max;
@@ -705,8 +706,9 @@ int bundle::build_splice_graph_edges(int mode)
 			gr.set_edge_info(p, ei);
 		}
 
-		if(r.rtype & END_BOUNDARY) 
+		if(r.rtype & END_BOUNDARY || (r.is_allelic() && gr.out_degree(i + 1) == 0) ) 
 		{
+			r.rtype = END_BOUNDARY;
 			edge_descriptor p = gr.add_edge(i + 1, tt);
 			double w = min_guaranteed_edge_weight;
 			if(mode == 1) w = r.max;
