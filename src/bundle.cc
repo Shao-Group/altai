@@ -162,19 +162,18 @@ int bundle::build_partial_exons()
 	for (int i = 0; i < regions.size(); i++)
 	{
 		region& r =  regions[i];
-		if(!r.is_allelic()) 
+		if(r.is_allelic()) continue;
+		
+		r.rebuild(&fmap); 
+		for(int k = 0; k < r.pexons.size(); k++)
 		{
-			r.rebuild(&fmap); 
-			for(int k = 0; k < r.pexons.size(); k++)
-			{
-				partial_exon& rpe = r.pexons[k];
-				partial_exon pe (rpe);
-				rpe.rid = i;
-				rpe.rid2 = k;
-				pe.rid = i;
-				pe.rid2 = k;
-				pexons.push_back(pe);
-			}
+			partial_exon& rpe = r.pexons[k];
+			partial_exon pe (rpe);
+			rpe.rid = i;
+			rpe.rid2 = k;
+			pe.rid = i;
+			pe.rid2 = k;
+			pexons.push_back(pe);
 		}
 	}
 
@@ -182,38 +181,38 @@ int bundle::build_partial_exons()
 	for (int i = 0; i < regions.size(); i++)
 	{
 		region& r =  regions[i];
-		if(r.is_allelic()) 
-		{
-			assert(r.pexons.size() == 0);
-			int ltype = -1, rtype = -1;
+		if(! r.is_allelic()) continue;
+		
+		assert(r.pexons.size() == 0);
+		int ltype = -1, rtype = -1;
 
-			// left side is not junction, not var, & (empty vertex or no pexon)  => ltype += START_BOUNDARY;
-			if (m1.find(r.lpos.p32) != m1.end()) ltype = r.ltype;
-			else if (i >= 1 && regions[i-1].is_allelic()) ltype = r.ltype;
-			else if (i >= 1 && regions[i-1].pexons.size() == 0) ltype = START_BOUNDARY;
-			else if (i >= 1 && regions[i-1].pexons[regions[i-1].pexons.size() - 1].type != EMPTY_VERTEX) ltype = r.ltype;
-			else ltype = START_BOUNDARY;
+		// left side is not junction, not var, & (empty vertex or no pexon)  => ltype += START_BOUNDARY;
+		if (m1.find(r.lpos.p32) != m1.end()) ltype = r.ltype;
+		else if (i >= 1 && regions[i-1].is_allelic()) ltype = r.ltype;
+		else if (i >= 1 && regions[i-1].pexons.size() == 0) ltype = START_BOUNDARY;
+		else if (i >= 1 && regions[i-1].pexons[regions[i-1].pexons.size() - 1].type != EMPTY_VERTEX) ltype = r.ltype;
+		else ltype = START_BOUNDARY;
 
-			// right side is not junction, not var, & empty => rtype += END_BOUNDARY;
-			if (m2.find(r.rpos.p32) != m2.end()) rtype = r.rtype;
-			else if (i < regions.size() - 1 && regions[i+1].is_allelic()) rtype = r.rtype;
-			else if (i < regions.size() - 1 && regions[i+1].pexons.size() == 0) rtype = END_BOUNDARY;
-			else if (i < regions.size() - 1 && regions[i+1].pexons[0].type != EMPTY_VERTEX) rtype = r.rtype;
-			else rtype = END_BOUNDARY;
+		// right side is not junction, not var, & empty => rtype += END_BOUNDARY;
+		if (m2.find(r.rpos.p32) != m2.end()) rtype = r.rtype;
+		else if (i < regions.size() - 1 && regions[i+1].is_allelic()) rtype = r.rtype;
+		else if (i < regions.size() - 1 && regions[i+1].pexons.size() == 0) rtype = END_BOUNDARY;
+		else if (i < regions.size() - 1 && regions[i+1].pexons[0].type != EMPTY_VERTEX) rtype = r.rtype;
+		else rtype = END_BOUNDARY;
 
-			assert(ltype != -1);
-			assert(rtype != -1);
-			assert(r.ave != 0);
+		assert(ltype != -1);
+		assert(rtype != -1);
+		assert(r.ave != 0);
 
-			partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
-			pe.assign_as_cov(r.ave, r.max, r.dev);
-			pe.rid = i;
-			pe.rid2 = 0;
-			pe.type = 0;  // assert not EMPTY_VERTEX
-			r.pexons.push_back(pe);
-			assert(r.pexons.size() == 1);
-			pexons.push_back(pe);
-		}
+		partial_exon pe(r.lpos, r.rpos, ltype, rtype, r.gt);
+		pe.assign_as_cov(r.ave, r.max, r.dev);
+		pe.rid = i;
+		pe.rid2 = 0;
+		pe.type = 0;  // assert not EMPTY_VERTEX
+		r.pexons.push_back(pe);
+		assert(r.pexons.size() == 1);
+		pexons.push_back(pe);
+		
 	}
 
 	// sort, make pe.pid & regional
