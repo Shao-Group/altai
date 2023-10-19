@@ -251,10 +251,10 @@ int bundle_bridge::build_regions()
 
 		assert(l2 >= l1);
 
-		as_pos32 l, r;
-		int ltype, rtype;
 		if (l2 >= r1) // non-AS region
 		{
+			as_pos32 l, r;
+			int ltype = 0, rtype = 0;
 			l = l1;
 			r = r1;
 			ltype = splicetype_set_to_int(ltypes);
@@ -266,6 +266,8 @@ int bundle_bridge::build_regions()
 		}
 		else  // AS region, build all variants at same position
 		{
+			as_pos32 l, r;
+			int ltype = 0, rtype = 0;
 			assert (l1 == l2);
 			assert (r1 == r2);
 			for (auto&& aa: i2->second)
@@ -274,11 +276,11 @@ int bundle_bridge::build_regions()
 				int c = aa.second;
 				l = as_pos32(l2, a);
 				r = as_pos32(r2, a);
-				ltype = ALLELIC_LEFT_SPLICE; 
-				rtype = ALLELIC_RIGHT_SPLICE;
+				ltype = splicetype_set_to_int(ltypes);
+				rtype = splicetype_set_to_int(rtypes);
 				genotype gt = asp.get_genotype(bb.chrm, l2, a);
 				region rr(l, r, ltype, rtype, gt);
-				rr.assign_as_cov(c, 0, c); 
+				rr.assign_as_cov(c, 0.01, c); 
 				regions.push_back(rr);
 			}
 			i2 ++;
@@ -304,7 +306,6 @@ int bundle_bridge::build_regions()
 		region rr(l, r, ltype, rtype, UNPHASED);
 		evaluate_rectangle(bb.mmap, l, r, rr.ave, rr.dev, rr.max);
 		regions.push_back(rr);
-		
 	}
 	sort(regions.begin(), regions.end());
 
