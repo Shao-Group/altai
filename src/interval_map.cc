@@ -46,7 +46,7 @@ PSIMI locate_boundary_iterators(const split_interval_map &imap, as_pos32 x, as_p
 {
 	SIMI lit, rit;
 	lit = locate_right_iterator(imap, x);
-	if(lit == imap.end() || upper(lit->first) > y) lit = imap.end();//FIXME: maybe lit == rit consider this and contained
+	if(lit == imap.end() || upper(lit->first) > y) lit = imap.end();
 
 	rit = locate_left_iterator(imap, y);
 	if(rit == imap.end() || lower(rit->first) < x) rit = imap.end();
