@@ -176,6 +176,13 @@ int region::build_partial_exons()
 		as_pos32 p1 = lower(it->first);
 		as_pos32 p2 = upper(it->first);
 		assert(p1 < p2);
+		if(is_allelic())
+		{
+			throw runtime_error("Should not re-build allelic region for allelic partial-exon!");
+			assert(p1.samepos(lpos), p2.samepos(rpos));
+			p1 = lpos;
+			p2 = rpos;
+		}
 		
 		bool b = false;
 		int lt = (p1.samepos(lpos)) ? ltype : START_BOUNDARY;
