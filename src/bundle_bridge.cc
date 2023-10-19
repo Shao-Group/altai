@@ -30,7 +30,6 @@ bundle_bridge::~bundle_bridge()
 int bundle_bridge::build()
 {
 	build_junctions();
-	// build_allelic_junctions(); // not implemented, not used
 	extend_junctions();
 	build_regions();
 	align_hits_transcripts();
@@ -120,12 +119,6 @@ int bundle_bridge::build_junctions()
 	}
 
 	return 0;
-}
-
-int bundle_bridge::build_allelic_junctions()
-{
-	throw runtime_error("bundle_bridge::build_allelic_junctions() not implemented as it won't be used.");
-	return 0;	
 }
 
 int bundle_bridge::extend_junctions()  // not used w/o ref

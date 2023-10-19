@@ -539,7 +539,7 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			to_revise_splice_graph = false;	
 		}
-		// else if(string(argv[i]) == "--not_skip_resolve_hyper_edge") //FIXME: unsafe to use
+		// else if(string(argv[i]) == "--not_skip_resolve_hyper_edge") //TODO: unsafe to use
 		// {
 		// 	skip_resolve_hyper_edge = false;
 		// }

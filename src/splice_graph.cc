@@ -1711,7 +1711,7 @@ int splice_graph::graphviz(const string &file, string label)
 		int rr = vi.rpos % 100000;
 		sprintf(buf, "%.1lf:%d%s-%d%s", w, ll, vi.lpos.ale.c_str(), rr, vi.rpos.ale.c_str());
 		mis.insert(PIS(i, buf));
-		mii.insert({i, vcf_data::graphviz_gt_color(vi.gt)});
+		mii.insert({i, vcf_data::graphviz_gt_color_shape(vi.gt, vi.type)});
 	}
 
 	MES mes;
