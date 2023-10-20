@@ -627,21 +627,25 @@ int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& r
 			{
 				edge_descriptor ee = gr_copy.max_in_edge(s);
 				assert(ee != null_edge);
-				assert(se0.find(ee) == se0.end());
-				se0.insert(ee);
-				sv1.insert(s);
-				sv2.insert(ee->source());
-				b = true;
+				if(se0.find(ee) == se0.end())
+				{
+					se0.insert(ee);
+					sv1.insert(s);
+					sv2.insert(ee->source());
+					b = true;
+				}
 			}
 			if(sv2.find(t) == sv2.end() && t != gr_copy.num_vertices() - 1)
 			{
 				edge_descriptor ee = gr_copy.max_out_edge(t);
 				assert(ee != null_edge);
-				assert(se0.find(ee) == se0.end());
-				se0.insert(ee);
-				sv1.insert(ee->target());
-				sv2.insert(t);
-				b = true;
+				if(se0.find(ee) == se0.end())
+				{
+					se0.insert(ee);
+					sv1.insert(ee->target());
+					sv2.insert(t);
+					b = true;
+				}
 			}
 			if(b == true) break;
 		}
