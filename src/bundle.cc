@@ -427,6 +427,7 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 		{				
 			const partial_exon& pe1 = pexons1[pexons1.size() - 1];
 			const partial_exon& pe2 = pexons2[0];
+			if(gt_conflict(pe1.gt, pe2.gt)) continue;
 			pid1 = pe1.pid;
 			pid2 = pe2.pid;
 			assert(pid1 < pid2);
@@ -452,6 +453,7 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 		{
 			const partial_exon& pe1 = pexons1[i];
 			const partial_exon& pe2 = pexons1[i+1];
+			if(gt_conflict(pe1.gt, pe2.gt)) continue;
 			int p1 = pe1.pid;
 			int p2 = pe2.pid;
 			assert(p1 < p2);
@@ -616,6 +618,7 @@ int bundle::build_splice_graph_edges(int mode)
 
 		if(lpid< 0 || rpid < 0) continue;
 
+		assert(! conflict(pexons[lpid].gt, pexons[rpid].gt)); 
 		edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
 
 		assert(c >= 1);
