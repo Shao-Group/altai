@@ -618,7 +618,7 @@ int bundle::build_splice_graph_edges(int mode)
 
 		if(lpid< 0 || rpid < 0) continue;
 
-		assert(! conflict(pexons[lpid].gt, pexons[rpid].gt)); 
+		assert(! gt_conflict(pexons[lpid].gt, pexons[rpid].gt)); 
 		edge_descriptor p = gr.add_edge(lpid + 1, rpid + 1);
 
 		assert(c >= 1);
