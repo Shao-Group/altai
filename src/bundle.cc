@@ -892,7 +892,7 @@ int bundle::build_regional()
 		assert(vi.lpos == r.lpos);
 		assert(vi.rpos == r.rpos);
 		assert(vi.gt == r.gt);
-		assert(vi.type = r.type);
+		assert(vi.type == r.type);
 		assert(b == regional.back());
 	}
 	assert(regional.size() == pexons.size());
