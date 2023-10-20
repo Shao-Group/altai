@@ -196,14 +196,10 @@ vertex_info splice_graph::get_vertex_info(int v) const
 double splice_graph::get_edge_weight(edge_base *e) const
 {
 	MED::const_iterator it = ewrt.find(e);
-	if (it != ewrt.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		throw EdgeWeightException();
-	}
+	if (it != ewrt.end()) return it->second;		
+	
+	throw runtime_error("Attempting to retrieve weight of non-existant edge.");
+	return -1;
 }
 
 edge_info splice_graph::get_edge_info(edge_base *e) const
@@ -456,6 +452,7 @@ bool splice_graph::refine_splice_graph()
 	return flag;
 }
 
+// return maximal edge in each subgraph, EXCLUDING allelic edges
 VE splice_graph::compute_maximal_edges()
 {
 	typedef pair<double, edge_descriptor> PDE;
@@ -474,8 +471,8 @@ VE splice_graph::compute_maximal_edges()
 		if(s == 0) continue;
 		if(t == num_vertices() - 1) continue;
 		ug.add_edge(s, t);
-		// bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
-		// if(! is_as_edge) 
+		bool is_as_edge = (get_vertex_info(s).is_allelic()) || (get_vertex_info(t).is_allelic());
+		if(! is_as_edge) 
 		{
 			ve.push_back(PDE(w, e));
 		}

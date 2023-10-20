@@ -26,11 +26,6 @@ typedef map<int, genotype> MII;
 typedef map<edge_descriptor, edge_info> MEIF;
 typedef pair<edge_descriptor, edge_info> PEIF;
 
-class EdgeWeightException : public std::exception {
-    public:
-		const char * what () {return "Edge weight not exists";}
-};
-
 class splice_graph : public directed_graph
 {
 public:
