@@ -138,6 +138,7 @@ int splice_graph::allelic_copy(const splice_graph &gr, MEE &x2y, MEE &y2x, genot
 	copy(gr, x2y, y2x);
 	assert(gr.num_vertices() == num_vertices());
 	assert(gr.num_edges() == num_edges());
+	assert(num_vertices() >= 2);
 
 	bool b = false;
 	for(int i = 1; i < num_vertices() - 1; i++)
@@ -558,6 +559,7 @@ int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& r
 	MEE y2x;             				// new to original
 	splice_graph gr_copy;
 	gr_copy.allelic_copy(*this, x2y, y2x, gt);
+	assert(gr_copy.num_vertices() == num_vertices());
 	if(gr_copy.num_vertices() <= 2)	return 0;
 	if(gr_copy.num_edges() <= 2)		
 	{
@@ -569,8 +571,6 @@ int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& r
 	set<int> sv1;
 	set<int> sv2;
 	SE se0;
-	edge_iterator it1, it2;
-	PEEI pei;
 
 	for(int i = 1; i < gr_copy.num_vertices() - 1; i++)
 	{
@@ -595,14 +595,14 @@ int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& r
 		for(auto it = ins.first; it != ins.second; ++it)
 		{
 			int s = (*it)->source();
-			se0.insert(*it1);
+			se0.insert(*it);
 			sv2.insert(s);
 			if(DEBUG_MODE_ON) assert(i == (*it)->target());
 		}
 		for(auto it = outs.first; it != outs.second; ++it)
 		{
 			int t = (*it)->target();
-			se0.insert(*it1);
+			se0.insert(*it);
 			sv1.insert(t);
 			if(DEBUG_MODE_ON) assert(i == (*it)->source());
 		}
