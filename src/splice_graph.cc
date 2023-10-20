@@ -520,8 +520,6 @@ bool splice_graph::keep_surviving_edges()
 		int s = (*it1)->source();
 		int t = (*it1)->target();
 		double w = get_edge_weight(*it1);
-		int32_t p1 = get_vertex_info(s).rpos.p32;
-		int32_t p2 = get_vertex_info(t).lpos.p32;
 		bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
 		if(w < min_surviving_edge_weight && !is_as_edge) continue;	// all allelic edges will be added to se0
 		se0.insert(*it1);

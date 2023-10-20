@@ -27,23 +27,6 @@ vertex_info::vertex_info()
 	as_type = 0;
 }
 
-vertex_info::vertex_info(int l)
-	: length(l)
-{
-	stddev = 1.0;
-	sdist = -1;
-	tdist = -1;
-	type = -1;
-	lpos = as_pos32(0);
-	rpos = as_pos32(0);
-	pos = 0;
-	lstrand = '.';
-	rstrand = '.';
-	regional = false;
-	gt = UNPHASED;
-	as_type = 0;
-}
-
 vertex_info::vertex_info(const vertex_info &vi)
 {
 	stddev = vi.stddev;

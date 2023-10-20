@@ -54,7 +54,7 @@ public:
 		6-AJ Non-var adjacent to AS var		
 		7-start/sink
 	*/
-	unsigned int as_type: 3;
+	unsigned int as_type;
 
 public:
 	bool is_allelic() const;
