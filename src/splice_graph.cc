@@ -124,6 +124,46 @@ int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 	return 0;
 }
 
+/*
+*	x2y: original to new
+*	y2x: new to original
+* 	gt:  allelic copy of graph for ALLELE1|ALLELE2
+*	populate this graph a copy by removing opposite allele, and graph refined
+*/
+int splice_graph::allelic_copy(const splice_graph &gr, MEE &x2y, MEE &y2x, genotype gt)
+{
+	clear();
+	assert(gt == ALLELE1 || gt == ALLELE2);
+
+	copy(gr, x2y, y2x);
+	assert(gr.num_vertices() == num_vertices());
+	assert(gr.num_edges() == num_edges());
+
+	bool b = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		const vertex_info& vi = get_vertex_info(i);
+		if(gt_conflict(vi.gt, gt)) 
+		{
+			clear_vertex(i);
+			b = true;
+		}
+	}
+	if(b) refine_splice_graph();
+
+	if(DEBUG_MODE_ON)
+	{
+		for(int i = 1; i < num_vertices() - 1; i++)
+		{
+			if(degree(i) == 0) continue;
+			const vertex_info& vi = get_vertex_info(i);
+			assert(!gt_conflict(vi.gt, gt));
+		}
+	}
+
+	return 0;	
+}
+
 int splice_graph::remove_edge(edge_descriptor e)
 {
 	if(se.find(e) == se.end()) return -1;

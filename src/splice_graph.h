@@ -76,6 +76,7 @@ public:
 	// modify the splice_graph
 	int clear();
 	int copy(const splice_graph &gr, MEE &x2y, MEE &y2x);
+	int allelic_copy(const splice_graph &gr, MEE &x2y, MEE &y2x, genotype gt);
 	int remove_edge(edge_descriptor e);
 	int remove_edge(int s, int t);
 
