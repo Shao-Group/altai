@@ -545,20 +545,161 @@ VE splice_graph::compute_maximal_edges()
 	return x;
 }
 
-bool splice_graph::keep_surviving_edges()
+/*
+*	@return survived edges for genotype[gt] in respective allelic subsgraphs
+*/
+int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& rsv1, set<int>& rsv2)
+{
+	if(num_vertices() <= 2)	return 0;
+	assert(gt == ALLELE1 || gt == ALLELE2);
+
+	// make graph copy
+	MEE x2y;             				// original to new
+	MEE y2x;             				// new to original
+	splice_graph gr_copy;
+	gr_copy.allelic_copy(*this, x2y, y2x, gt);
+	if(gr_copy.num_vertices() <= 2)	return 0;
+	if(gr_copy.num_edges() <= 2)		
+	{
+		if(DEBUG_MODE_ON) cerr << "splice_graph " << gid << "does not have allele " << gt << "edges to survive" ;
+		return 0;
+	}
+	
+	// survive [gt] allelic edges in gr_copy, EXCLD pseudo as edges
+	set<int> sv1;
+	set<int> sv2;
+	SE se0;
+	edge_iterator it1, it2;
+	PEEI pei;
+
+	for(int i = 1; i < gr_copy.num_vertices() - 1; i++)
+	{
+		if(gr_copy.degree(i) == 0) continue;
+	
+		const vertex_info& vi = gr_copy.get_vertex_info(i);
+		if (vi.gt != gt) continue;
+		
+		PEEI ins = gr_copy.in_edges(i);
+		PEEI outs = gr_copy.out_edges(i);
+
+		if (vi.type == PSEUDO_AS_VERTEX) 
+		{
+			if(DEBUG_MODE_ON)
+			{
+				for(auto j = ins.first; j != ins.second; ++j) assert(gr_copy.get_edge_weight(*j) < min_guaranteed_edge_weight * 1.1);
+				for(auto j = outs.first; j != outs.second; ++j) assert(gr_copy.get_edge_weight(*j) < min_guaranteed_edge_weight * 1.1);
+			}
+			continue;
+		}
+
+		for(auto it = ins.first; it != ins.second; ++it)
+		{
+			int s = (*it)->source();
+			se0.insert(*it1);
+			sv2.insert(s);
+			if(DEBUG_MODE_ON) assert(i == (*it)->target());
+		}
+		for(auto it = outs.first; it != outs.second; ++it)
+		{
+			int t = (*it)->target();
+			se0.insert(*it1);
+			sv1.insert(t);
+			if(DEBUG_MODE_ON) assert(i == (*it)->source());
+		}
+	}
+
+	if(se.size() == 0) 
+	{
+		if(DEBUG_MODE_ON) cerr << "splice_graph " << gid << "does not have allele " << gt << "edges to survive" ;
+		return 0;
+	}
+
+	// survive edges in s-t path
+	while(true)
+	{
+		bool b = false;
+		for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+		{
+			edge_descriptor e = (*it);
+			int s = e->source(); 
+			int t = e->target();
+			if(sv1.find(s) == sv1.end() && s != 0)
+			{
+				edge_descriptor ee = gr_copy.max_in_edge(s);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(s);
+				sv2.insert(ee->source());
+				b = true;
+			}
+			if(sv2.find(t) == sv2.end() && t != gr_copy.num_vertices() - 1)
+			{
+				edge_descriptor ee = gr_copy.max_out_edge(t);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(ee->target());
+				sv2.insert(t);
+				b = true;
+			}
+			if(b == true) break;
+		}
+		if(b == false) break;
+	}
+
+	// populate rse0, rsv1, rsv2 for return
+	int c = 0;
+	for(edge_descriptor e: se0)
+	{
+		if(DEBUG_MODE_ON) assert(edge(e).second == false);
+
+		auto it = y2x.find(e);
+		if(DEBUG_MODE_ON) assert(it != y2x.end());
+		
+		edge_descriptor r = it->second;
+		if(DEBUG_MODE_ON) assert(edge(r).second == true);			
+		
+		c++;
+		rse0.insert(r);
+		rsv1.insert(r->target());
+		rsv2.insert(r->source());
+	}
+
+	return c;
+}
+
+// survive real allelic edges, max edges in each subgraph, edges weight > min surviving weight
+bool splice_graph::keep_surviving_edges() 
 {
 	set<int> sv1;
 	set<int> sv2;
 	SE se0;
 	edge_iterator it1, it2;
 	PEEI pei;
+
+	// survive allelic edges
+	{
+		//CLEAN:
+		int _c = se0.size();
+		int _d = survivived_edges_for_allele(ALLELE1, se0, sv1, sv2);
+		if(DEBUG_MODE_ON) assert(_c + _d == se0.size());
+		int _e = survivived_edges_for_allele(ALLELE2, se0, sv1, sv2);
+		if(DEBUG_MODE_ON && _e > 0)
+		{
+			assert(_c + _d < se0.size());
+		}
+	} 
+
+	// pseudo as edges wont be added to se0
 	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
 	{
+		if(se0.find(*it1) != se0.end()) continue;
+
 		int s = (*it1)->source();
 		int t = (*it1)->target();
 		double w = get_edge_weight(*it1);
-		bool is_as_edge = (get_vertex_info(s).rpos.ale != "$") || (get_vertex_info(t).lpos.ale != "$");
-		if(w < min_surviving_edge_weight && !is_as_edge) continue;	// all allelic edges will be added to se0
+		if(w < min_surviving_edge_weight) continue;
 		se0.insert(*it1);
 		sv1.insert(t);
 		sv2.insert(s);
@@ -741,7 +882,6 @@ bool splice_graph::remove_small_junctions()
 	{
 		if(degree(i) <= 0) continue;
 
-		bool b = true;
 		edge_iterator it1, it2;
 		PEEI pei;
 		int32_t p1 = get_vertex_info(i).lpos.p32;

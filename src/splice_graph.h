@@ -82,6 +82,7 @@ public:
 
 	// revise splice graph
 	VE compute_maximal_edges();
+	int survivived_edges_for_allele(genotype gt, SE& se0, set<int>& sv1, set<int>& sv2);
 	int revise_splice_graph();
 	bool refine_splice_graph();
 	bool keep_surviving_edges();
