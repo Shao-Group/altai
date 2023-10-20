@@ -563,7 +563,7 @@ int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& r
 	if(gr_copy.num_vertices() <= 2)	return 0;
 	if(gr_copy.num_edges() <= 2)		
 	{
-		if(DEBUG_MODE_ON) cerr << "splice_graph " << gid << "does not have allele " << gt << "edges to survive" ;
+		if(DEBUG_MODE_ON) cerr << "splice_graph " << "does not have allele " << gt << "edges to survive" << endl;
 		return 0;
 	}
 	
