@@ -321,7 +321,7 @@ int bundle::build_pseudo_variant_exon()
 		partial_exon  pe_pseudo(as_pos32(pe_counter.lpos.p32, "n"), as_pos32(pe_counter.rpos.p32, "n"), pe_counter.ltype, pe_counter.rtype, gt);
 		assert(gt_conflict(pe_counter.gt, pe_pseudo.gt));
 
-		pe_pseudo.assign_as_cov(0.01, 0.01, 0);
+		pe_pseudo.assign_as_cov(0.01, 0.01, 0.01);
 		pe_pseudo.rid = -1;
 		pe_pseudo.rid2 =-1;
 		pe_pseudo.type = PSEUDO_AS_VERTEX;
@@ -872,6 +872,8 @@ int bundle::build_regional()
 {
 	regional.clear();
 	// vertices: for each (partial) exon, incld PSEUDO_AS_VERTEX
+	assert(gr.num_vertices() == pexons.size() + 2);
+
 	for(int i = 0; i < pexons.size(); i++) 
 	{
 		const partial_exon& r = pexons[i];

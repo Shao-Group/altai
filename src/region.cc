@@ -72,7 +72,7 @@ int region::build_join_interval_map()
 	return 0;
 }
 
-int region::assign_as_cov(int _ave, int _dev, int _max)
+int region::assign_as_cov(double _ave, double _dev, double _max)
 {
 	ave = _ave;
 	dev = _dev;
