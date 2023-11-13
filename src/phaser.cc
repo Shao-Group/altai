@@ -567,31 +567,13 @@ int phaser::split_hs()
 		}
 	}
 
-	// make vertex pos map
-	map<pair<int, int> map<int, genotype> > pos2vertices_gt;
-	for (int i = 0; i < gr.num_vertices(); i++)
-	{
-		const vertex_info& vi = gr.get_vertex_info(i);
-		if(vi.gt != ALLELE1 && vi.gt != ALLELE2) continue;
-		
-		pair<int, int> pp {vi.lpos.p32, vi.rpos.p32};
-		if(pos2vertices_gt.find(pp) == pos2vertices_gt.end())
-		{
-			pos2vertices_gt.insert({pp, {i, vi.gt} });
-		}
-		else
-		{
-			pos2vertices_gt.find(pp)->insert({i, vi.gt};
-		}
-	}
-
 	for (int i = 0; i < 2; i++)
 	{
 		// only two potential alleles 
 		assert (i == 0 || i == 1); 
 		hyper_set*    phs      = (i == 0)? phs1  : phs2;
 		MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
-		genotype	  gt 	   = (i == 0)? ALLELE1 : ALLELE2;
+		
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
@@ -606,50 +588,7 @@ int phaser::split_hs()
 
 				assert(edge_idx >= 0 && edge_idx < sc.i2e.size());
 				edge_descriptor e = sc.i2e[edge_idx];
-
-				const vertex_info& vis = gr.get_vertex_info(e->source());
-				int ss = -1; // alternative s or t
-				bool b = false;
-				if(gt_conflict(vis.gt, gt))
-				{
-					b = true;
-					auto it1 = pos2vertices_gt.find({vis.lpos.p32, vis.rpos.p32});
-					if(it1 != pos2vertices_gt.end())
-					{
-						for(auto it2: it1->second)
-						{
-							genotype gg = it2.second;
-							if(gg == gt) ss = it2.first;
-						}
-					}
-				}
-
-				int tt = -1;
-				const vertex_info& vit = gr.get_vertex_info(e->target());
-				if(gt_conflict(vit.gt, gt))
-				{
-					b = true;
-					auto it1 = pos2vertices_gt.find({vit.lpos.p32, vit.rpos.p32});
-					if(it1 != pos2vertices_gt.end())
-					{
-						for(auto it2: it1->second)
-						{
-							genotype gg = it2.second;
-							if(gg == gt) tt = it2.first;
-						}
-					}
-				}
-				//FIXME: assert tt to ss has only one edge
-				if(b == true && (ss < 0 || tt < 0)) continue;
-				if(b == true)
-				{
-					PED ped = gr.edge(ss, tt);
-					assert(ped.second == true);
-					assert(ped.first != null_edge);
-					e = ped.first;
-				}
-
-				if(e == null_edge) continue;
+				if (e == null_edge) continue;
 				
 				if(ewrt_cur.find(e) == ewrt_cur.end())
 				{
@@ -666,7 +605,6 @@ int phaser::split_hs()
 					break;
 				}
 			}
-			//TODO: edit edge_idx_list
 			// add hyper_edge if all edges have AS weight > 1 (hs will be transformed)
 			if (use_this && int(bottleneck) >= 1)
 			{
@@ -715,8 +653,6 @@ int phaser::assemble_scallop0(scallop& sc)
 	sc.trsts.clear();
 	sc.non_full_trsts.clear();
 	sc.assemble_continue(is_allelic);
-
-	//FIXME: for specific transcripts, use a probabilistic model to judge whether it is true
 
 	trsts1 = sc.trsts;
 	trsts2 = sc.trsts;
