@@ -1261,7 +1261,7 @@ int bundle::build_hyper_set()
 		
 		vector<int> v = align_fragment(fr);
 
-		if(fragment.gt == ALLELE1 || fragment.gt == ALLELE2)
+		if( (! break_unphased_allelic_phasing) || fragment.gt == ALLELE1 || fragment.gt == ALLELE2)
 		{
 			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
 			else m[v] += fr.cnt;
@@ -1386,6 +1386,7 @@ int bundle::build_hyper_set()
 	if(DEBUG_MODE_ON) 
 	{
 		if(print_bundle_detail) cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		if(print_bundle_detail) cout << "s1 = "<< s1 << ", s2 = " << s2 << ", s3 = " << s3 << ", s4 = " << s4 << endl;
 		for(const auto & mvii:m)
 		{
 			const vector<int>& vi = mvii.first;
