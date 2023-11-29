@@ -60,7 +60,9 @@ int bridger::bridge()
 	int n2 = get_paired_fragments();
 
 	// first round of briding hard fragments
-	// remove_tiny_boundary(); //TODO: examine and fix. Based on real spos, but regions
+	if(remove_tiny_boundary_mode == 1) remove_tiny_boundary();
+	else if (remove_tiny_boundary_mode == 2) remove_tiny_boundary_without_var();
+	else assert (remove_tiny_boundary_mode == 0);
 
 	bridge_hard_fragments();
 	filter_paths();
@@ -349,33 +351,33 @@ int bridger::build_path_nodes(map<vector<int>, int> &m, const vector<int> &v, in
 	return 0;
 }
 
-int bridger::remove_tiny_boundary()
+//TODO: examine and fix. Based on real spos, but regions
+// tiny boundary is defined as "a tiny boundary by splice-junctions"
+// a tiny bounary may contain var, due to alignment error
+int bridger::remove_tiny_boundary()//FIXME: 
 {
-	// tiny boundary is defined as "a tiny boundary by splice-junctions"
-	// a tiny bounary may contain var, due to alignment error
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
 
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 
-		//if(fr.h1->bridged == true) continue;
-		//if(fr.h2->bridged == true) continue;
-
+		// regions[j1 + 1:end] is the real tiny boundary (which may include 1+ regions b/c var)
 		vector<int> v1 = decode_vlist(fr.h1->vlist);
 		int n1 = v1.size();
-
-		// regions[j1 + 1:end] is the real tiny boundary (which may include 1+ regions b/c var)
 		int j1 = n1 - 2;
-		for (; j1 >= 0; j1--)
+		if(n1 >= 2)
 		{
-			int idx = v1[j1];
-			int idx2 = v1[j1 + 1];
-			if (bd->regions[idx].rtype & LEFT_SPLICE || bd->regions[idx].rtype & RIGHT_SPLICE) break;
-			else assert(bd->regions[idx].rpos.samepos(bd->regions[idx2].lpos)); // must be as splicing thus same spos
-		}	
+			for (; j1 >= 0; j1--)
+			{
+				int idx = v1[j1];
+				int idx2 = v1[j1 + 1];
+				if (bd->regions[idx].rtype & LEFT_SPLICE || bd->regions[idx].rtype & RIGHT_SPLICE) break;
+				else assert(bd->regions[idx].rpos.samepos(bd->regions[idx2].lpos)); // must be as splicing thus same spos
+			}	
+		}
 
-		if (n1 >= 2 && j1 >=0 )
+		if (n1 >= 2 && j1 >=0 && j1 <= n1 - 2)
 		{
 			int k = v1[n1 - 1];
 			int idx = v1[j1];
@@ -395,20 +397,22 @@ int bridger::remove_tiny_boundary()
 			}
 		}
 
+		// regions[start: j2] is the real tiny boundary (which may include 1+ regions b/c var)
 		vector<int> v2 = decode_vlist(fr.h2->vlist);
 		int n2 = v2.size();
-
-		// regions[start: j2] is the real tiny boundary (which may include 1+ regions b/c var)
 		int j2 = 1;
-		for (; j2 <= n2 - 1; j2++)
+		if(n2 >= 2)
 		{
-			int idx = v2[j2];
-			int idx2 = v2[j2 - 1];
-			if (bd->regions[idx].ltype & LEFT_SPLICE || bd->regions[idx].ltype & RIGHT_SPLICE) break;
-			else assert(bd->regions[idx].lpos.samepos(bd->regions[idx2].rpos)); // must be as splicing thus same spos
-		}	
+			for (; j2 <= n2 - 1; j2++)
+			{
+				int idx = v2[j2];
+				int idx2 = v2[j2 - 1];
+				if (bd->regions[idx].ltype & LEFT_SPLICE || bd->regions[idx].ltype & RIGHT_SPLICE) break;
+				else assert(bd->regions[idx].lpos.samepos(bd->regions[idx2].rpos)); // must be as splicing thus same spos
+			}	
+		}
 
-		if(n2 >= 2 && j2 <= n2 - 1)
+		if(n2 >= 2 && j2 <= n2 - 1 && j2 >= 1)
 		{
 			int k = v2[0];
 			int idx = v2[j2];
@@ -426,6 +430,51 @@ int bridger::remove_tiny_boundary()
 					fr.h2->pos = bd->regions[idx].lpos;
 				}
 			} 			
+		}
+	}
+	return 0;
+}
+
+int bridger::remove_tiny_boundary_without_var()
+{
+	for(int i = 0; i < bd->fragments.size(); i++)
+	{
+		fragment &fr = bd->fragments[i];
+
+		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
+		//FIXME: check tiny boundary if contains var skip
+		vector<int> v1 = decode_vlist(fr.h1->vlist);
+		int n1 = v1.size();
+		if(n1 >= 2 && v1[n1 - 2] + 1 == v1[n1 - 1])		// next(second last region) == last region
+		{
+			int k = v1[n1 - 1];
+			int32_t total = bd->regions[k].rpos - bd->regions[k].lpos;
+			int32_t flank = fr.h1->rpos - bd->regions[k].lpos;
+
+			if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+			{
+				vector<int> v(v1.begin(), v1.begin() + n1 - 1);
+				assert(v.size() + 1 == v1.size());
+				fr.h1->vlist = encode_vlist(v);
+				fr.h1->rpos = bd->regions[k].lpos;
+			}
+		}
+
+		vector<int> v2 = decode_vlist(fr.h2->vlist);
+		int n2 = v2.size();
+		if(n2 >= 2 && v2[0] + 1 == v2[1])		// prev(second region) == first region
+		{
+			int k = v2[0];
+			int32_t total = bd->regions[k].rpos - bd->regions[k].lpos;
+			int32_t flank = bd->regions[k].rpos - fr.h2->pos;
+
+			if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
+			{
+				vector<int> v(v2.begin() + 1, v2.end());
+				assert(v.size() + 1 == v2.size());
+				fr.h2->vlist = encode_vlist(v);
+				fr.h2->pos = bd->regions[k].rpos;
+			}
 		}
 	}
 	return 0;
