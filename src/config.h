@@ -106,6 +106,7 @@ extern bool use_overlap_scoring;
 extern int32_t max_clustering_flank; 
 extern int32_t flank_tiny_length;
 extern double flank_tiny_ratio;
+extern int remove_tiny_boundary_mode; // 0 not use; [default] 1 remove incld AS boundary; 2 remove non-var boundary only
 extern double bridger_suppl_coefficient1;
 extern double bridger_suppl_coefficient2;
 

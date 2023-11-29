@@ -61,6 +61,7 @@ bool use_overlap_scoring = false;
 int32_t max_clustering_flank = 30;
 int32_t flank_tiny_length = 10;
 double flank_tiny_ratio = 0.4;
+int remove_tiny_boundary_mode = 1; 
 double bridger_suppl_coefficient1 = 0.5;
 double bridger_suppl_coefficient2 = 0.5;
 
@@ -481,6 +482,13 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--flank_tiny_ratio")
 		{
 			flank_tiny_ratio = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--remove_tiny_boundary_mode")
+		{
+			int _x_ = atoi(argv[i + 1]);
+			assert(_x_ == 0 || _x_ == 1 || _x_ == 2);
+			remove_tiny_boundary_mode = _x_;
 			i++;
 		}
 		else if(string(argv[i]) == "--bridger_suppl_coefficient1")
