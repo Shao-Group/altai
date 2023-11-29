@@ -60,7 +60,8 @@ public:
 	int bridge_phased_cluster(fcluster &fc);
 
 	int remove_tiny_boundary();
-
+	int remove_tiny_boundary_without_var();
+	
 	int build_junction_graph();
 	int bridge_hard_fragments();
 	int dynamic_programming(int k1, int k2, vector< vector<entry> > &table);
