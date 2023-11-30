@@ -1255,16 +1255,38 @@ int bundle::build_hyper_set()
 		//if(fr.h1->bridged == false) continue;
 		//if(fr.h2->bridged == false) continue;
 
-		vector<int> v = align_fragment(fr);
 		if(fragment.gt == ALLELE1) s1 ++;
 		else if(fragment.gt == ALLELE2) s2 ++;
 		else s3++;
 		
-		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
-		else m[v] += fr.cnt;
+		vector<int> v = align_fragment(fr);
+
+		if(fragment.gt == ALLELE1 || fragment.gt == ALLELE2)
+		{
+			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+			else m[v] += fr.cnt;
+		}
+		else if (! break_unphased_allelic_phasing)
+		{
+			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+			else m[v] += fr.cnt;
+		}
+		else
+		{
+			assert(break_unphased_allelic_phasing);
+			assert(fragment.gt == NONSPECIFIC || fragment.gt == UNPHASED);
+			vector<vector<int>>& bpp = break_as_phasing_path(v);
+			for(cosnt vector<int>& v: bpp)
+			{
+				if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+				else m[v] += fr.cnt;
+			}
+		}
 	}
 	
 	// note by Qimin, bridge umi-linked fragments into one single long path  //TODO:
+	// TODO: umi not supported yet
+	/*
 	for(int k = 0; k < br.umiLink.size(); k++)
 	{
 		vector<int> v;
@@ -1353,6 +1375,7 @@ int bundle::build_hyper_set()
 			else m[v] += cnt;
 		}
 	}
+	*/
 	
 	for(int k = 0; k < bb.hits.size(); k++)
 	{
@@ -1360,7 +1383,7 @@ int bundle::build_hyper_set()
 
 		// bridged used here, but maybe okay
 		if(h.bridged == true) continue;
-
+		s4 ++;
 		vector<int> v = align_hit(h);
 		
 		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, 1));
@@ -1392,7 +1415,8 @@ int bundle::build_hyper_set()
 		int c = it->second;
 		if(v.size() >= 2) hs.add_node_list(v, c);
 	}
-
+	
+	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "print fragment/hs gt" << s0 << " " << s1 << " " << s2 << endl;}
 	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "build_hyper_set completed. print hs." << endl; hs.print();}
 	if(DEBUG_MODE_ON && hs.nodes.size() == 0) {cerr << "hyper_set size is 0." << endl;}
 
