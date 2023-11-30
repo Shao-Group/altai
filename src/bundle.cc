@@ -242,7 +242,7 @@ int bundle::build_partial_exons()
 	{
 		for(const region& r: regions)
 			for(const partial_exon& pe: r.pexons)
-				assert(pe.pid >= 0 && pe.pid <= pexons.size());
+				assert(pe.pid >= 0 && pe.pid < pexons.size());
 	}
 
 	return 0;
@@ -469,6 +469,7 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 	return 0;
 }
 
+// return hit-aligned pids (from 0)
 vector<int> bundle::align_hit(hit &h)
 {
 	bool b = true;
@@ -503,6 +504,7 @@ vector<int> bundle::align_hit(hit &h)
 	else return sp2;
 }
 
+// return fragment-aligned pids (from 0)
 vector<int> bundle::align_fragment(fragment &fr)
 {
 	bool b = true;
@@ -1334,14 +1336,14 @@ int bundle::build_hyper_set()
 
 		if(v.size() > 0)
 		{
-			/*
-			printf("v = ");
-			for(int ii = 0; ii < v.size(); ii++)
-			{
-				printf("%d ", v[ii]);
-			}
-			printf("\n");
-			*/
+			
+			// printf("v = ");
+			// for(int ii = 0; ii < v.size(); ii++)
+			// {
+			// 	printf("%d ", v[ii]);
+			// }
+			// printf("\n");
+			
 
 			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, cnt));
 			else m[v] += cnt;
