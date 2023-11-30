@@ -1449,14 +1449,14 @@ vector<vector<int>> bundle::break_as_phasing_path(vector<int>& pids)
 			cout << endl;
 		}
 		
-		int t = nonspec_pp.size();
+		int original_size = pids.size();
 		int bt = 0;
 		for(const auto& v: nonspec_pp)
 		{
 			bt += v.size();
 			for(int i: v)  assert(pexons[i].gt != ALLELE1 && pexons[i].gt != ALLELE2);
 		}
-		assert(bt <= t);
+		assert(bt <= original_size);
 	}
 
 	return nonspec_pp;
