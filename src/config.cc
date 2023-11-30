@@ -154,6 +154,7 @@ bool print_vcf = false;
 bool print_hit = false;
 bool print_region_detail = false;
 bool print_bundle_bridge = false;
+bool print_bridger_detail = false;
 bool print_bundle_detail = false;
 bool print_phaser_detail = false;
 bool print_scallop_detail = false;
@@ -598,6 +599,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--print_bundle_bridge")
 		{
 			print_bundle_bridge = true;			
+		}
+		else if(string(argv[i]) == "--print_bridger_detail")
+		{
+			print_bridger_detail = true;		
 		}
 		else if(string(argv[i]) == "--print_bundle_detail")
 		{

@@ -200,6 +200,7 @@ extern bool print_vcf;
 extern bool print_hit;
 extern bool print_region_detail;
 extern bool print_bundle_bridge;
+extern bool print_bridger_detail;
 extern bool print_bundle_detail;
 extern bool print_phaser_detail;
 extern bool print_scallop_detail;

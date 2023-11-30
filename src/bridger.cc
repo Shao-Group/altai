@@ -37,8 +37,7 @@ bridger::bridger(bundle_bridge *b, const genotype &g)
 
 int bridger::bridge()
 {
-	/*
-	if (DEBUG_MODE_ON)
+	if (DEBUG_MODE_ON && print_bridger_detail)
 	{
 		printf("before bridging ... \n");
 		printf("bridger gt = %s\n", gt_str(gt));
@@ -79,10 +78,11 @@ int bridger::bridge()
 	double r4 = n4 * 100.0 / n;
 
 	vector<int> ct = get_bridged_fragments_type();	// ct<ct1, ct2, ct3> paired-end, UMI-linked, both
-	if (verbose >= 3) printf("gt = %s, #fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
-			gt_str(gt), n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
-	if (verbose >= 3)
+	
+	if (DEBUG_MODE_ON && print_bridger_detail)
 	{
+		printf("gt = %s, #fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
+			gt_str(gt), n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
 		printf("after bridging ... \n");
 		printf("bridger gt = %s\n", gt_str(gt));
 		for(int i = 0; i < bd->fragments.size(); i++)
@@ -301,7 +301,6 @@ int bridger::build_path_nodes(int max_len)
 		fragment &fr = bd->fragments[i];
 
 		if (gt_conflict(fr.gt, gt)) continue;
-		// FIXME: add nonspecific edge weight coeff to balance alleles
 		
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1)
 		{
@@ -1415,7 +1414,6 @@ int bridger::filter_paths()
 {
 	for(int k = 0; k < bd->fragments.size(); k++)
 	{
-
 		fragment &fr = bd->fragments[k];
 
 		// TODO fliter based on fragments type
