@@ -1284,6 +1284,7 @@ int bundle::build_hyper_set()
 		}
 	}
 	
+	// note by Qimin, bridge umi-linked fragments into one single long path
 	// TODO: umi not supported yet
 	/*
 	for(int k = 0; k < br.umiLink.size(); k++)
@@ -1414,7 +1415,6 @@ int bundle::build_hyper_set()
 		if(v.size() >= 2) hs.add_node_list(v, c);
 	}
 	
-	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "print fragment/hs gt" << s0 << " " << s1 << " " << s2 << endl;}
 	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "build_hyper_set completed. print hs." << endl; hs.print();}
 	if(DEBUG_MODE_ON && hs.nodes.size() == 0) {cerr << "hyper_set size is 0." << endl;}
 
