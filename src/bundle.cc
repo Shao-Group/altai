@@ -1255,13 +1255,13 @@ int bundle::build_hyper_set()
 		//if(fr.h1->bridged == false) continue;
 		//if(fr.h2->bridged == false) continue;
 
-		if(fragment.gt == ALLELE1) s1 ++;
-		else if(fragment.gt == ALLELE2) s2 ++;
+		if(fr.gt == ALLELE1) s1 ++;
+		else if(fr.gt == ALLELE2) s2 ++;
 		else s3++;
 		
 		vector<int> v = align_fragment(fr);
 
-		if(fragment.gt == ALLELE1 || fragment.gt == ALLELE2)
+		if(fr.gt == ALLELE1 || fr.gt == ALLELE2)
 		{
 			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
 			else m[v] += fr.cnt;
@@ -1274,9 +1274,9 @@ int bundle::build_hyper_set()
 		else
 		{
 			assert(break_unphased_allelic_phasing);
-			assert(fragment.gt == NONSPECIFIC || fragment.gt == UNPHASED);
-			vector<vector<int>>& bpp = break_as_phasing_path(v);
-			for(cosnt vector<int>& v: bpp)
+			assert(fr.gt == NONSPECIFIC || fr.gt == UNPHASED);
+			const vector<vector<int>>& bpp = break_as_phasing_path(v);
+			for(const vector<int>& v: bpp)
 			{
 				if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
 				else m[v] += fr.cnt;
@@ -1284,7 +1284,6 @@ int bundle::build_hyper_set()
 		}
 	}
 	
-	// note by Qimin, bridge umi-linked fragments into one single long path  //TODO:
 	// TODO: umi not supported yet
 	/*
 	for(int k = 0; k < br.umiLink.size(); k++)
