@@ -586,8 +586,14 @@ int bridger::bridge_hard_fragments()
 			for(int e = 0; e < pb.size(); e++)
 			{
 				vector<int> px = fc.v1;
+				assert(pb[e].size() >= 2);
 				if(pb[e].size() >= 2) px.insert(px.end(), pb[e].begin() + 1, pb[e].end() - 1);
 				px.insert(px.end(), fc.v2.begin(), fc.v2.end());
+
+				for(int k = 0; k < px.size() - 1; k++)
+				{
+					assert(px[k] < px[k + 1]);
+				}
 				int s = (int)(min_bridging_score) + 2;
 				if(use_overlap_scoring) s = evaluate_bridging_path(px);
 				pn.push_back(px);
