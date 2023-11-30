@@ -128,6 +128,7 @@ map <int, int >::iterator                              vcf_map_len_it;
 map <int, map <string, genotype> >::iterator           vcf_map_end;
 map <int, int >::iterator                              vcf_map_len_end;
 double major_gt_threshold = 0.75;
+bool break_unphased_allelic_phasing = true;
 
 // for controling
 bool output_tex_files = false;
@@ -526,6 +527,10 @@ int parse_arguments(int argc, const char ** argv)
 		// 	min_num_reads_support_variant  = atoi(argv[i + 1]);
 		// 	i++;
 		// }
+		else if(string(argv[i]) == "--not_break_unphased_allelic_phasing")
+		{
+			break_unphased_allelic_phasing  = false;
+		}
 		else if(string(argv[i]) == "--chr_exclude")
 		{
 			chr_exclude = string(argv[i + 1]);
