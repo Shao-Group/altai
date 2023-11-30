@@ -170,6 +170,7 @@ extern map <int, map <string, genotype> >::iterator           vcf_map_end;
 extern map <int, int >::iterator                              vcf_map_len_end;
 extern double major_gt_threshold;  // min % for major allele in voting
 
+extern bool break_unphased_allelic_phasing;
 
 // for controling
 extern bool output_tex_files;
