@@ -1236,7 +1236,8 @@ int bundle::print(int index)
 
 int bundle::build_hyper_set()
 {
-	map<vector<int>, int> m;
+	int s1 = 0, s2 = 0, s3 = 0, s4 = 0;		// stats of fragment/hs genotype, allele1, allele2, nonspecific, single hit
+	map<vector<int>, int> m;		// map<vector of pexons, count>
 
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
@@ -1255,6 +1256,9 @@ int bundle::build_hyper_set()
 		//if(fr.h2->bridged == false) continue;
 
 		vector<int> v = align_fragment(fr);
+		if(fragment.gt == ALLELE1) s1 ++;
+		else if(fragment.gt == ALLELE2) s2 ++;
+		else s3++;
 		
 		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
 		else m[v] += fr.cnt;
