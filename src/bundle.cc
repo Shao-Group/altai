@@ -1390,23 +1390,22 @@ int bundle::build_hyper_set()
 		else m[v] += 1;
 	}
 
-	/*
-	if(DEBUG_MODE_ON && print_bundle_detail) 
+	if(DEBUG_MODE_ON) 
 	{
-		cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		if(print_bundle_detail) cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		if(print_bundle_detail) cout << "s1 = "<< s1 << ", s2 = " << s2 << ", s3 = " << s3 << ", s4 = " << s4 << endl;
 		for(const auto & mvii:m)
 		{
 			const vector<int>& vi = mvii.first;
-			int i = mvii.second;
-			cout << "\t";
-			for(int j: vi)
+			for(int j: vi) assert(j >= 0 && j < pexons.size());
+			if(print_bundle_detail)
 			{
-				cout << j << ", ";
+				cout << "\t";
+				for(int j: vi) cout << j << ", ";
+				cout << ": " << mvii.second << ";" <<  endl;
 			}
-			cout << ": " << i << ";" <<  endl;
 		}
 	}
-	*/
 
 	hs.clear();
 	for(map<vector<int>, int>::iterator it = m.begin(); it != m.end(); it++)
