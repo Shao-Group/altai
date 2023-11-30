@@ -47,7 +47,6 @@ int bridger::bridge()
 		}
 		printf("===\n");
 	}
-	*/
 
 	update_length();
 	int n = bd->fragments.size();
@@ -100,6 +99,7 @@ int bridger::bridge_overlapped_fragments()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 		bridge_overlapped_fragment(fr, 0, 0);
 	}
 	return 0;
@@ -357,6 +357,7 @@ int bridger::remove_tiny_boundary()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 
@@ -438,6 +439,7 @@ int bridger::remove_tiny_boundary_without_var()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 		vector<int> v1 = decode_vlist(fr.h1->vlist);
@@ -1415,6 +1417,7 @@ int bridger::filter_paths()
 	for(int k = 0; k < bd->fragments.size(); k++)
 	{
 		fragment &fr = bd->fragments[k];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
 		// TODO fliter based on fragments type
 
@@ -1488,6 +1491,8 @@ vector<int> bridger::get_bridged_fragments_type()
 	
 	for(int k = 0; k < bd->fragments.size(); k++)
 	{
+		if (!gt_implicit_same(bd->fragments[k].gt, gt)) continue;  // bridging only corresponding gt fragments
+		
 		if(bd->fragments[k].type == 0) 
 		{
 			ct[3]++;
