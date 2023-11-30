@@ -1394,3 +1394,44 @@ int bundle::build_hyper_set()
 
 	return 0;
 }
+
+vector<vector<int>> bundle::break_as_phasing_path(vector<int>& pids)
+{
+	vector<vector<int> > nonspec_pp;
+	
+	int s = 0;
+	for(int v = 0; v < pids.size(); v++)
+	{
+		int i = pids[v];
+		assert(i >= 0);
+		assert(i < pexons.size());
+		if(!gt_as(pexons[i].gt)) continue;
+
+		if(s <= v - 2) nonspec_pp.push_back(vector<int>(pids.begin() + s, pids.begin() + v));
+		s = v + 1;
+	}
+	if(s <= pids.size() - 2) nonspec_pp.push_back(vector<int>(pids.begin() + s, pids.end()));
+	
+	if(DEBUG_MODE_ON)
+	{
+		if(print_bundle_detail)
+		{
+			cout << "original pp: ";
+			printv(pids);
+			cout << "broken   pp: ";
+			for(const auto& v: nonspec_pp) {printv(v); cout << "~~";}
+			cout << endl;
+		}
+		
+		int t = nonspec_pp.size();
+		int bt = 0;
+		for(const auto& v: nonspec_pp)
+		{
+			bt += v.size();
+			for(int i: v)  assert(pexons[i].gt != ALLELE1 && pexons[i].gt != ALLELE2);
+		}
+		assert(bt <= t);
+	}
+
+	return nonspec_pp;
+}

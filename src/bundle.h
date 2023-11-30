@@ -77,6 +77,7 @@ public:
 	
 	// hyper set
 	int build_hyper_set();
+	vector<vector<int>> break_as_phasing_path(vector<int>& v);
 
 private:
 	int build_splice_graph_vertices(int mode);
