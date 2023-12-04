@@ -51,16 +51,17 @@ int bridger::bridge()
 	update_length();
 	int n = bd->fragments.size();
 
+	// first round of briding hard fragments
+	if(remove_tiny_boundary_mode == 1) remove_tiny_boundary();
+	else if (remove_tiny_boundary_mode == 2) remove_tiny_boundary_without_var();
+	else assert (remove_tiny_boundary_mode == 0);
+
 	bridge_overlapped_fragments();
 	filter_paths();
 	int n1 = get_paired_fragments();
 
 	int n2 = get_paired_fragments();
 
-	// first round of briding hard fragments
-	if(remove_tiny_boundary_mode == 1) remove_tiny_boundary();
-	else if (remove_tiny_boundary_mode == 2) remove_tiny_boundary_without_var();
-	else assert (remove_tiny_boundary_mode == 0);
 
 	bridge_hard_fragments();
 	filter_paths();
@@ -225,15 +226,14 @@ int bridger::build_junction_graph()
 		int x = v[0];
 		int y = v[1];
 
-		if (DEBUG_MODE_ON) printf("jset (x,y,w) = (%d, %d, %d)\n", x, y, w);
+		// if (DEBUG_MODE_ON) printf("jset (x,y,w) = (%d, %d, %d)\n", x, y, w);
 		assert(jsetx[x].find(y) == jsetx[x].end());
 		assert(jsety[y].find(x) == jsety[y].end());
 		const region& r1 = bd->regions[x];
 		const region& r2 = bd->regions[y];
-		if (DEBUG_MODE_ON) cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
+		// if (DEBUG_MODE_ON) cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
 		if(gt_conflict(r1.gt, gt)) continue;
 		if(gt_conflict(r2.gt, gt)) continue;
-		// TODO: non-specific edge weights may be changed to a better ratio
 		jsetx[x].insert(PI(y, w));
 		jsety[y].insert(PI(x, w));
 	}
@@ -390,6 +390,7 @@ int bridger::remove_tiny_boundary()
 				{
 					// vector<int> v(v1.begin(), v1.begin() + n1 - 1);
 					vector<int> v(v1.begin(), v1.begin() + j1 + 1);
+					assert(v.size() < v1.size());
 					fr.h1->vlist = encode_vlist(v);
 					fr.h1->rpos = bd->regions[idx].rpos;
 				}
@@ -425,6 +426,7 @@ int bridger::remove_tiny_boundary()
 				{
 					// vector<int> v(v2.begin() + 1, v2.end());
 					vector<int> v(v2.begin() + j2, v2.end());
+					assert(v.size() < v2.size());
 					fr.h2->vlist = encode_vlist(v);
 					fr.h2->pos = bd->regions[idx].lpos;
 				}
@@ -461,7 +463,7 @@ int bridger::remove_tiny_boundary_without_var()
 					vector<int> v(v1.begin(), v1.begin() + n1 - 1);
 					assert(v.size() + 1 == v1.size());
 					fr.h1->vlist = encode_vlist(v);
-					fr.h1->rpos = bd->regions[k].lpos;
+					fr.h1->rpos = bd->regions[k].lpos.p32;
 				}
 			} 
 		}
@@ -485,7 +487,7 @@ int bridger::remove_tiny_boundary_without_var()
 					vector<int> v(v2.begin() + 1, v2.end());
 					assert(v.size() + 1 == v2.size());
 					fr.h2->vlist = encode_vlist(v);
-					fr.h2->pos = bd->regions[k].rpos;
+					fr.h2->pos = bd->regions[k].rpos.p32;
 				}
 			}
 		}
@@ -587,6 +589,8 @@ int bridger::bridge_hard_fragments()
 			for(int e = 0; e < pb.size(); e++)
 			{
 				vector<int> px = fc.v1;
+				// if(DEBUG_MODE_ON) {printv(fc.v1); cout << "fc.vi above" << endl; printv(fc.v2); cout << "fc v2 "<< endl; printv(pb[e]); cout << "pb e" << endl;} 
+				// if(DEBUG_MODE_ON) cerr << "pb e size = " << pb[e].size() << endl;
 				assert(pb[e].size() >= 2);
 				if(pb[e].size() >= 2) px.insert(px.end(), pb[e].begin() + 1, pb[e].end() - 1);
 				px.insert(px.end(), fc.v2.begin(), fc.v2.end());
