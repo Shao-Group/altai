@@ -61,6 +61,7 @@ using namespace std;
 
 #define EMPTY_VERTEX -9
 #define PSEUDO_AS_VERTEX -1
+#define UNDERSEQ_AS_VERTEX -2
 
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_ADD 1
 #define TRANSCRIPT_COUNT_ADD_COVERAGE_NUL 2
@@ -106,6 +107,7 @@ extern bool use_overlap_scoring;
 extern int32_t max_clustering_flank; 
 extern int32_t flank_tiny_length;
 extern double flank_tiny_ratio;
+extern int remove_tiny_boundary_mode; // 0 not use; [default] 1 remove incld AS boundary; 2 remove non-var boundary only
 extern double bridger_suppl_coefficient1;
 extern double bridger_suppl_coefficient2;
 
@@ -160,6 +162,7 @@ extern set<string> chrofinterest;
 
 // AS info
 extern bool mask_WASP;
+extern int min_num_reads_support_variant;
 extern string vmap_chrm;
 extern vcf_data asp;
 extern map < string, map <int, map <string, genotype> > >     vcf_map;
@@ -169,8 +172,8 @@ extern map <int, int >::iterator                              vcf_map_len_it;
 extern map <int, map <string, genotype> >::iterator           vcf_map_end;
 extern map <int, int >::iterator                              vcf_map_len_end;
 extern double major_gt_threshold;  // min % for major allele in voting
-
 extern bool break_unphased_allelic_phasing;
+extern bool use_opposite_phasing;
 
 // for controling
 extern bool output_tex_files;
@@ -197,6 +200,7 @@ extern bool print_vcf;
 extern bool print_hit;
 extern bool print_region_detail;
 extern bool print_bundle_bridge;
+extern bool print_bridger_detail;
 extern bool print_bundle_detail;
 extern bool print_phaser_detail;
 extern bool print_scallop_detail;

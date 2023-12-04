@@ -1254,7 +1254,6 @@ int bundle::build_hyper_set()
 
 		//if(fr.h1->bridged == false) continue;
 		//if(fr.h2->bridged == false) continue;
-
 		if(fr.gt == ALLELE1) s1 ++;
 		else if(fr.gt == ALLELE2) s2 ++;
 		else s3++;
@@ -1284,7 +1283,7 @@ int bundle::build_hyper_set()
 		}
 	}
 	
-	// note by Qimin, bridge umi-linked fragments into one single long path
+	// bridge umi-linked fragments into one single long path
 	// TODO: umi not supported yet
 	/*
 	for(int k = 0; k < br.umiLink.size(); k++)
