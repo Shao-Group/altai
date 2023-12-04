@@ -129,6 +129,7 @@ map <int, int >::iterator                              vcf_map_len_it;
 map <int, map <string, genotype> >::iterator           vcf_map_end;
 map <int, int >::iterator                              vcf_map_len_end;
 double major_gt_threshold = 0.75;
+bool use_opposite_phasing = false;
 bool break_unphased_allelic_phasing = true;
 
 // for controling
@@ -153,6 +154,7 @@ bool print_vcf = false;
 bool print_hit = false;
 bool print_region_detail = false;
 bool print_bundle_bridge = false;
+bool print_bridger_detail = false;
 bool print_bundle_detail = false;
 bool print_phaser_detail = false;
 bool print_scallop_detail = false;
@@ -530,11 +532,15 @@ int parse_arguments(int argc, const char ** argv)
 		{
 			mask_WASP = true;
 		}
-		// else if(string(argv[i]) == "--min_num_reads_support_variant")
-		// {
-		// 	min_num_reads_support_variant  = atoi(argv[i + 1]);
-		// 	i++;
-		// }
+		else if(string(argv[i]) == "--min_num_reads_support_variant")
+		{
+			min_num_reads_support_variant  = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--use_opposite_phasing")
+		{
+			use_opposite_phasing  = true;
+		}
 		else if(string(argv[i]) == "--not_break_unphased_allelic_phasing")
 		{
 			break_unphased_allelic_phasing  = false;
@@ -593,6 +599,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--print_bundle_bridge")
 		{
 			print_bundle_bridge = true;			
+		}
+		else if(string(argv[i]) == "--print_bridger_detail")
+		{
+			print_bridger_detail = true;		
 		}
 		else if(string(argv[i]) == "--print_bundle_detail")
 		{

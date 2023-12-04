@@ -37,8 +37,7 @@ bridger::bridger(bundle_bridge *b, const genotype &g)
 
 int bridger::bridge()
 {
-	/*
-	if (DEBUG_MODE_ON)
+	if (DEBUG_MODE_ON && print_bridger_detail)
 	{
 		printf("before bridging ... \n");
 		printf("bridger gt = %s\n", gt_str(gt));
@@ -48,21 +47,19 @@ int bridger::bridge()
 		}
 		printf("===\n");
 	}
-	*/
 
 	update_length();
 	int n = bd->fragments.size();
 
-	bridge_overlapped_fragments();
-	filter_paths();
-	int n1 = get_paired_fragments();
-
-	int n2 = get_paired_fragments();
-
-	// first round of briding hard fragments
 	if(remove_tiny_boundary_mode == 1) remove_tiny_boundary();
 	else if (remove_tiny_boundary_mode == 2) remove_tiny_boundary_without_var();
 	else assert (remove_tiny_boundary_mode == 0);
+
+	// first round of briding hard fragments
+	bridge_overlapped_fragments();
+	filter_paths();
+	int n1 = get_paired_fragments();
+	int n2 = get_paired_fragments();
 
 	bridge_hard_fragments();
 	filter_paths();
@@ -79,10 +76,11 @@ int bridger::bridge()
 	double r4 = n4 * 100.0 / n;
 
 	vector<int> ct = get_bridged_fragments_type();	// ct<ct1, ct2, ct3> paired-end, UMI-linked, both
-	if (verbose >= 3) printf("gt = %s, #fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
-			gt_str(gt), n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
-	if (verbose >= 3)
+	
+	if (DEBUG_MODE_ON && print_bridger_detail)
 	{
+		printf("gt = %s, #fragments = %d, #fixed = %d -> %d -> %d -> %d, ratio = %.2lf -> %.2lf -> %.2lf -> %.2lf, #remain = %d, length = (%d, %d, %d), total paired-end = %d, UMI-linked only = %d, intersection: %d, bridged paired-end = %d, UMI-linked only = %d, intersection: %d\n", 
+			gt_str(gt), n, n1, n2, n3, n4, r1, r2, r3, r4, n - n4, length_low, length_median, length_high, ct[3], ct[4], ct[5], ct[0], ct[1], ct[2]);
 		printf("after bridging ... \n");
 		printf("bridger gt = %s\n", gt_str(gt));
 		for(int i = 0; i < bd->fragments.size(); i++)
@@ -100,6 +98,7 @@ int bridger::bridge_overlapped_fragments()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 		bridge_overlapped_fragment(fr, 0, 0);
 	}
 	return 0;
@@ -225,15 +224,14 @@ int bridger::build_junction_graph()
 		int x = v[0];
 		int y = v[1];
 
-		if (DEBUG_MODE_ON) printf("jset (x,y,w) = (%d, %d, %d)\n", x, y, w);
+		// if (DEBUG_MODE_ON) printf("jset (x,y,w) = (%d, %d, %d)\n", x, y, w);
 		assert(jsetx[x].find(y) == jsetx[x].end());
 		assert(jsety[y].find(x) == jsety[y].end());
 		const region& r1 = bd->regions[x];
 		const region& r2 = bd->regions[y];
-		if (DEBUG_MODE_ON) cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
+		// if (DEBUG_MODE_ON) cout << r1.gt << " " << r2.gt << " " << gt << "gt\n";
 		if(gt_conflict(r1.gt, gt)) continue;
 		if(gt_conflict(r2.gt, gt)) continue;
-		// TODO: non-specific edge weights may be changed to a better ratio
 		jsetx[x].insert(PI(y, w));
 		jsety[y].insert(PI(x, w));
 	}
@@ -301,7 +299,6 @@ int bridger::build_path_nodes(int max_len)
 		fragment &fr = bd->fragments[i];
 
 		if (gt_conflict(fr.gt, gt)) continue;
-		// FIXME: add nonspecific edge weight coeff to balance alleles
 		
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1)
 		{
@@ -358,6 +355,7 @@ int bridger::remove_tiny_boundary()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 
@@ -390,6 +388,7 @@ int bridger::remove_tiny_boundary()
 				{
 					// vector<int> v(v1.begin(), v1.begin() + n1 - 1);
 					vector<int> v(v1.begin(), v1.begin() + j1 + 1);
+					assert(v.size() < v1.size());
 					fr.h1->vlist = encode_vlist(v);
 					fr.h1->rpos = bd->regions[idx].rpos;
 				}
@@ -425,6 +424,7 @@ int bridger::remove_tiny_boundary()
 				{
 					// vector<int> v(v2.begin() + 1, v2.end());
 					vector<int> v(v2.begin() + j2, v2.end());
+					assert(v.size() < v2.size());
 					fr.h2->vlist = encode_vlist(v);
 					fr.h2->pos = bd->regions[idx].lpos;
 				}
@@ -439,6 +439,8 @@ int bridger::remove_tiny_boundary_without_var()
 	for(int i = 0; i < bd->fragments.size(); i++)
 	{
 		fragment &fr = bd->fragments[i];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
+
 
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 		vector<int> v1 = decode_vlist(fr.h1->vlist);
@@ -460,7 +462,7 @@ int bridger::remove_tiny_boundary_without_var()
 					vector<int> v(v1.begin(), v1.begin() + n1 - 1);
 					assert(v.size() + 1 == v1.size());
 					fr.h1->vlist = encode_vlist(v);
-					fr.h1->rpos = bd->regions[k].lpos;
+					fr.h1->rpos = bd->regions[k].lpos.p32;
 				}
 			} 
 		}
@@ -477,14 +479,13 @@ int bridger::remove_tiny_boundary_without_var()
 			else
 			{
 				int32_t total = bd->regions[k].rpos - bd->regions[k].lpos;
-				int32_t flank = bd->regions[k].rpos - fr.h2->pos;
-
+				int32_t flank = bd->regions[k].rpos.p32 - int(fr.h2->pos);
 				if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
 				{
 					vector<int> v(v2.begin() + 1, v2.end());
 					assert(v.size() + 1 == v2.size());
 					fr.h2->vlist = encode_vlist(v);
-					fr.h2->pos = bd->regions[k].rpos;
+					fr.h2->pos = bd->regions[k].rpos.p32;
 				}
 			}
 		}
@@ -586,8 +587,16 @@ int bridger::bridge_hard_fragments()
 			for(int e = 0; e < pb.size(); e++)
 			{
 				vector<int> px = fc.v1;
+				// if(DEBUG_MODE_ON) {printv(fc.v1); cout << "fc.vi above" << endl; printv(fc.v2); cout << "fc v2 "<< endl; printv(pb[e]); cout << "pb e" << endl;} 
+				// if(DEBUG_MODE_ON) cerr << "pb e size = " << pb[e].size() << endl;
+				assert(pb[e].size() >= 2);
 				if(pb[e].size() >= 2) px.insert(px.end(), pb[e].begin() + 1, pb[e].end() - 1);
 				px.insert(px.end(), fc.v2.begin(), fc.v2.end());
+
+				for(int k = 0; k < px.size() - 1; k++)
+				{
+					assert(px[k] < px[k + 1]);
+				}
 				int s = (int)(min_bridging_score) + 2;
 				if(use_overlap_scoring) s = evaluate_bridging_path(px);
 				pn.push_back(px);
@@ -1409,8 +1418,8 @@ int bridger::filter_paths()
 {
 	for(int k = 0; k < bd->fragments.size(); k++)
 	{
-
 		fragment &fr = bd->fragments[k];
+		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
 		// TODO fliter based on fragments type
 
@@ -1484,6 +1493,8 @@ vector<int> bridger::get_bridged_fragments_type()
 	
 	for(int k = 0; k < bd->fragments.size(); k++)
 	{
+		if (!gt_implicit_same(bd->fragments[k].gt, gt)) continue;  // bridging only corresponding gt fragments
+		
 		if(bd->fragments[k].type == 0) 
 		{
 			ct[3]++;
