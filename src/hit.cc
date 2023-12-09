@@ -224,7 +224,6 @@ int hit::build_features(bam1_t *b)
 				if (alerpos > p)
 					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar || bam_cigar_op(cigar[k+1]) != BAM_CDEL)
 						continue;												// the later condition checks whether it is DEL
-				
 				// WASP filter, 0:N/A, 1:passed, 2+:failed
 				if(vw == 0 || vw == 1) 
 				{
@@ -271,11 +270,16 @@ int hit::build_features(bam1_t *b)
 	return 0;
 }
 
+/*
+** build aligned intervals from spos + apos
+** augment apos if a variant site is covered by spos but not itvm
+*/
 int hit::build_aligned_intervals()
 {
 	itv_align.clear();
 
-	vector<pair<int32_t, int32_t> > itvs; 	// aligned interval by spos, may incl indel (itvm does not incl indel)
+	// aligned interval by spos, may incl indel (itvm does not incl indel)
+	vector<pair<int32_t, int32_t> > itvs; 	
 	int32_t p1 = pos;
 	for(int k = 0; k < spos.size(); k++)
 	{
@@ -284,6 +288,29 @@ int hit::build_aligned_intervals()
 		p1 = low32(spos[k]);
 	}
 	itvs.push_back({p1, rpos});
+
+	// apos supplement un-aligned variant sites with 'N', if as pos present, skip
+	set<int64_t> apos_in_itvm;
+	for(as_pos i: apos) apos_in_itvm.insert(i.p64);
+	
+	for(const auto& itvs_it: itvs)
+	{
+		int sl = itvs_it.first;
+		int sr = itvs_it.second;
+		auto it = vcf_map_it;
+		auto it_len = vcf_map_len_it;
+		for ( ; it != vcf_map_end && it_len!= vcf_map_len_end; vcf_data::increse_it(it, it_len))					// iterate through vcf
+		{	
+			if(it->first >= sr)  break;
+			if(it->first <  sl)  continue;
+			if(it_len->second != 1) continue;
+			int32_t alelpos = it->first; 									// 0-based ref pos, included
+			int32_t alerpos = alelpos + it_len->second;						// 0-based query pos, excluded
+			if(apos_in_itvm.find(pack(alelpos, alerpos)) == apos_in_itvm.end()) 
+				apos.push_back(as_pos(pack(alelpos, alerpos), "N"));			
+		}
+	}
+	sort(apos.begin(), apos.end());
 
 	if (!has_variant()) 
 	{
