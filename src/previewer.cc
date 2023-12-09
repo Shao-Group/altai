@@ -289,8 +289,14 @@ int previewer::process_bundle(bundle_base &bb, map<int, int>& m)
 	br.build_fragments();
 	//br.group_fragments();
 
-	bridger bdg(&br, UNPHASED);
-	bdg.bridge_overlapped_fragments();
+	bridger bdg1(&br, ALLELE1);
+	bdg1.bridge_overlapped_fragments();
+
+	bridger bdg2(&br, ALLELE2);
+	bdg2.bridge_overlapped_fragments();
+
+	bridger bdg3(&br, UNPHASED);
+	bdg3.bridge_overlapped_fragments();
 
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
