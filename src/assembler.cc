@@ -182,9 +182,10 @@ int assembler::process(int n)
 		for(int i = 0; i < 3; i++) ts_nonfull.push_back(transcript_set(bb.chrm, 0.9));
 
 		bundle bd(bb);
-		bd.build(1, true);
-		bd.print(index++);
-		assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
+		// TODO: use one bundle first. Future: combine from two bundles may be better
+		// bd.build(1, true);
+		// bd.print(index++);
+		// assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
 
 		bd.build(2, true);
 		bd.print(index++);				
