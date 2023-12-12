@@ -67,9 +67,8 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 
 
 /*
-*	init ewrt1/2, countbg1/2, normalize ratiobg1/2
-*
-*   NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
+**	init ewrt1/2, countbg1/2, normalize ratiobg1/2
+**  NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
 */
 int phaser::init()
 {
@@ -82,7 +81,6 @@ int phaser::init()
 
 	vwrt1.resize(gr.vwrt.size(), -1);
 	vwrt2.resize(gr.vwrt.size(), -1); 
-
 	for(auto i: gr.ewrt)
 	{
 		edge_descriptor e = i.first;
@@ -96,10 +94,8 @@ int phaser::init()
     ewrtbg2 = 0;
 	for(int i = 0; i < gr.num_vertices(); i++)
 	{ 
-		// cout << "inside for loop: " << i << gt_str(gr.vinf[i].gt) << endl;
 		if (gr.get_vertex_info(i).gt == ALLELE1)
 		{
-			// cout << "inside if1 statement" << endl;
 			PEEI in = gr.in_edges(i);
 			PEEI out = gr.out_edges(i);
 			for (auto e = in.first; e!= in.second; e++)	
@@ -108,7 +104,6 @@ int phaser::init()
 				ewrt1[*e] = gr.ewrt[*e];
 				ewrt2[*e] = 0;
 				ewrtbg1 += gr.ewrt[*e];
-				// cout << "ale 1 in edge weight" << gr.ewrt[*e] << endl;
 			}
 			for (auto e = out.first; e!= out.second; e++)	
 			{
@@ -121,7 +116,6 @@ int phaser::init()
 		}
 		else if (gr.get_vertex_info(i).gt == ALLELE2)
 		{
-			// cout << "inside if2 statement" << endl;
 			PEEI in = gr.in_edges(i);
 			PEEI out = gr.out_edges(i);
 			for (auto e = in.first; e!= in.second; e++)	
@@ -130,7 +124,6 @@ int phaser::init()
 				ewrt1[*e] = 0;
 				ewrt2[*e] = gr.ewrt[*e];
 				ewrtbg2 += gr.ewrt[*e];
-				// cout << "ale 2 in edge weight" << gr.ewrt[*e] << endl;
 			}
 			for (auto e = out.first; e!= out.second; e++)	
 			{
@@ -157,8 +150,8 @@ int phaser::init()
 }
 
 /*
-	assign edges to different gt
- 	TODO: did not consider hs
+**	assign edges to different gt
+** 	TODO: did not consider hs
 */ 
 int phaser::assign_gt()
 {
