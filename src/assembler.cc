@@ -182,15 +182,18 @@ int assembler::process(int n)
 		for(int i = 0; i < 3; i++) ts_nonfull.push_back(transcript_set(bb.chrm, 0.9));
 
 		bundle bd(bb);
-		bd.build(1, true);
-		bd.print(index++);
-		assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
-
-		bd.build(2, true);
-		bd.print(index++);				
-		assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
-		
-
+		if(bundle_mode == 1 || bundle_mode == 3)
+		{
+			bd.build(1, true);
+			bd.print(index++);
+			assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
+		}
+		if(bundle_mode == 2 || bundle_mode == 3)
+		{
+			bd.build(2, true);
+			bd.print(index++);				
+			assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
+		}
 		
 		// retrieve and filter transcripts
 		// i = {0, 1, 2}, corresponds to NONSPECIFIC/UNPHASED, ALLELE1, ALLELE2

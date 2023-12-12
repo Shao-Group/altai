@@ -133,6 +133,7 @@ bool use_opposite_phasing = false;
 bool break_unphased_allelic_phasing = true;
 
 // for controling
+int bundle_mode = 2;
 bool output_tex_files = false;
 bool output_graphviz_files = false;
 string fixed_gene_name = "";
@@ -449,6 +450,12 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--assemble_duplicates")
 		{
 			assemble_duplicates = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--bundle_mode")
+		{
+			bundle_mode = atoi(argv[i + 1]);
+			assert(bundle_mode == 1 || bundle_mode == 2 || bundle_mode == 3);
 			i++;
 		}
 		else if(string(argv[i]) == "--batch_bundle_size")

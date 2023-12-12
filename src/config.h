@@ -176,6 +176,7 @@ extern bool break_unphased_allelic_phasing;
 extern bool use_opposite_phasing;
 
 // for controling
+extern int bundle_mode;
 extern bool output_tex_files;
 extern bool output_graphviz_files;
 extern string fixed_gene_name;
