@@ -92,6 +92,13 @@ int phaser::init()
 	vwrtbg2 = 0;
 	ewrtbg1 = 0;       
     ewrtbg2 = 0;
+	
+	assert(gr.get_vertex_weight(0) == 0.0);
+	assert(gr.get_vertex_weight(gr.num_vertices() - 1) == 0.0);
+	vwrt1[0] = 0.0;
+	vwrt2[0] = 0.0;
+	vwrt1[gr.num_vertices() - 1] = 0.0;
+	vwrt2[gr.num_vertices() - 1] = 0.0;
 	for(int i = 0; i < gr.num_vertices(); i++)
 	{ 
 		if (gr.get_vertex_info(i).gt == ALLELE1)
@@ -112,6 +119,8 @@ int phaser::init()
 				ewrt2[*e] = 0;
 				ewrtbg1 += gr.ewrt[*e];
 			}
+			vwrt1[i] = gr.get_vertex_weight(i);
+			vwrt2[i] = 0.0;
 			vwrtbg1 += gr.get_vertex_weight(i);
 		}
 		else if (gr.get_vertex_info(i).gt == ALLELE2)
@@ -132,6 +141,8 @@ int phaser::init()
 				ewrt2[*e] = gr.ewrt[*e];
 				ewrtbg2 += gr.ewrt[*e];
 			}
+			vwrt1[i] = 0.0;
+			vwrt2[i] = gr.get_vertex_weight(i);
 			vwrtbg2 += gr.get_vertex_weight(i);
 		}
 		else assert(!gr.get_vertex_info(i).is_as_vertex() || gr.get_vertex_info(i).gt == UNPHASED);
