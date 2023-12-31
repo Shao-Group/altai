@@ -9,6 +9,7 @@ See LICENSE for licensing.
 #include "hyper_set.h"
 #include "vertex_info.h"
 #include "as_pos32.hpp"
+#include "specific_trsts.hpp"
 #include <limits.h>
 
 phaser::phaser(scallop& _sc, bool _is_allelic)
@@ -60,7 +61,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			//FIXME: revise graph
 			split_hs();
 			assemble_allelic_scallop(); 
-			assign_transcripts_gt();
+			assign_allele_spec_transcripts();
 		}
 	} 
 }
@@ -810,18 +811,46 @@ pair<double, double> phaser::normalize_epsilon(double x, double y)
 }
 
 /*
-*	Transcripts will be assigned gt w.r.t. allelic scallop where whey were assembled
-*	Nonspecific transcripts will be picked in transcript_set/filter
+**	Transcripts will be assigned gt w.r.t. allelic scallop where whey were assembled
+**	Transcripts in both alleles' scallop instances will be assigned NONSPECIFIC gt
+**	Nonspecific transcripts will be picked in `phaser::filter_allele_spec_transcripts()`
 */
-int phaser::assign_transcripts_gt()
+int phaser::assign_allele_spec_transcripts()
 {
 	for(transcript& t: trsts1) t.assign_gt(ALLELE1);
 	for(transcript& t: trsts2) t.assign_gt(ALLELE2);
 	for(transcript& t: non_full_trsts1) t.assign_gt(ALLELE1);
 	for(transcript& t: non_full_trsts2) t.assign_gt(ALLELE2);
-	if(verbose >= 2)
+
+	specific_trsts::get_allele_spec_trsts(trsts1, trsts2, min_allele_transcript_cov);
+	
+	/*	
+	//TODO:
+	if(recover_partial_tx_min_overlap_with_full_tx > 0)
 	{
-		printf("Assigned genotypes for the above collected transcripts.\n");
+		double f = recover_partial_tx_min_overlap_with_full_tx;
+		recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
+		recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
 	}
+	*/
+
+	if(verbose >= 2) printf("Assigned genotypes for the above collected transcripts.\n");
+
+	if(DEBUG_MODE_ON)
+	{
+		for(const transcript& t: trsts1) 
+		{
+			assert(t.gt != ALLELE2);
+			assert(t.gt == ALLELE1 || t.gt == NONSPECIFIC);
+		}
+		for(const transcript& t: trsts2) 
+		{
+			assert(t.gt != ALLELE1);
+			assert(t.gt == ALLELE2 || t.gt == NONSPECIFIC);
+		}
+		for(const transcript& t: non_full_trsts1) assert(t.gt == ALLELE1 || t.gt == NONSPECIFIC);
+		for(const transcript& t: non_full_trsts2) assert(t.gt == ALLELE2 || t.gt == NONSPECIFIC);
+	}
+
 	return 0;
 }

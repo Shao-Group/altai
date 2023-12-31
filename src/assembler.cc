@@ -27,6 +27,7 @@ See LICENSE for licensing.
 #include "vcf_data.h"
 #include "phaser.h"
 #include "util.h"
+#include "specific_trsts.hpp"
 
 assembler::assembler()
 {
@@ -130,18 +131,35 @@ int assembler::assemble()
 		nonfull_trsts[i] = ft1.trs;
 	}	
 
-	// get specific MULTI-exon trsts; single-exon transcripts are all discarded
-	specific_full_trsts[1] = specific_trsts::exclusive_of_1(trsts[1], trsts[2]);
-	specific_full_trsts[2] = specific_trsts::exclusive_of_1(trsts[2], trsts[1]);
-	specific_full_trsts[0] = specific_trsts::intersection_of(trsts[1], trsts[2]);
-	for(transcript& t: specific_full_trsts[0]) t.make_non_specific();
+	// get specific trsts
+	specific_full_trsts.clear();
 
-	if(recover_partial_tx_min_overlap_with_full_tx > 0)
+	for(transcript t: trsts[1])
 	{
-		double f = recover_partial_tx_min_overlap_with_full_tx;
-		recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
-		recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
+		if(t.gt == ALLELE1) specific_full_trsts[1].push_back(t);
+		else if(t.gt == NONSPECIFIC || t.gt == UNPHASED) specific_full_trsts[0].push_back(t);
 	}
+	for(transcript t: trsts[2])
+	{
+		if(t.gt == ALLELE2) specific_full_trsts[2].push_back(t); 			
+		else if(t.gt == NONSPECIFIC || t.gt == UNPHASED) specific_full_trsts[0].push_back(t);
+	}
+
+	for(transcript& t: specific_full_trsts[0]) t.make_non_specific();
+	filter ft0(specific_full_trsts[0]);
+	ft0.merge_single_exon_transcripts();
+	ft0.filter_length_coverage();
+	ft0.remove_nested_transcripts();
+	specific_full_trsts[0].clear();
+	specific_full_trsts[0] = ft0.trs;
+
+	//TODO: nf trsts
+	// if(recover_partial_tx_min_overlap_with_full_tx > 0)
+	// {
+	// 	double f = recover_partial_tx_min_overlap_with_full_tx;
+	// 	recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
+	// 	recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
+	// }
 
 	write();
 	
@@ -176,8 +194,8 @@ int assembler::process(int n)
 
 		// transcript_set ts1(bb.chrm, 0.9);	
 		// transcript_set ts2(bb.chrm, 0.9);		
-		vector<transcript_set> ts_full;		 	// full-length set; [0]NONSPECIFIC/UNPHASED, [1]ALLELE1, [2]ALLELE2
-		vector<transcript_set> ts_nonfull;		// non-full-length set; [0]NONSPECIFIC/UNPHASED, [1]ALLELE1, [2]ALLELE2
+		vector<transcript_set> ts_full;		 	// full-length set; [0]merged, [1]ALLELE1, [2]ALLELE2
+		vector<transcript_set> ts_nonfull;		// non-full-length set; [0]merged, [1]ALLELE1, [2]ALLELE2
 		for(int i = 0; i < 3; i++) ts_full.push_back(transcript_set(bb.chrm, 0.9));
 		for(int i = 0; i < 3; i++) ts_nonfull.push_back(transcript_set(bb.chrm, 0.9));
 
@@ -195,42 +213,54 @@ int assembler::process(int n)
 			assemble(bd.gr, bd.hs, bb.is_allelic, ts_full, ts_nonfull);
 		}
 		
-		// retrieve and filter transcripts
-		// i = {0, 1, 2}, corresponds to NONSPECIFIC/UNPHASED, ALLELE1, ALLELE2
-		for(int i = 0; i < 3; i++)
-		{
-			if (DEBUG_MODE_ON)	assert(trsts.size() == 3 && nonfull_trsts.size() == 3 && specific_full_trsts.size() == 3);
-			
-			int sdup = assemble_duplicates / 1 + 1;
-			int mdup = assemble_duplicates / 2 + 0;
-			vector<transcript> gv1 = ts_full[i].get_transcripts(sdup, mdup); 
-			vector<transcript> gv2 = ts_nonfull[i].get_transcripts(sdup, mdup);
+		// get allele spec transcripts again
+		//TODO: deal with nonfull
+		int sdup = assemble_duplicates / 1 + 1;
+		int mdup = assemble_duplicates / 2 + 0;
+		vector<transcript> tx0 = ts_full[0].get_transcripts(sdup, mdup); 
+		vector<transcript> tx1 = ts_full[1].get_transcripts(sdup, mdup); 
+		vector<transcript> tx2 = ts_full[2].get_transcripts(sdup, mdup); 
+		specific_trsts::get_allele_spec_trsts(tx1, tx2, min_allele_transcript_cov);
 
-			for(int k = 0; k < gv1.size(); k++)
+
+		// retrieve and filter transcripts
+		// i = {0, 1, 2}, corresponds to merged, ALLELE1, ALLELE2
+		for(int i = 0; i <= 2; i++)
+		{
+			genotype gg = UNPHASED;
+			if (DEBUG_MODE_ON)	assert(trsts.size() == 3 && nonfull_trsts.size() == 3 && specific_full_trsts.size() == 3);
+			if (i == 0) gg = NONSPECIFIC;
+			if (i == 1) gg = ALLELE1;
+			if (i == 2) gg = ALLELE2;
+			
+			vector<transcript>* gv1;
+			if(i == 0) gv1 = &tx0;
+			else if(i == 1) gv1 = &tx1;
+			else if(i == 2) gv1 = &tx2;
+			else assert(0);
+
+			for(int k = 0; k < gv1->size(); k++)
 			{
-				if(gv1[k].exons.size() >= 2) gv1[k].coverage /= (1.0 * assemble_duplicates);
-			}
-			for(int k = 0; k < gv2.size(); k++) 
-			{
-				if(gv2[k].exons.size() >= 2) gv2[k].coverage /= (1.0 * assemble_duplicates);
+				if((gv1->at(k)).exons.size() >= 2) gv1->at(k).coverage /= (1.0 * assemble_duplicates);
+				if((i == 1 || i == 2) && DEBUG_MODE_ON) assert(gv1->at(k).gt == gg || gv1->at(k).gt == NONSPECIFIC);
 			}
 
 			if (use_filter)
 			{
-				filter ft1(gv1);
+				filter ft1(*gv1);
 				ft1.filter_length_coverage();
 				ft1.remove_nested_transcripts();
 				if(ft1.trs.size() >= 1) trsts[i].insert(trsts[i].end(), ft1.trs.begin(), ft1.trs.end());
 
-				filter ft2(gv2);
-				ft2.filter_length_coverage();
-				ft2.remove_nested_transcripts();
-				if(ft2.trs.size() >= 1) nonfull_trsts[i].insert(nonfull_trsts[i].end(), ft2.trs.begin(), ft2.trs.end());
+				// filter ft2(gv2);
+				// ft2.filter_length_coverage();
+				// ft2.remove_nested_transcripts();
+				// if(ft2.trs.size() >= 1) nonfull_trsts[i].insert(nonfull_trsts[i].end(), ft2.trs.begin(), ft2.trs.end());
 			}
 			else
 			{
-				trsts[i].insert(trsts[i].end(), gv1.begin(), gv1.end());
-				nonfull_trsts[i].insert(nonfull_trsts[i].end(), gv2.begin(), gv2.end());
+				trsts[i].insert(trsts[i].end(), gv1->begin(), gv1->end());
+				// nonfull_trsts[i].insert(nonfull_trsts[i].end(), gv2.begin(), gv2.end());
 			}
 		}		
 	}
@@ -257,6 +287,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 		
 		for(int r = 0; r < assemble_duplicates; r++)
 		{
+			// 0: merged; 1: ALLELE1; 2: ALLELE2 
 			transcript_set fl_add_0(chrm, 0.9);		// full length allele 0, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD := count is always 1, cov +=
 			transcript_set fl_add_1(chrm, 0.9);		// full length allele 1, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD
 			transcript_set fl_add_2(chrm, 0.9);		// full length allele 2, mode1 = mode2 = TRANSCRIPT_COUNT_ONE_COVERAGE_ADD

@@ -146,6 +146,7 @@ bool to_revise_splice_graph = true;
 bool skip_resolve_hyper_edge = true;
 bool skip_resolve_smallest = true;
 bool use_filter = true;
+double min_allele_transcript_cov = 0.1;
 double recover_partial_tx_min_overlap_with_full_tx = -1;
 
 // for debugging
@@ -576,6 +577,11 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "--not_use_filter")
 		{
 			use_filter = false;
+		}
+		else if(string(argv[i]) == "--min_allele_transcript_cov")
+		{
+			min_allele_transcript_cov = atof(argv[i + 1]);
+			i++;
 		}
 		else if(string(argv[i]) == "--recover_partial_tx_min_overlap_with_full_tx")
 		{

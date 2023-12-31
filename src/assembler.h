@@ -40,7 +40,7 @@ private:
 	bool terminate;
 	int qcnt;
 	double qlen;
-	vector< vector<transcript> > trsts;
+	vector< vector<transcript> > trsts;				  // 0: merged; 1: ALLELE1; 2: ALLELE2
 	vector< vector<transcript> > nonfull_trsts;
 	vector< vector<transcript> > specific_full_trsts; // 0: nonspecific; 1: ALLELE1 spec; 2: ALLELE2 spec
 	vector<transcript> recovered_allele1;

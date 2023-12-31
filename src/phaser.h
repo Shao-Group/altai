@@ -74,7 +74,7 @@ private:
     int split_hs();
     int assemble_allelic_scallop();     
     int allelic_transform(scallop& sc, splice_graph* pgr, MEE& x2y);
-    int assign_transcripts_gt();
+    int assign_allele_spec_transcripts();
 
 private:
     pair<double, double> get_as_ratio(int i);

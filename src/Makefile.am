@@ -43,4 +43,5 @@ altai_SOURCES = splice_graph.h splice_graph.cc \
 				  vcf_data.h vcf_data.cc \
 				  as_pos.hpp as_pos.cpp \
 				  as_pos32.hpp as_pos32.cpp \
+				  specific_trsts.hpp specific_trsts.cc \
 				  main.cc
