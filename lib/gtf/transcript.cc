@@ -335,7 +335,8 @@ int transcript::compare1(const transcript &t, double single_exon_overlap) const
 
 int transcript::extend_bounds(const transcript &t)
 {
-	assert(gt_implicit_same(gt, t.gt));
+	// assert(gt_implicit_same(gt, t.gt));
+	assert(!gt_conflict(gt, t.gt));
 	if(exons.size() == 0) return 0;
 	if(t.exons.front().first < exons.front().first) exons.front().first = t.exons.front().first;
 	if(t.exons.back().second > exons.back().second) exons.back().second = t.exons.back().second;
