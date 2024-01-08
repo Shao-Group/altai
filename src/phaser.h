@@ -71,6 +71,7 @@ private:
     int assign_gt();
     int split_gr();
     int refine_allelic_graphs();
+    int smooth_allelic_graphs();
     int split_hs();
     int assemble_allelic_scallop();     
     int allelic_transform(scallop& sc, splice_graph* pgr, MEE& x2y);

@@ -554,6 +554,76 @@ int phaser::refine_allelic_graphs()
 }
 
 /*
+** smooth allelic graphs by giving 0.9 weight to all vertices and edges less than that
+** so that PESUDO_VERTEX and edges have an adequote weight
+*/
+int phaser::smooth_allelic_graphs()
+{
+	const double EDGE_SMOOTH_WEIGHT = 0.9;
+	const double VERTEX_SMOOTH_WEIGHT = 0.9;
+	vector<splice_graph*> gr_pointers{pgr1, pgr2};
+	for (splice_graph* pgr: gr_pointers)
+	{
+		PEEI pei;
+		edge_iterator it1, it2;
+
+		// smooth edges
+		for (pei = pgr->edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++) 
+		{
+			edge_descriptor e = *it1;
+			assert(e != null_edge);
+			if(pgr->get_edge_weight(e) >= EDGE_SMOOTH_WEIGHT) continue;
+			edge_info ei = pgr->get_edge_info(e);
+			ei.weight = EDGE_SMOOTH_WEIGHT;
+			pgr->set_edge_weight(e, EDGE_SMOOTH_WEIGHT);
+			pgr->set_edge_info(e, ei);
+		}
+
+		// smooth vertices
+		for(int i = 1; i < pgr->num_vertices() - 1; i++)
+		{
+			if(pgr->degree(i) == 0) continue;
+			if(pgr->get_vertex_weight(i) >= VERTEX_SMOOTH_WEIGHT) continue;
+			vertex_info vi = pgr->get_vertex_info(i);
+			pgr->set_vertex_weight(i, VERTEX_SMOOTH_WEIGHT);
+			pgr->set_vertex_info(i, vi);
+		}
+
+		pgr->edge_integrity_examine();
+		pgr->edge_integrity_enforce();
+	}
+	
+	if(DEBUG_MODE_ON && print_phaser_detail) 
+	{
+		cout << "phaser::smooth_allelic_graphs done" << endl;
+		pgr1->edge_integrity_examine();
+		pgr2->edge_integrity_examine();
+		
+		cout << "pgr1-smooth\tsize:" << pgr1->ewrt.size() << "\taddr-" << pgr1 << endl;
+		set<edge_descriptor> gr1edges;
+		for (auto i:pgr1->ewrt) 
+		{
+			cout << "\t" << i.first << ": " << i.second << " " << endl;
+			gr1edges.insert(i.first);
+		}
+		if (gr1edges.size() == 0 && ewrtbg1 > 0.05) cerr << pgr1->gid << "(ale1) is empty after smoothing but has non-empty AS weight" << endl;
+
+		cout << "pgr2-smooth\tsize" << pgr2->ewrt.size() << "\taddr-" << pgr2 << endl;
+		set<edge_descriptor> gr2edges;
+		for (auto i:pgr2->ewrt) 
+		{
+			cout << "\t" << i.first << ": " << i.second << " " << endl;
+			assert(gr1edges.find(i.first) == gr1edges.end());
+			gr2edges.insert(i.first);
+		}
+		if (gr2edges.size() == 0 && ewrtbg2 > 0.05) cerr << pgr1->gid << "(ale2) is empty after smoothing but has non-empty AS weight" << endl;
+	}
+
+	return 0;
+}
+
+
+/*
 **	split hs0 to two allelic hs1/hs2
 **	via keeping hyper_edge whose all edges' weight >= 1 in each allelic graph
 **	TODO: break hyper_edge into pieces if the drop of weight is at AS pos
