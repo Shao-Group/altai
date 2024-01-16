@@ -177,6 +177,7 @@ extern bool use_opposite_phasing;
 
 // for controling
 extern int bundle_mode;
+extern bool phaser_smooth;
 extern bool output_tex_files;
 extern bool output_graphviz_files;
 extern string fixed_gene_name;

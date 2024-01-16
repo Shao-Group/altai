@@ -58,6 +58,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			assign_gt();
 			split_gr();
 			refine_allelic_graphs();
+			if(phaser_smooth) smooth_allelic_graphs();
 			//FIXME: revise graph
 			split_hs();
 			assemble_allelic_scallop(); 
@@ -490,7 +491,7 @@ int phaser::split_gr()
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
-int phaser::refine_allelic_graphs()
+int phaser::refine_allelic_graphs() // FIXME:
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
 	for (splice_graph* pgr: gr_pointers)
