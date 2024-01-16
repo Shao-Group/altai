@@ -57,6 +57,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			
 			assign_gt();
 			split_gr();
+			remove_low_depth_var_vertex();
 			refine_allelic_graphs();
 			if(phaser_smooth) smooth_allelic_graphs();
 			//FIXME: revise graph
@@ -488,6 +489,40 @@ int phaser::split_gr()
 	return 0;
 }
 
+int phaser::remove_low_depth_var_vertex()
+{
+	map<pair<int, int>, vector<int> > pos_allele;
+
+	for(int i = 1; i < gr.num_vertices() - 1; i ++) 
+	{
+		vertex_info vi = gr.get_vertex_info(i);
+		if(!gt_as(vi.gt)) continue;
+		pair<int32_t, int32_t> pospair {vi.lpos.p32, vi.rpos.p32};
+		auto it = pos_allele.find(pospair);
+		if (it == pos_allele.end()) pos_allele.insert({pospair, {i}});
+		else it->second.push_back(i);
+	}
+
+	for(const auto& pi: pos_allele)
+	{
+		assert(pi.second.size() >= 1);
+		if(pi.second.size() >= 2) continue;
+		
+		int vertex_idx = pi.second[0];
+		const int LOW_DEPTH_GEOMETRIC_DIST = 3;
+		if(gr.get_vertex_weight(vertex_idx) > LOW_DEPTH_GEOMETRIC_DIST) continue;
+		
+		vertex_info vi1 = pgr1->get_vertex_info(vertex_idx);
+		vi1.gt = NONSPECIFIC;
+		pgr1->set_vertex_info(vertex_idx, vi1);
+
+		vertex_info vi2 = pgr2->get_vertex_info(vertex_idx);
+		vi2.gt = NONSPECIFIC;
+		pgr1->set_vertex_info(vertex_idx, vi2);
+	}
+
+	return 0;
+}
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
