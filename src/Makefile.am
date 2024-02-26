@@ -3,16 +3,14 @@ bin_PROGRAMS = altai
 GTF_INCLUDE = $(top_srcdir)/lib/gtf
 UTIL_INCLUDE = $(top_srcdir)/lib/util
 GRAPH_INCLUDE = $(top_srcdir)/lib/graph
-GUROBI_INCLUDE = $(GUROBI_HOME)/include
 
 GTF_LIB = $(top_builddir)/lib/gtf
 UTIL_LIB = $(top_builddir)/lib/util
 GRAPH_LIB = $(top_builddir)/lib/graph
-GUROBI_LIB = $(GUROBI_HOME)/lib
 
-altai_CPPFLAGS = -I$(GTF_INCLUDE) -I$(GRAPH_INCLUDE) -I$(UTIL_INCLUDE) -I$(GUROBI_INCLUDE)
-altai_LDFLAGS = -pthread -L$(GTF_LIB) -L$(GRAPH_LIB) -L$(UTIL_LIB) -L$(GUROBI_LIB)
-altai_LDADD = -lgtf -lgraph -lutil -lgurobi_c++ -lgurobi91 
+altai_CPPFLAGS = -I$(GTF_INCLUDE) -I$(GRAPH_INCLUDE) -I$(UTIL_INCLUDE) 
+altai_LDFLAGS = -pthread -L$(GTF_LIB) -L$(GRAPH_LIB) -L$(UTIL_LIB) 
+altai_LDADD = -lgtf -lgraph -lutil  
 
 altai_SOURCES = splice_graph.h splice_graph.cc \
 				  super_graph.h super_graph.cc \
