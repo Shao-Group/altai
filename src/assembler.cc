@@ -118,7 +118,7 @@ int assembler::assemble()
 	if(DEBUG_MODE_ON && trsts[0].size() < 1 && trsts[1].size() < 1 && trsts[2].size() < 1) throw runtime_error("No AS transcript found!");
 
 	// filter each allele
-	for(int i = 0; i < 3; i++)
+	/* for(int i = 0; i < 3; i++)
 	{
 		if (! use_filter) break;
 
@@ -129,7 +129,7 @@ int assembler::assemble()
 		filter ft1(nonfull_trsts[i]);
 		ft1.merge_single_exon_transcripts();
 		nonfull_trsts[i] = ft1.trs;
-	}	
+	}	 */
 
 	// get specific trsts
 	specific_full_trsts.clear();
@@ -147,9 +147,9 @@ int assembler::assemble()
 
 	for(transcript& t: specific_full_trsts[0]) t.make_non_specific();
 	filter ft0(specific_full_trsts[0]);
-	ft0.merge_single_exon_transcripts();
+	/* ft0.merge_single_exon_transcripts();
 	ft0.filter_length_coverage();
-	ft0.remove_nested_transcripts();
+	ft0.remove_nested_transcripts(); */
 	specific_full_trsts[0].clear();
 	specific_full_trsts[0] = ft0.trs;
 
@@ -160,6 +160,8 @@ int assembler::assemble()
 	// 	recovered_allele1 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[1], f, true);
 	// 	recovered_allele2 = specific_trsts::recover_full_from_partial_transcripts(trsts[0], nonfull_trsts[2], f, true);
 	// }
+
+	trsts[0] = trsts_collective;
 
 	write();
 	
@@ -215,8 +217,10 @@ int assembler::process(int n)
 		
 		// get allele spec transcripts again
 		//TODO: deal with nonfull
-		int sdup = assemble_duplicates / 1 + 1;
-		int mdup = assemble_duplicates / 2 + 0;
+		// int sdup = assemble_duplicates / 1 + 1;
+		// int mdup = assemble_duplicates / 2 + 0;
+		int sdup = 0;
+		int mdup = 0;
 		vector<transcript> tx0 = ts_full[0].get_transcripts(sdup, mdup); 
 		vector<transcript> tx1 = ts_full[1].get_transcripts(sdup, mdup); 
 		vector<transcript> tx2 = ts_full[2].get_transcripts(sdup, mdup); 
@@ -245,6 +249,7 @@ int assembler::process(int n)
 				if((i == 1 || i == 2) && DEBUG_MODE_ON) assert(!(gt_conflict(gv1->at(k).gt, gg)));
 			}
 
+			/*
 			if (use_filter)
 			{
 				filter ft1(*gv1);
@@ -258,6 +263,7 @@ int assembler::process(int n)
 				// if(ft2.trs.size() >= 1) nonfull_trsts[i].insert(nonfull_trsts[i].end(), ft2.trs.begin(), ft2.trs.end());
 			}
 			else
+			*/
 			{
 				trsts[i].insert(trsts[i].end(), gv1->begin(), gv1->end());
 				// nonfull_trsts[i].insert(nonfull_trsts[i].end(), gv2.begin(), gv2.end());
@@ -301,20 +307,23 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			string gid = "gene." + tostring(index) + "." + tostring(k) + "." + tostring(r);
 			gr.gid = gid;
 
+			// decompose a merged graph
+			scallop sc0(gr, hs, false, false);
+			sc0.assemble(false);
+			trsts_collective.insert(trsts_collective.begin(), sc0.trsts.begin(), sc0.trsts.end());
+
 			// partial decomp of non-AS nodes
 			scallop sc(gr, hs, r == 0 ? false : true, true);
 			sc.assemble(is_allelic);
-			
 		
 			if(verbose >= 2)
 			{
 				printf("assembly with r = %d; %lu transcripts in partial decomposition of merged splice graph\n", r, sc.trsts.size());
-				// for(int i = 0; i < trsts1.size(); i++) trsts1[i].write(cout);
 			}
 		
-
 			for(const transcript& _t: sc.trsts)
 			{
+				trsts_collective.push_back(_t);
 				fl_add_0.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 				if(ALLELE2 != _t.gt) fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 				if(ALLELE1 != _t.gt) fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
@@ -337,9 +346,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			if(verbose >= 2)
 			{
 				printf("assembly with r = %d; another %lu transcripts in splice graph of ALLELE1\n", r, trsts1.size());
-				// for(int i = 0; i < trsts1.size(); i++) trsts1[i].write(cout)
 				printf("assembly with r = %d; another %lu transcripts in splice graph of ALLELE2\n", r, trsts2.size());
-				// for(int i = 0; i < sc2.trsts.size(); i++) sc2.trsts[i].write(cout);
 			}
 
 			// add transcripts to corresponding transcript_set
@@ -347,6 +354,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			{
 				transcript t0(_t);
 				t0.make_non_specific();
+				trsts_collective.push_back(t0);
 				fl_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 				fl_add_1.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}
@@ -361,6 +369,7 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			{
 				transcript t0(_t);
 				t0.make_non_specific();
+				trsts_collective.push_back(t0);
 				fl_add_0.add(t0, 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 				fl_add_2.add(transcript(_t), 1, 0, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD, TRANSCRIPT_COUNT_ONE_COVERAGE_ADD);
 			}

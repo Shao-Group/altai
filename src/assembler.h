@@ -46,6 +46,8 @@ private:
 	vector<transcript> recovered_allele1;
 	vector<transcript> recovered_allele2;
 
+	vector<transcript> trsts_collective;				  // high recall, low precision; 0: merged; 1: ALLELE1; 2: ALLELE2
+
 public:
 	int assemble();
 
