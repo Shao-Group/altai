@@ -308,9 +308,16 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			gr.gid = gid;
 
 			// decompose a merged graph
-			scallop sc0(gr, hs, false, false);
+			splice_graph gr_copy(gr);
+			hyper_set hs_copy(hs);
+			scallop sc0(gr_copy, hs_copy, false, false);
 			sc0.assemble(false);
-			trsts_collective.insert(trsts_collective.begin(), sc0.trsts.begin(), sc0.trsts.end());
+			for(const transcript& _t: sc0.trsts)
+			{
+				transcript t0(_t);
+				t0.make_non_specific();
+				trsts_collective.push_back(t0);
+			}
 
 			// partial decomp of non-AS nodes
 			scallop sc(gr, hs, r == 0 ? false : true, true);
