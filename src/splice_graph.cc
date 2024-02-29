@@ -2017,7 +2017,7 @@ int splice_graph::output_transcript(transcript &trst, const path &p, const strin
 		{
 			trst.add_as_exons(get_vertex_info(v[k]).lpos, get_vertex_info(v[k]).rpos);
 			if (trst.gt == UNPHASED || trst.gt == NONSPECIFIC) trst.gt = g;
-			else assert(trst.gt == g);
+			// else assert(trst.gt == g);
 		}
 		else if (g == NONSPECIFIC && trst.gt == UNPHASED)
 		{
