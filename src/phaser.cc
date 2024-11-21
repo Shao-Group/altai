@@ -511,7 +511,11 @@ int phaser::refine_allelic_graphs()
 			{
 				if(pgr->degree(i) == 0) continue;
 				if(pgr->in_degree(i) >= 1 && pgr->out_degree(i) >= 1) continue;
-				pgr->clear_vertex(i);
+				// pgr->clear_vertex(i);
+				vertex_info vi = pgr->get_vertex_info(i);
+				vi.type = REVIVAL_AS_UNDERSEQ;
+				pgr->set_vertex_info(i, vi);
+				pgr->add_edge(i, pgr->num_vertices() -1);
 				b = true;
 			}
 			if(b == false) break;
