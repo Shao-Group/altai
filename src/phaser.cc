@@ -589,13 +589,13 @@ int phaser::split_hs()
 		}
 	}
 
-	for (int i = 0; i < 2; i++)
+	for (int allele_index = 0; allele_index < 2; allele_index++)
 	{
 		// only two potential alleles 
-		assert (i == 0 || i == 1); 
-		hyper_set*    phs      = (i == 0)? phs1  : phs2;
-		MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
-		genotype	  gt 	   = (i == 0)? ALLELE1 : ALLELE2;
+		assert (allele_index == 0 || allele_index == 1); 
+		hyper_set*    phs      = (allele_index == 0)? phs1  : phs2;
+		MED&          ewrt_cur = (allele_index == 0)? ewrt1 : ewrt2;
+		genotype	  gt 	   = (allele_index == 0)? ALLELE1 : ALLELE2;
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
