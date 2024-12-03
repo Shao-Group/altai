@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -28,24 +30,31 @@ typedef map<int, int> MI;
 class scallop
 {
 public:
-	scallop();
-	scallop(const splice_graph &gr, const hyper_set &hs);
+	scallop(splice_graph &gr, const hyper_set &hs, bool r = false, bool keep_as = true);                      // sc w. both alleles 
+	scallop(splice_graph* gr, const hyper_set &hs, const scallop &sc, bool r = false, bool keep_as = false);  // sc for each allele
 	virtual ~scallop();
 
 public:
 	int assemble(bool is_allelic);
+	int assemble_continue(bool is_allelic);
+	int transform(splice_graph* pgr, const VE& old_i2e, const MEE& x2y);  // allelic transform
 
 public:
-	splice_graph gr;					// splice graph
+	splice_graph& gr;					// splice graph
 	MEI e2i;							// edge map, from edge to index
 	VE i2e;								// edge map, from index to edge
+	bool random_ordering;				// whether using random ordering
 	MEV mev;							// super edges
 	vector<int> v2v;					// vertex map
 	hyper_set hs;						// hyper edges
 	int round;							// iteration
-	set<int> nonzeroset;				// vertices with degree >= 1
+	bool keep_as_nodes;					// true: decompose ns nodes only, false: decompose all nodes
+
+	set<int> asnonzeroset;			    // vertices with degree >= 1 && !vi.is_ordinary_vertex()
+	set<int> nsnonzeroset;				// vertices with degree >= 1 &&  vi.is_ordinary_vertex()
 	vector<path> paths;					// predicted paths
 	vector<transcript> trsts;			// predicted transcripts
+	vector<transcript> non_full_trsts;		// predicted non full length transcripts
 
 private:
 	// init
@@ -53,9 +62,8 @@ private:
 	int init_vertex_map();
 	int init_super_edges();
 	int init_inner_weights();
-	int init_nonzeroset();
-	int add_pseudo_hyper_edges();
-	int refine_splice_graph();
+	int init_vertex_astype();
+	int init_nonzeroset(bool keep_as_nodes);
 
 	// resolve iteratively
 	bool resolve_trivial_vertex(int type, double jump_ratio);
@@ -91,12 +99,17 @@ private:
 	int compute_length(const path &p);
 	int greedy_decompose();
 
+	// debug
+	bool assert_debug();
+	bool assert_mev_gr_edge_descriptor_bijection();
+	bool assert_mev_super_set_gr_edge_descriptor();
+
 	// stats, print, and draw
 	int print();
 	int stats();
-	int summarize_vertices();
 	int draw_splice_graph(const string &file);
 	vector<int> topological_sort();
+	int clear();
 };
 
 #endif

@@ -10,6 +10,8 @@ See LICENSE for licensing.
 #include <string>
 #include "as_pos.hpp"
 
+using namespace std;
+
 class as_pos32
 {
     public:
@@ -47,6 +49,9 @@ class as_pos32
         bool operator<=(as_pos32 a) const                   { return (*this)< a || (*this) ==a; }
         bool operator>=(as_pos32 a) const                   { return (*this)> a || (*this) ==a; }     
         operator int32_t() const                            { return p32;}
+
+        string aspos32string() const; 
+        static bool inside_strict(as_pos32 l1, as_pos32 r1, as_pos32 l2, as_pos32 r2); // true if l2/r2 is strictly inside l1/r1
 };
 
 

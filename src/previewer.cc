@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Coral
+(c) 2019 by Mingfu Shao and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -12,25 +14,48 @@ See LICENSE for licensing.
 #include <cstring>
 
 #include "previewer.h"
+#include "bundle_bridge.h"
+#include "bridger.h"
 #include "config.h"
-#include "gurobi_c++.h"
+// #include "gurobi_c++.h"
 
-previewer::previewer()
+int previewer::open_file()
 {
     sfn = sam_open(input_file.c_str(), "r");
     hdr = sam_hdr_read(sfn);
     b1t = bam_init1();
-	GRBEnv env = GRBEnv(); // test Gurobi
+	// GRBEnv env = GRBEnv(); // check Gurobi
+	return 0;
 }
 
-previewer::~previewer()
+int previewer::close_file()
 {
     bam_destroy1(b1t);
     bam_hdr_destroy(hdr);
     sam_close(sfn);
+	return 0;
 }
 
 int previewer::preview()
+{
+	if(library_type == EMPTY)
+	{
+		open_file();
+		solve_strandness();
+		close_file();
+	}
+
+	if(insertsize_median < 0)
+	{
+		open_file();
+		solve_insertsize();
+		close_file();
+	}
+
+	return 0;
+}
+
+int previewer::solve_strandness()
 {
 	int total = 0;
 	int single = 0;
@@ -40,6 +65,8 @@ int previewer::preview()
 	int second = 0;
 	vector<int> sp1;
 	vector<int> sp2;
+
+	int hid = 0;
 
     while(sam_read1(sfn, hdr, b1t) >= 0)
 	{
@@ -59,7 +86,8 @@ int previewer::preview()
 		char buf[1024];
 		strcpy(buf, hdr->target_name[p.tid]);
 
-		hit ht(b1t, string(buf));
+		// hit ht(b1t, string(buf));
+		hit ht(b1t, string(buf), hid++);
 		ht.set_tags(b1t);
 
 		if((ht.flag & 0x1) >= 1) paired ++;
@@ -110,11 +138,196 @@ int previewer::preview()
 
 	if(verbose >= 1)
 	{
-		printf("preview: reads = %d, single = %d, paired = %d, spliced reads = %d, first = %d, second = %d, inferred library_type = %s, given library_type = %s\n",
-			total, single, paired, sp, first, second, vv[s1 + 1].c_str(), vv[library_type + 1].c_str());
+		printf("preview strandness: sampled reads = %d, single = %d, paired = %d, first = %d, second = %d, inferred = %s, given = %s\n",
+			total, single, paired, first, second, vv[s1 + 1].c_str(), vv[library_type + 1].c_str());
 	}
 
 	if(library_type == EMPTY) library_type = s1;
 
 	return 0;
+}
+
+int previewer::solve_insertsize()
+{
+	map<int, int> m;
+	bundle_base bb1;
+	bundle_base bb2;
+	bb1.strand = '+';
+	bb2.strand = '-';
+	int cnt = 0;
+	int hid = 0;
+
+    while(sam_read1(sfn, hdr, b1t) >= 0)
+	{
+		bam1_core_t &p = b1t->core;
+
+		if((p.flag & 0x4) >= 1) continue;										// read is not mapped
+		if((p.flag & 0x100) >= 1) continue;										// secondary alignment
+		if(p.n_cigar > max_num_cigar) continue;									// ignore hits with more than max-num-cigar types
+		if(p.qual < min_mapping_quality) continue;								// ignore hits with small quality
+		if(p.n_cigar < 1) continue;												// should never happen
+		
+		char buf[1024];
+		strcpy(buf, hdr->target_name[p.tid]);
+
+		hit ht(b1t, string(buf), hid++);
+
+		ht.set_tags(b1t);
+		ht.set_strand();
+
+		// truncate
+		if(ht.tid != bb1.tid || ht.pos > bb1.rpos + min_bundle_gap)
+		{
+			cnt += process_bundle(bb1, m);
+			bb1.clear();
+			bb1.strand = '+';
+		}
+		if(ht.tid != bb2.tid || ht.pos > bb2.rpos + min_bundle_gap)
+		{
+			cnt += process_bundle(bb2, m);
+			bb2.clear();
+			bb2.strand = '-';
+		}
+
+		//if(cnt >= 500000) break;
+		if(cnt >= 1000000) break;
+
+		// add hit
+		if(uniquely_mapped_only == true && ht.nh != 1) continue;
+		if(library_type != UNSTRANDED && ht.strand == '+' && ht.xs == '-') continue;
+		if(library_type != UNSTRANDED && ht.strand == '-' && ht.xs == '+') continue;
+		if(library_type != UNSTRANDED && ht.strand == '.' && ht.xs != '.') ht.strand = ht.xs;
+		if(library_type != UNSTRANDED && ht.strand == '+') bb1.add_hit(ht);
+		if(library_type != UNSTRANDED && ht.strand == '-') bb2.add_hit(ht);
+		if(library_type == UNSTRANDED && ht.xs == '.') bb1.add_hit(ht);
+		if(library_type == UNSTRANDED && ht.xs == '.') bb2.add_hit(ht);
+		if(library_type == UNSTRANDED && ht.xs == '+') bb1.add_hit(ht);
+		if(library_type == UNSTRANDED && ht.xs == '-') bb2.add_hit(ht);
+	}
+
+	int total = 0;
+	for(map<int, int>::iterator it = m.begin(); it != m.end(); it++)
+	{
+		total += it->second;
+	}
+
+	if(total < 100) // single-cell data may have low number of paired-end reads
+	//if(total < 10000)
+	{
+		printf("not enough paired-end reads to create the profile (%d collected)\n", total);
+		exit(0);
+	}
+
+	int n = 0;
+	insertsize_ave = 0;
+	double sx2 = 0;
+	insertsize_low = -1;
+	insertsize_high = -1;
+	insertsize_median = -1;
+	for(auto it = m.begin(); it != m.end(); it++)
+	{
+		n += it->second;
+		if(n >= 0.5 * total && insertsize_median < 0) insertsize_median = it->first;
+		insertsize_ave += it->second * it->first;
+		sx2 += it->second * it->first * it->first;
+		if(insertsize_low == -1 && n >= 1.0 * insertsize_low_percentile * total) insertsize_low = it->first;
+		if(insertsize_high == -1 && n >= 1.0 * insertsize_high_percentile * total) insertsize_high = it->first;
+		if(n >= 0.999 * total) break;
+	}
+	
+	insertsize_ave = insertsize_ave * 1.0 / n;
+	insertsize_std = sqrt((sx2 - n * insertsize_ave * insertsize_ave) * 1.0 / n);
+
+	if(verbose >= 1)
+	{
+		printf("preview insertsize: sampled reads = %d, isize = %.2lf +/- %.2lf, median = %d, low = %d, high = %d\n", 
+				total, insertsize_ave, insertsize_std, insertsize_median, insertsize_low, insertsize_high);
+	}
+	
+	/*
+	insertsize_profile.assign(insertsize_high, 1);
+	n = insertsize_high;
+	for(map<int, int>::iterator it = m.begin(); it != m.end(); it++)
+	{
+		if(it->first >= insertsize_high) continue;
+		insertsize_profile[it->first] += it->second;
+		n += it->second;
+	}
+
+	for(int i = 0; i < insertsize_profile.size(); i++)
+	{
+		insertsize_profile[i] = insertsize_profile[i] * 1.0 / n;
+		printf("insertsize_profile %d %.8lf\n", i, insertsize_profile[i]);
+	}
+
+	further relax bounds of insertsize
+	insertsize_low = insertsize_low / 1.15;
+	insertsize_high = insertsize_high * 1.15;
+	*/
+
+	return 0;
+}
+
+int previewer::process_bundle(bundle_base &bb, map<int, int>& m)
+{
+	if(bb.hits.size() < 50) return 0;
+	if(bb.tid < 0) return 0;
+
+	int cnt = 0;
+
+	bb.buildbase();
+
+	bundle_bridge br(bb);
+
+	br.build_junctions();
+	br.extend_junctions();
+	br.build_regions();
+
+	br.align_hits_transcripts();
+	br.index_references();
+
+	br.build_fragments();
+	//br.group_fragments();
+
+	bridger bdg1(&br, ALLELE1);
+	bdg1.bridge_overlapped_fragments();
+
+	bridger bdg2(&br, ALLELE2);
+	bdg2.bridge_overlapped_fragments();
+
+	bridger bdg3(&br, UNPHASED);
+	bdg3.bridge_overlapped_fragments();
+
+	for(int k = 0; k < br.fragments.size(); k++)
+	{
+		fragment& fr = br.fragments[k];
+		if(fr.paths.size() != 1) continue;
+
+		// make sure all vertices are well covered
+		bool b = true;
+		vector<int> v = decode_vlist(fr.paths[0].v);
+		for(int j = 0; j < v.size(); j++)
+		{
+			if(br.regions[v[j]].ave < 20.0) b = false;
+			if(b == false) break;
+		}
+		if(b == false) continue;
+
+		int32_t len = fr.paths[0].length;
+
+		/*
+		fr.print(k);
+		printf("fragment: len = %d, v = (", len);
+		printv(decode_vlist(fr.paths[0].v));
+		printf(")\n");
+		*/
+
+		cnt++;
+
+		if(m.find(len) != m.end()) m[len]++;
+		else m.insert(pair<int, int>(len, 1));
+
+		if(cnt >= 1000) return cnt;
+	}
+	return cnt;
 }

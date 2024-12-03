@@ -12,9 +12,12 @@ See LICENSE for licensing.
 #include <fstream>
 #include <string>
 #include "bundle_base.h"
-#include "bundle.h"
+// #include "bundle.h"
 #include "transcript.h"
 #include "splice_graph.h"
+#include "hyper_set.h"
+#include "transcript_set.h"
+#include "phaser.h"
 
 using namespace std;
 
@@ -32,18 +35,25 @@ private:
 	bundle_base bb2;		// -
 	vector<bundle_base> pool;
 
+	int hid;
 	int index;
 	bool terminate;
 	int qcnt;
 	double qlen;
-	vector<transcript> trsts;
+	vector< vector<transcript> > trsts;				  // 0: merged; 1: ALLELE1; 2: ALLELE2
+	vector< vector<transcript> > nonfull_trsts;
+	vector< vector<transcript> > specific_full_trsts; // 0: nonspecific; 1: ALLELE1 spec; 2: ALLELE2 spec
+	vector<transcript> recovered_allele1;
+	vector<transcript> recovered_allele2;
+
+	vector<transcript> trsts_collective;				  // high recall, low precision; 0: merged; 1: ALLELE1; 2: ALLELE2
 
 public:
 	int assemble();
 
 private:
 	int process(int n);
-	int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic);
+	int assemble(const splice_graph &gr, const hyper_set &hs, bool is_allelic, vector<transcript_set> &ts1, vector<transcript_set> &ts2);
 	int assign_RPKM();
 	int write();
 	bool determine_regional_graph(splice_graph &gr);

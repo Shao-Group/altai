@@ -50,11 +50,13 @@ public:
 	virtual int remove_edge(int s, int t) = 0;
 
 	// access functions
-	virtual size_t support_size() const;
+	// virtual size_t support_size() const;
 	virtual size_t num_vertices() const;
 	virtual size_t num_edges() const;
 	virtual int degree(int v) const;
 	virtual PEB edge(int s, int t);
+	virtual PEB edge(edge_descriptor e);
+	virtual PEB edge(edge_descriptor e) const;
 	virtual PEEI edges() const;
 	virtual vector<edge_descriptor> edges(int x, int y);
 	virtual set<int> adjacent_vertices(int v);
@@ -68,11 +70,11 @@ public:
 	virtual bool bfs(const vector<int> &vs, int t, const set<edge_descriptor> &fb);
 	virtual bool check_path(int s, int t);
 	virtual bool compute_shortest_path(int s, int t, vector<int> &p);
-	virtual bool check_nested();
-	virtual bool intersect(edge_descriptor ex, edge_descriptor ey) = 0;
+	// virtual bool check_nested();
+	// virtual bool intersect(edge_descriptor ex, edge_descriptor ey) = 0;
 
 	// draw
-	virtual int draw(const string &file, const MIS &mis, const MES &mes, double len) = 0;
+	virtual int draw(const string &file, const MIS &mis, const MES &mes, double len, string label) = 0;
 	virtual int print() const;
 };
 

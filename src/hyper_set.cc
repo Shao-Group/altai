@@ -9,12 +9,23 @@ See LICENSE for licensing.
 #include <algorithm>
 #include <cstdio>
 
+hyper_set& hyper_set::operator=(const hyper_set &hs)
+{
+	nodes = hs.nodes;
+	edges = hs.edges;
+	ecnts = hs.ecnts;
+	e2s = hs.e2s;
+	edges_to_transform = hs.edges_to_transform;
+	return *this;
+}
+
 int hyper_set::clear()
 {
 	nodes.clear();
 	edges.clear();
 	e2s.clear();
 	ecnts.clear();
+	edges_to_transform.clear();
 	return 0;
 }
 
@@ -39,6 +50,93 @@ int hyper_set::add_node_list(const vector<int> &s, int c)
 	return 0;
 }
 
+// compatible: hyper_set::build_index()
+// NOT compatible: hyper_set::build(), hyper_set::build_edges()
+int hyper_set::add_edge_list(const MVII& s)
+{
+	nodes.clear();
+	edges.clear();
+	e2s.clear();
+	ecnts.clear();
+	edges_to_transform.clear();
+	for(auto i = s.begin(); i != s.end(); ++i)
+	{
+		const vector<int>& edge_idx_list = i->first;
+		int c = i->second;
+		edges_to_transform.push_back(edge_idx_list);
+		ecnts.push_back(c);
+	}
+	assert(edges_to_transform.size() == ecnts.size());
+	return 0;
+}
+
+/* 
+**  transform original-indexed hs to new-indexed hs
+**  original i2e ---> (origianl edge_descriptor) ---> x2y ---> (new edge_descriptor) ---> e2i ---> (new edge index)
+*/
+int hyper_set::transform(const directed_graph* pgr, const VE& i2e_old, const MEE& x2y, const MEI& e2i_new)
+{
+	assert(nodes.size() == 0);  // transform is only compatible w. add_edge_list, where nodes are never used
+	assert(edges.size() == 0);
+	assert(edges_to_transform.size() == ecnts.size());
+	
+	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cout << "hyper_set is empty when transforming!" << endl;
+	if(edges_to_transform.size() == 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set is empty when transforming!" << endl;
+	/* if (DEBUG_MODE_ON) for(const auto& es: edges_to_transform) {for(int i: es) cout << i2e_old[i] <<" "; cout <<endl;} */
+	
+	vector<int> ecnts_transformed;	
+	for(int i = 0; i < edges_to_transform.size(); i++)
+	{
+		const vector<int> & vv =  edges_to_transform[i];
+		vector<int> ve;
+		bool keep_vv = true;
+
+		for(int k : vv)
+		{
+			if (k == -1)
+			{
+				ve.push_back(-1);
+				continue;
+			}
+
+			assert(k >= 0 && k < i2e_old.size());
+			auto e_old = i2e_old[k]; 				// index ---> original edge_descriptor
+			assert(e_old != null_edge);
+			
+			auto x2yit = x2y.find(e_old);  			// original edges descriptor ---> new edge descriptor
+			assert(x2yit != x2y.end());
+
+			auto e_new = x2yit->second;
+			auto e2iit = e2i_new.find(e_new);  		// new edge descriptor ---> new index			
+
+			if(pgr->edge(e_new).second && e2iit != e2i_new.end()) 
+			{
+				ve.push_back(e2iit->second);
+			}
+			else
+			{
+				keep_vv = false;
+			}
+		}
+
+		if(keep_vv)
+		{
+			assert(vv.size() == ve.size());
+			edges.push_back(ve);
+			ecnts_transformed.push_back(ecnts[i]);
+		}
+	}
+
+	if(edges.size() == 0 && edges_to_transform.size() != 0 && DEBUG_MODE_ON && verbose >= 3) cout << "hyper_set becomes empty after transforming!" << endl;
+	if(edges.size() == 0 && edges_to_transform.size() != 0 && DEBUG_MODE_ON && verbose >= 3) cerr << "hyper_set becomes empty after transforming!" << endl;
+
+	ecnts = ecnts_transformed;
+	edges_to_transform.clear();
+
+	assert(edges.size() == ecnts.size());
+	return 0;
+}
+
 int hyper_set::build(directed_graph &gr, MEI& e2i)
 {
 	build_edges(gr, e2i);
@@ -48,6 +146,7 @@ int hyper_set::build(directed_graph &gr, MEI& e2i)
 
 int hyper_set::build_edges(directed_graph &gr, MEI& e2i)
 {
+	assert(edges.size() == 0);
 	edges.clear();
 	for(MVII::iterator it = nodes.begin(); it != nodes.end(); it++)
 	{
@@ -305,7 +404,8 @@ int hyper_set::replace(const vector<int> &v, int e)
 
 		int b = bv[0];
 		vv[b] = e;
-
+		
+		/* get rid of testing useful
 		bool b1 = useful(vv, 0, b);
 		bool b2 = useful(vv, b + v.size() - 1, vv.size() - 1);
 
@@ -314,8 +414,11 @@ int hyper_set::replace(const vector<int> &v, int e)
 			fb.push_back(k);
 			continue;
 		}
+		*/
 
 		vv.erase(vv.begin() + b + 1, vv.begin() + b + v.size());
+
+		fb.push_back(k);
 
 		if(e2s.find(e) == e2s.end())
 		{
@@ -366,12 +469,15 @@ int hyper_set::remove(int e)
 			if(vv[i] != e) continue;
 
 			vv[i] = -1;
+			fb.push_back(k);
 
+			/*
 			bool b1 = useful(vv, 0, i - 1);
 			bool b2 = useful(vv, i + 1, vv.size() - 1);
 			if(b1 == false && b2 == false) fb.push_back(k);
 			 
 			break;
+			*/
 		}
 	}
 
@@ -382,6 +488,9 @@ int hyper_set::remove(int e)
 
 int hyper_set::remove_pair(int x, int y)
 {
+	insert_between(x, y, -1);
+	return 0;
+
 	if(e2s.find(x) == e2s.end()) return 0;
 	set<int> &s = e2s[x];
 	vector<int> fb;
@@ -438,6 +547,8 @@ int hyper_set::insert_between(int x, int y, int e)
 			if(vv[i] != x) continue;
 			if(vv[i + 1] != y) continue;
 			vv.insert(vv.begin() + i + 1, e);
+			
+			if(e == -1) continue;
 
 			if(e2s.find(e) == e2s.end())
 			{
@@ -452,16 +563,16 @@ int hyper_set::insert_between(int x, int y, int e)
 
 			//printf("line %d: insert %d between (%d, %d) = (%d, %d, %d)\n", k, e, x, y, vv[i], vv[i + 1], vv[i + 2]);
 
-			break;
+			// break;
 		}
 	}
 	return 0;
 }
 
-bool hyper_set::extend(int e)
-{
-	return (left_extend(e) || right_extend(e));
-}
+// bool hyper_set::extend(int e)
+// {
+// 	return (left_extend(e) || right_extend(e));
+// }
 
 bool hyper_set::left_extend(int e)
 {
@@ -600,7 +711,6 @@ bool hyper_set::right_dominate(int e)
 
 int hyper_set::print()
 {
-	//printf("PRINT HYPER_SET\n");
 	for(MVII::iterator it = nodes.begin(); it != nodes.end(); it++)
 	{
 		const vector<int> &v = it->first;
@@ -610,13 +720,19 @@ int hyper_set::print()
 		printf(")\n");
 	}
 
-	//*
 	for(int i = 0; i < edges.size(); i++)
 	{
 		printf("hyper-edge (edges) %d: ( ", i);
 		printv(edges[i]);
 		printf(")\n");
 	}
-	//*/
+
+	for(int i = 0; i < edges_to_transform.size(); i++)
+	{
+		printf("hyper-edge (edges_to_transform) %d: ( ", i);
+		printv(edges[i]);
+		printf(")\n");
+	}
+
 	return 0;
 }

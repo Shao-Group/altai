@@ -9,7 +9,6 @@ See LICENSE for licensing.
 
 #include <vector>
 #include <map>
-
 #include "graph_base.h"
 
 using namespace std;
@@ -28,7 +27,7 @@ public:
 	virtual int remove_edge(edge_descriptor e);
 	virtual int remove_edge(int s, int t);
 	virtual int move_edge(edge_base *e, int x, int y);
-	virtual int exchange(int x, int y, int z);
+	// virtual int exchange(int x, int y, int z);
 	virtual int rotate(int x, int y);
 
 	// access functions
@@ -46,12 +45,12 @@ public:
 	virtual bool compute_shortest_path(edge_descriptor ex, edge_descriptor ey, vector<int> &p);
 	virtual bool check_path(int x, int y);
 	virtual bool check_path(edge_descriptor ex, edge_descriptor ey);
-	virtual bool intersect(edge_descriptor ex, edge_descriptor ey);
+	// virtual bool intersect(edge_descriptor ex, edge_descriptor ey);
 	virtual vector<int> topological_sort();
-	virtual vector<int> topological_sort_reverse();
-	virtual vector<int> topological_sort0();
-	virtual int compute_in_partner(int x);
-	virtual int compute_out_partner(int x);
+	// virtual vector<int> topological_sort_reverse();
+	// virtual vector<int> topological_sort0();
+	// virtual int compute_in_partner(int x);
+	// virtual int compute_out_partner(int x);
 	virtual int compute_in_equivalent_vertex(int x);
 	virtual int compute_out_equivalent_vertex(int x);
 	virtual int check_nest(int x, int r, set<edge_descriptor> &vv);
@@ -59,8 +58,10 @@ public:
 	virtual int check_nest(int x, int r, const vector<int> &tpo);
 
 	// draw
-	int draw(const string &file, const MIS &mis, const MES &mes, double len);
-	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &topo);
+	int draw(const string &file, const MIS &mis, const MES &mes, double len, string label = "");
+	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &topo, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii , const MES &mes, double len, const vector<int> &topo, string label = "");
 };
 
 #endif

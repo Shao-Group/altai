@@ -16,7 +16,7 @@ See LICENSE for licensing.
 
 #include "item.h"
 #include "transcript.h"
-#include "../../src/as_pos32.hpp"
+#include "src/as_pos32.hpp"
 
 using namespace std;
 
@@ -37,17 +37,18 @@ public:
 	int sort();
 	int shrink();
 	int clear();
-	int set_gene_id(const string &id);
+	// int set_gene_id(const string &id);
 	int assign_RPKM(double factor);
 
 	// filter
 	int filter_single_exon_transcripts();
 	int filter_low_coverage_transcripts(double min_coverage);
 
-	set<as_pos32> get_exon_boundaries() const;
+	// set<as_pos32> get_exon_boundaries() const;
 	PI32 get_bounds() const;
-	string get_seqname() const;
-	string get_gene_id() const;
+	// string get_seqname() const;
+	// string get_gene_id() const;
+	// char get_strand() const;
 
 	// write
 	int write(ofstream &fout) const;	

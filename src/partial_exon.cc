@@ -6,27 +6,44 @@ Part of Altai
 See LICENSE for licensing.
 */
 
+#include <cstdio>
 #include "partial_exon.h"
 #include "util.h"
-#include <cstdio>
 #include "as_pos32.hpp"
+#include "vcf_data.h"
 
-partial_exon::partial_exon(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype)
-	: lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype)
+partial_exon::partial_exon(as_pos32 _lpos, as_pos32 _rpos, int _ltype, int _rtype, genotype _gt)
+	: lpos(_lpos), rpos(_rpos), ltype(_ltype), rtype(_rtype), gt(_gt)
 {
-}
-
-string partial_exon::label() const
-{
-	string l = tostring((lpos.p32 + 1) % 100000) + lpos.ale;
-	string r = tostring(rpos.p32 % 100000) + rpos.ale;
-	return (l + "-" + r);
+	type = 0;
+	rid = -1;
+	rid2 = -1;
+	pid = -1;
 }
 
 int partial_exon::print(int index) const
 {
-	printf("partial_exon %d: [%d%s-%d%s), type = (%d, %d), length = %d, ave-abd = %.1lf, std-abd = %.1lf\n",
-			index, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), ltype, rtype, rpos - lpos, ave, dev);
+	printf("partial_exon %d: [%d%s-%d%s), rid = %d.%d, pid = %d, type = (%d, %d), length = %d, ave-abd = %.1lf, max-abd = %.1lf, std-abd = %.1lf, gt=%s\n",
+			index, lpos.p32, lpos.ale.c_str(), rpos.p32, rpos.ale.c_str(), rid, rid2, pid, ltype, rtype, rpos - lpos, ave, max, dev, gt_str(gt));
+	return 0;
+}
+
+bool partial_exon::is_allelic() const
+{
+	if(lpos.ale != "$")
+	{
+		assert(rpos.ale != "$");
+		return true;
+	}
+	assert(rpos.ale == "$");
+	return false;
+}
+
+int partial_exon::assign_as_cov(double _ave, double _max, double _dev)
+{
+	ave = _ave;
+	max = _max;
+	dev = _dev;
 	return 0;
 }
 

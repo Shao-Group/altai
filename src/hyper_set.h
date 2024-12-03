@@ -27,8 +27,12 @@ typedef pair< pair<int, int>, int> PPII;
 class hyper_set
 {
 public:
+	hyper_set& operator=(const hyper_set &hs);
+
+public:
 	MVII nodes;			// hyper-edges using list-of-nodes
 	VVI edges;			// hyper-edges using list-of-edges
+	VVI edges_to_transform;			// hyper-edges using list-of-edges, not transformed to allelic graph yet
 	vector<int> ecnts;	// counts for edges
 	MISI e2s;			// index: from edge to hyper-edges
 
@@ -47,6 +51,10 @@ public:
 	MPII get_routes(int x, directed_graph &gr, MEI &e2i);
 	int print();
 
+	// for reconstructing hs (when splitting)
+	int add_edge_list(const MVII& s);
+	int transform(const directed_graph* pgr, const VE& original_i2e, const MEE& x2y, const MEI& new_e2i);
+
 public:
 	int replace(int x, int e);
 	int replace(int x, int y, int e);
@@ -57,7 +65,7 @@ public:
 	int remove_pair(int x, int y);
 	int insert_between(int x, int y, int e);
 	bool useful(const vector<int> &v, int k1, int k2);
-	bool extend(int e);
+	// bool extend(int e);
 	bool left_extend(int e);
 	bool left_extend(const vector<int> &s);
 	bool right_extend(int e);

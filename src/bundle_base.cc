@@ -22,6 +22,7 @@ bundle_base::bundle_base()
 	lpos = 1 << 30;
 	rpos = 0;
 	strand = '.';
+	is_allelic = false;
 }
 
 bundle_base::~bundle_base()
@@ -35,6 +36,11 @@ int bundle_base::add_hit(const hit &ht)
 	if(ht.pos < lpos) lpos = ht.pos;
 	if(ht.rpos > rpos) rpos = ht.rpos;
 
+	// try to include more paired-end reads
+	int32_t p = ht.rpos;
+	if(ht.mpos > ht.rpos && ht.mpos <= ht.rpos + 100000) p = ht.mpos;
+	if(p > rpos) rpos = p;
+
 	// set tid
 	if(tid == -1) tid = ht.tid;
 	assert(tid == ht.tid);
@@ -44,13 +50,17 @@ int bundle_base::add_hit(const hit &ht)
 	assert(strand == ht.strand);
 
 	// set bundle is_allelic
-	if (ht.apos.size() != 0) is_allelic = true;
+	if (! is_allelic)
+	{
+		if (ht.has_variant()) is_allelic = true;
+	}	
 	return 0;
 }
 
 int bundle_base::buildbase()
 {
-	map<as_pos, int> apos_count;  // count of AS pos - used to keep or filter out AS pos
+	map<as_pos, int> apos_count;  // count of AS pos 
+
 	// count apos
 	for(int i = 0; i < hits.size(); i++)
 	{
@@ -68,30 +78,6 @@ int bundle_base::buildbase()
 			}
 		}
 	}
-	// filter apos
-	vector<hit> h;
-	for(int i = 0; i < hits.size(); i++)
-	{
-		hit &ht = hits[i];
-	
-		bool b = false;
-		auto it = ht.apos.begin();
-		while (it != ht.apos.end())
-		{
-			if(apos_count.find(*it)->second < min_num_reads_support_variant)
-			{
-				// it = ht.apos.erase(it);
-				b = true;
-				break;
-			}
-			else {
-				++it;
-			}
-    	}
-		// if(b) ht.make_itvna(); //TODO: optimize making of itvna
-		if (!b) h.push_back(ht);
-	}
-	hits = h;
 
 	
 	for(int i = 0; i < hits.size(); i++)
@@ -105,12 +91,10 @@ int bundle_base::buildbase()
 		}
 		*/
 
-		for(int k = 0; k < ht.itvm.size(); k++)
+		for(int k = 0; k < ht.itv_align.size(); k++)
 		{
-			as_pos32 s = high32(ht.itvm[k]);
-			as_pos32 t = low32(ht.itvm[k]);
-			assert(s.ale == "$");
-			assert(t.ale == "$");
+			as_pos32 s (high32(ht.itv_align[k]).p32, "$");
+			as_pos32 t (low32(ht.itv_align[k]).p32, "$");
 			mmap += make_pair(ROI(s, t), 1);
 		}
 
@@ -131,19 +115,6 @@ int bundle_base::buildbase()
 			assert(t.ale == "$");
 			imap += make_pair(ROI(s, t), 1);
 		}
-
-		if (vcf_file == "")
-			nammap = mmap;
-		else
-		{
-			for(int k = 0; k < ht.itvna.size(); k++)
-			{
-				as_pos32 s = high32(ht.itvna[k]);
-				as_pos32 t = low32(ht.itvna[k]);
-				assert(s.ale == "$" && t.ale == "$");
-				nammap += make_pair(ROI(s, t), 1);
-			}
-		} 
 	}
 	return 0;
 }
@@ -157,15 +128,16 @@ bool bundle_base::overlap(const hit &ht) const
 
 int bundle_base::clear()
 {
+	is_allelic = false;
 	tid = -1;
 	chrm = "";
 	lpos = 1 << 30;
 	rpos = 0;
 	strand = '.';
+	apos_count.clear();
 	hits.clear();
 	mmap.clear();
 	imap.clear();
-	nammap.clear();
 	return 0;
 }
 

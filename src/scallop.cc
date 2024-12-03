@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -15,23 +17,94 @@ See LICENSE for licensing.
 #include <cfloat>
 #include <algorithm>
 
-scallop::scallop()
-{}
-
-scallop::scallop(const splice_graph &g, const hyper_set &h)
-	: gr(g), hs(h)
+/*
+** sc1/sc2 for each deconvoluted allele, based on sc0;
+** re-use v2v
+** transform mev, hs
+** rebuild e2i, i2e
+*/
+scallop::scallop(splice_graph *g, const hyper_set &_hs, const scallop &sc, bool r, bool keep_as)
+	: gr(*g), hs(_hs), random_ordering(r), keep_as_nodes(false)
 {
+	assert(!keep_as);
+	assert(!keep_as_nodes);
 	round = 0;
-	if(output_tex_files == true) gr.draw(gr.gid + "." + tostring(round++) + ".tex");
-
+	gr.edge_integrity_examine();
 	gr.get_edge_indices(i2e, e2i);
-	//add_pseudo_hyper_edges();
+	// hs.build_index();						// see transform();
+	mev = sc.mev;  								// init_super_edges(); // will be transformed
+	v2v = sc.v2v; 								// init_vertex_map();
+	init_inner_weights();		
+	init_nonzeroset(keep_as_nodes);
+}
+
+
+// transform mev, hs
+int scallop::transform(splice_graph* pgr, const VE& i2e_old, const MEE& x2y)
+{
+	MEV mev2;
+	for(auto i: mev)
+	{
+		edge_descriptor e1 = i.first;
+		vector<int> vertices_in_super_edge = i.second;
+		if (e1 == null_edge) continue;
+
+		// transform edge
+		auto e2_iterator = x2y.find(e1);
+		assert(e2_iterator != x2y.end()); 
+		edge_descriptor e2 = e2_iterator->second;
+		assert(e2 != e1);
+		
+		// add edge
+		assert(mev2.find(e2) == mev2.end());
+		mev2.insert({e2, vertices_in_super_edge});
+	}
+	mev = mev2;
+
+	hs.transform(pgr, i2e_old, x2y, e2i);
+	hs.build_index();
+
+	if(DEBUG_MODE_ON && print_scallop_detail) {cout <<"hs transformed" << endl; hs.print();}
+
+	return 0;
+}
+
+/*
+** after scallop.assemble() is paused
+** continue to assemble everything (incld. as and non-as transcripts)
+** and collect transcripts
+*/
+int scallop::assemble_continue(bool is_allelic)
+{
+	paths.clear();
+	trsts.clear();
+	non_full_trsts.clear();
+	nsnonzeroset.clear();
+	asnonzeroset.clear();
+	
+	keep_as_nodes = false;
+	init_nonzeroset(false);
+	assemble(is_allelic);
+	return 0;
+}
+
+/*
+**	sc0 w. both alleles
+*/ 
+scallop::scallop(splice_graph &g, const hyper_set &h, bool r, bool _keep)
+	: gr(g), hs(h), random_ordering(r), keep_as_nodes(_keep)
+{
+	//TODO? traverse and assign node phasing info if it is determined -- in init stage
+	round = 0;
+	gr.get_edge_indices(i2e, e2i);
 	hs.build(gr, e2i);
+	if(DEBUG_MODE_ON && print_scallop_detail) {cout << "hs before scallop decomp" << endl; hs.print();}
 	init_super_edges();
 	init_vertex_map();
 	init_inner_weights();
-	init_nonzeroset();
+	init_nonzeroset(keep_as_nodes);
 }
+
 
 scallop::~scallop()
 {
@@ -40,122 +113,142 @@ scallop::~scallop()
 int scallop::assemble(bool is_allelic)
 {
 	int c = classify();
-	if(verbose >= 1) printf("process splice graph %s type = %d, vertices = %lu, edges = %lu, phasing paths = %lu\n", gr.gid.c_str(), c, gr.num_vertices(), gr.num_edges(), hs.edges.size());
-
-	//resolve_negligible_edges(false, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-
-	if (is_allelic)
+	
+	if(verbose >= 1)
 	{
-		while(true)
-		{	
-			if(gr.num_vertices() > max_num_exons) break;
-
-			bool b = false;
-
-			b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
-			if(b == true) continue;
-			
-			b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
-			if(b == true) continue;
-
-			b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-			if(b == true) continue;
-			/**/
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
-			if(b == true) continue;
-
-			b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
-			if(b == true) continue;
-
-			b = resolve_splittable_vertex(SPLITTABLE_SIMPLE, 1, max_decompose_error_ratio[SPLITTABLE_SIMPLE]);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
-			if(b == true) continue;
-
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
-			if(b == true) continue;
-
-			b = resolve_hyper_edge(2);
-			if(b == true) continue;
-
-			b = resolve_hyper_edge(1);
-			if(b == true) continue;
-
-			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			break;
-		}
+		printf("process splice graph %s type = %d, vertices = %lu, edges = %lu, phasing paths = %lu\n", 
+				gr.gid.c_str(), c, gr.num_vertices(), gr.num_edges(), hs.edges.size());
 	}
-	else
+
+	if (DEBUG_MODE_ON && print_scallop_detail) 
 	{
-		while(true)
-		{	
-			if(gr.num_vertices() > max_num_exons) break;
+		gr.print_weights();
+		hs.print();
+		if(keep_as_nodes) 
+			assert(asnonzeroset.size() + nsnonzeroset.size() + 2 == gr.num_vertices()); 
+		else
+			assert(asnonzeroset.size() == 0);
+		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".pre.dot");
+	}
 
-			bool b = false;
+	if(DEBUG_MODE_ON) {
+		cout << "print hs before decomposition" << endl;
+		hs.print();
+	}
 
-			b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
 
-			b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
+	while(true)
+	{	
+		if(gr.num_vertices() > max_num_exons) break;
 
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
-			if(b == true) continue;
+		bool b = false;
 
-			b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
-			if(b == true) continue;
+		b = resolve_trivial_vertex_fast(max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		if(!assert_debug()) cerr << "assert debug failed 1" << endl;
+		if(b == true) continue;
 
-			b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
-			if(b == true) continue;
+		b = resolve_trivial_vertex(1, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+		if(!assert_debug()) cerr << "assert debug failed 2" << endl;
+		if(b == true) continue;
 
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
-			if(b == true) continue;
+		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, 1, 0.01);
+		if(!assert_debug()) cerr << "assert debug failed 3" << endl;
+		if(b == true) continue;
+		
+		b = resolve_smallest_edges(max_decompose_error_ratio[SMALLEST_EDGE]);
+		if(!assert_debug()) cerr << "assert debug failed 4" << endl;
+		if(b == true) continue;
 
-			b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
-			if(b == true) continue;
+		b = resolve_negligible_edges(true, max_decompose_error_ratio[NEGLIGIBLE_EDGE]);
+		if(!assert_debug()) cerr << "assert debug failed 5" << endl;		
+		if(b == true) continue;
 
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
-			if(b == true) continue;
+		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, 1, 0.01);
+		if(!assert_debug()) cerr << "assert debug failed 6" << endl;
+		if(b == true) continue;
 
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
-			if(b == true) continue;
+		b = resolve_splittable_vertex(SPLITTABLE_HYPER, 1, max_decompose_error_ratio[SPLITTABLE_HYPER]);
+		if(!assert_debug()) cerr << "assert debug failed 7" << endl;
+		if(b == true) continue;
 
-			b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
-			if(b == true) continue;
+		b = resolve_splittable_vertex(SPLITTABLE_SIMPLE, 1, max_decompose_error_ratio[SPLITTABLE_SIMPLE]);
+		if(!assert_debug()) cerr << "assert debug failed 8" << endl;
+		if(b == true) continue;
 
+		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, 0.05);
+		if(!assert_debug()) cerr << "assert debug failed 9" << endl;
+		if(b == true) continue;
+
+		b = resolve_unsplittable_vertex(UNSPLITTABLE_MULTIPLE, INT_MAX, 0.05);
+		if(!assert_debug()) cerr << "assert debug failed 10" << endl;
+		if(b == true) continue;
+
+		b = resolve_unsplittable_vertex(UNSPLITTABLE_SINGLE, INT_MAX, max_decompose_error_ratio[UNSPLITTABLE_SINGLE]);
+		if(!assert_debug()) cerr << "assert debug failed 11" << endl;
+		if(b == true) continue;
+
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
+		{
 			b = resolve_hyper_edge(2);
-			if(b == true) continue;
-
-			b = resolve_hyper_edge(1);
-			if(b == true) continue;
-
-			b = resolve_smallest_edges(DBL_MAX);
-			if(b == true) continue;
-
-			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
-			if(b == true) continue;
-
-			break;
+			if(!assert_debug()) cerr << "assert debug failed 12" << endl;
 		}
+		if(b == true) continue;
+
+		if (!keep_as_nodes || !skip_resolve_hyper_edge) 
+		{
+			b = resolve_hyper_edge(1); 
+			if(!assert_debug()) cerr << "assert debug failed 13" << endl;
+		}
+		if(b == true) continue;
+
+		if (!keep_as_nodes || !skip_resolve_smallest) 
+		{
+			b = resolve_smallest_edges(DBL_MAX);
+			if(!assert_debug()) cerr << "assert debug failed 14" << endl;
+		}
+		if(b == true) continue;
+
+		// don't decompose trivial vertices until last round of scallop
+		if (!keep_as_nodes) 
+		{
+			b = resolve_trivial_vertex(2, max_decompose_error_ratio[TRIVIAL_VERTEX]);
+			if(!assert_debug()) cerr << "assert debug failed 15" << endl;
+		}
+		
+		if(b == true) continue;
+
+		break;
 	}
 
 	collect_existing_st_paths();
-	greedy_decompose();
+	if(!assert_debug()) cerr << "assert debug failed 16" << endl;
 
+	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
+	{
+		cout << "scallop finished while-loop once" << endl;
+		gr.print_weights();
+		hs.print();
+		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
+		if(output_graphviz_files == true) gr.graphviz(gr.gid + ".post.dot");
+	}
+
+	if (keep_as_nodes && is_allelic)  return 0;
+	
+	
+	greedy_decompose();
+	if(!assert_debug()) cerr << "assert debug failed 17" << endl;
+	
 	trsts.clear();
-	gr.output_transcripts(trsts, paths);
+	non_full_trsts.clear();
+	gr.output_transcripts1(trsts, non_full_trsts, paths);
+
+	if (verbose >= 2 && DEBUG_MODE_ON && print_scallop_detail)
+	{
+		cout << "scallop finished greedy" << endl;
+		gr.print_weights();
+		hs.print();
+		cout << "ns nonzero size " << nsnonzeroset.size() << ", as nonzero size " << asnonzeroset.size() << endl;
+	}
 
 	if(verbose >= 2) 
 	{
@@ -172,9 +265,9 @@ bool scallop::resolve_smallest_edges(double max_ratio)
 	int root = -1;
 	double ratio = max_ratio;
 	bool flag = false;
-	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	//for(int i = 1; i < gr.num_vertices() - 1; i++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
+	if(random_ordering) random_shuffle(vv.begin(), vv.end());
+
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -216,6 +309,7 @@ bool scallop::resolve_smallest_edges(double max_ratio)
 		ratio = r;
 		se = e;
 		root = i;
+		if(random_ordering == true) break;
 	}
 
 	if(flag == true) return true;
@@ -238,7 +332,7 @@ bool scallop::resolve_negligible_edges(bool extend, double max_ratio)
 	bool flag = false;
 	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
 	//for(int i = 1; i < gr.num_vertices() - 1; i++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -293,9 +387,9 @@ bool scallop::resolve_splittable_vertex(int type, int degree, double max_ratio)
 	int root = -1;
 	double ratio = max_ratio;
 	vector<equation> eqns;
-	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	//for(int i = 1; i < gr.num_vertices() - 1; i++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
+	if(random_ordering) random_shuffle(vv.begin(), vv.end());
+
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -323,6 +417,8 @@ bool scallop::resolve_splittable_vertex(int type, int degree, double max_ratio)
 		ratio = rt.ratio;
 		eqns = rt.eqns;
 		//degree = rt.degree;
+
+		if(random_ordering == true) break;
 	}
 
 	if(root == -1) return false;
@@ -341,9 +437,9 @@ bool scallop::resolve_unsplittable_vertex(int type, int degree, double max_ratio
 	MPID pe2w;
 	double ratio = max_ratio;
 	bool flag = false;
-	//for(int i = 1; i < gr.num_vertices() - 1; i++)
-	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
+	if(random_ordering) random_shuffle(vv.begin(), vv.end());
+
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -378,6 +474,8 @@ bool scallop::resolve_unsplittable_vertex(int type, int degree, double max_ratio
 		root = i;
 		ratio = rt.ratio;
 		pe2w = rt.pe2w;
+
+		if(random_ordering == true) break;
 	}
 
 	if(flag == true) return true;
@@ -461,7 +559,8 @@ bool scallop::resolve_hyper_edge(int fsize)
 		for(int j = 0; j < w2.size(); j++)
 		{
 			double w = (w1[i] < w2[j]) ? w1[i] : w2[j];
-			if(w < 1.0) continue;
+			// if(w < 1.0) continue;
+			if(w < min_guaranteed_edge_weight) continue;
 
 			flag = true;
 			int k1 = split_edge(v1[i], w);
@@ -484,11 +583,11 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 {
 	int root = -1;
 	double ratio = DBL_MAX;
-	int se = -1;
+	// int se = -1;
 	bool flag = false;
-	//for(int i = 1; i < gr.num_vertices() - 1; i++)
-	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
+	if(random_ordering) random_shuffle(vv.begin(), vv.end());
+
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -501,7 +600,7 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 		if(gr.in_degree(i) >= 2 && gr.out_degree(i) >= 2) continue;
 		if(classify_trivial_vertex(i, true) != type) continue;
 
-		int e;
+		// int e;
 		double r = compute_balance_ratio(i);
 
 		if(r < 1.02)
@@ -518,9 +617,10 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 
 		root = i;
 		ratio = r;
-		se = e;
+		// se = e;
 
 		if(ratio < jump_ratio) break;
+		if(random_ordering == true) break;
 	}
 
 	if(flag == true) return true;
@@ -537,8 +637,9 @@ bool scallop::resolve_trivial_vertex(int type, double jump_ratio)
 bool scallop::resolve_trivial_vertex_fast(double jump_ratio)
 {
 	bool flag = false;
-	//for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	vector<int> vv(nonzeroset.begin(), nonzeroset.end());
+	vector<int> vv(nsnonzeroset.begin(), nsnonzeroset.end());
+	if(random_ordering) random_shuffle(vv.begin(), vv.end());
+
 	for(int k = 0; k < vv.size(); k++)
 	{
 		int i = vv[k];
@@ -568,40 +669,6 @@ bool scallop::resolve_single_trivial_vertex_fast(int i, double jump_ratio)
 	return true;
 }
 
-int scallop::summarize_vertices()
-{
-	for(set<int>::iterator it = nonzeroset.begin(); it != nonzeroset.end(); it++)
-	{
-		int i = (*it);
-		assert(gr.in_degree(i) >= 1);
-		assert(gr.out_degree(i) >= 1);
-		
-		if(gr.in_degree(i) == 1 || gr.out_degree(i) == 1)
-		{
-			int c = classify_trivial_vertex(i, false);
-			printf("summary: trivial vertex %d, type = %d\n", i, c);
-		}
-		else
-		{
-			MPII mpi = hs.get_routes(i, gr, e2i);
-			set<int> s1;
-			set<int> s2;
-			for(MPII::iterator it = mpi.begin(); it != mpi.end(); it++)
-			{
-				PI p = it->first;
-				s1.insert(p.first);
-				s2.insert(p.second);
-			}
-			router rt(i, gr, e2i, i2e, mpi);
-			rt.classify();
-			rt.build();
-			printf("summary: nontrivial vertex %d, degree = (%d, %d), hyper edges = %lu, graph degree = (%lu, %lu), type = %d, degree = %d, ratio = %.3lf\n", 
-					i, gr.in_degree(i), gr.out_degree(i), mpi.size(), s1.size(), s2.size(), rt.type, rt.degree, rt.ratio);
-		}
-	}
-	return 0;
-}
-
 int scallop::classify()
 {
 	assert(gr.num_vertices() >= 2);
@@ -623,43 +690,6 @@ int scallop::classify()
 	else return NORMAL;
 }
 
-int scallop::add_pseudo_hyper_edges()
-{
-	for(int k = 1; k < gr.num_vertices() - 1; k++)
-	{
-		int s = -1, t = -1;
-		double w1 = 0, w2 = 0;
-		edge_iterator it1, it2;
-		PEEI pei;
-		for(pei = gr.in_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			double w = gr.get_edge_weight(*it1);
-			if(w <= w1) continue;
-			w1 = w;
-			s = (*it1)->source();
-		}
-		for(pei = gr.out_edges(k), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
-		{
-			double w = gr.get_edge_weight(*it1);
-			if(w <= w2) continue;
-			w2 = w;
-			t = (*it1)->target();
-		}
-		if(s == -1 || t == -1) continue;
-		if(w1 <= 10.0 || w2 <= 10.0) continue;
-		if(s == 0) continue;
-		if(t == gr.num_vertices() - 1) continue;
-
-		vector<int> v;
-		v.push_back(s - 1);
-		v.push_back(k - 1);
-		v.push_back(t - 1);
-		
-		hs.add_node_list(v, 1);
-	}
-	return 0;
-}
-
 int scallop::init_super_edges()
 {
 	mev.clear();
@@ -668,8 +698,8 @@ int scallop::init_super_edges()
 	for(pei = gr.edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
 	{
 		vector<int> v;
-		int s = (*it1)->source();
-		v.push_back(s);
+		// int s = (*it1)->source();
+		// v.push_back(s);
 		mev.insert(PEV(*it1, v));
 	}
 	return 0;
@@ -700,14 +730,34 @@ int scallop::init_vertex_map()
 	return 0;
 }
 
-int scallop::init_nonzeroset()
+// set gt vertex type in bundle::bundle splice graph
+int scallop::init_vertex_astype()
 {
-	nonzeroset.clear();
+	throw runtime_error("vertex astype not implemented yet");
+	return 0;
+}
+
+// if keep_as_nodes, separate ns/asnonzeroset, else use only nsnonzeroset
+// source/sink are strictly excluded
+int scallop::init_nonzeroset(bool keep_as)
+{
+	nsnonzeroset.clear();
+	asnonzeroset.clear();
 	for(int i = 1; i < gr.num_vertices() - 1; i++)
 	{
 		if(gr.degree(i) <= 0) continue;
-		nonzeroset.insert(i);
+		if (keep_as)
+		{
+			if (gr.get_vertex_info(i).is_ordinary_vertex()) nsnonzeroset.insert(i);
+			else asnonzeroset.insert(i);
+		}
+		else 
+		{
+			nsnonzeroset.insert(i);
+		}
 	}
+
+	if (!keep_as) assert(asnonzeroset.size() == 0);	
 	return 0;
 }
 
@@ -755,9 +805,9 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 	// add vertices  and exchange sink
 	for(int i = m; i < n; i++) 
 	{
-		gr.add_vertex();
-		assert(nonzeroset.find(i) == nonzeroset.end());
-		nonzeroset.insert(i);
+		gr.add_vertex(); //FIXME: as_type
+		assert(nsnonzeroset.find(i) == nsnonzeroset.end());
+		nsnonzeroset.insert(i);
 		v2v.push_back(-1);
 	}
 	v2v[n] = v2v[m];
@@ -772,10 +822,13 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 
 		gr.move_edge(e, e->source(), k);
 
-		double w = gr.get_edge_weight(e);
-		gr.set_vertex_info(k, gr.get_vertex_info(root));
-		gr.set_vertex_weight(k, w);
-		v2v[k] = v2v[root];
+		// double w = gr.get_edge_weight(e);
+		// gr.set_vertex_info(k, gr.get_vertex_info(root));
+		gr.set_vertex_info(k, vertex_info());//FIXME: copy as type of e.source
+		gr.set_vertex_weight(k, 0);
+		v2v[k] = -2; //v2v[root];
+
+
 	}
 	for(map<int, int>::iterator it = ev2.begin(); it != ev2.end(); it++)
 	{
@@ -805,6 +858,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			int v1 = p->source();
 			int v2 = ev2[e2];
 			gr.move_edge(p, v1, v2);
+			mev[p].push_back(root);
 			//gr.set_edge_weight(p, w);
 		}
 		else if(mdegree[e2] == 1)
@@ -816,6 +870,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			int v1 = ev1[e1];
 			int v2 = p->target();
 			gr.move_edge(p, v1, v2);
+			mev[p].insert(mev[p].begin(), root);
 			//gr.set_edge_weight(p, w);
 		}
 		else
@@ -838,6 +893,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 			gr.set_edge_info(p, edge_info());
 
 			vector<int> v0;
+			v0.push_back(root);
 			if(mev.find(p) != mev.end()) mev[p] = v0;
 			else mev.insert(PEV(p, v0));
 
@@ -846,7 +902,7 @@ int scallop::decompose_vertex_extend(int root, MPID &pe2w)
 	}
 
 	assert(gr.degree(root) == 0);
-	nonzeroset.erase(root);
+	nsnonzeroset.erase(root);
 
 	for(map<int, int>::iterator it = ev1.begin(); it != ev1.end(); it++)
 	{
@@ -940,7 +996,7 @@ int scallop::decompose_vertex_replace(int root, MPID &pe2w)
 	}
 
 	assert(gr.degree(root) == 0);
-	nonzeroset.erase(root);
+	nsnonzeroset.erase(root);
 	return 0;
 }
 
@@ -1079,6 +1135,7 @@ int scallop::merge_adjacent_equal_edges(int x, int y)
 	gr.set_edge_info(p, edge_info(lxy));
 
 	vector<int> v = mev[xx];
+	v.push_back(xt);
 	v.insert(v.end(), mev[yy].begin(), mev[yy].end());
 
 	if(mev.find(p) != mev.end()) mev[p] = v;
@@ -1102,7 +1159,7 @@ int scallop::merge_adjacent_equal_edges(int x, int y)
 	if(gr.in_degree(xt) == 0 && gr.out_degree(xt) == 0)
 	{
 		assert(gr.degree(xt) == 0);
-		nonzeroset.erase(xt);
+		nsnonzeroset.erase(xt);
 	}
 
 	return n;
@@ -1115,6 +1172,7 @@ int scallop::remove_edge(int e)
 	int s = ee->source();
 	int t = ee->target();
 
+	mev.erase(ee);
 	e2i.erase(ee);
 	i2e[e] = null_edge;
 	gr.remove_edge(ee);
@@ -1231,10 +1289,12 @@ int scallop::balance_vertex(int v)
 	{
 		double wx = gr.get_edge_weight(*it1);
 		double wy = wx * r1;
-		if(wy < 1.0)
+		if(wy < min_guaranteed_edge_weight)
 		{
-			m1 += (1.0 - wy);
-			wy = 1.0;
+			// m1 += (1.0 - wy);
+			// wy = 1.0;
+			m1 += (min_guaranteed_edge_weight - wy);
+			wy = min_guaranteed_edge_weight;
 		}
 		gr.set_edge_weight(*it1, wy);
 	}
@@ -1242,10 +1302,12 @@ int scallop::balance_vertex(int v)
 	{
 		double wx = gr.get_edge_weight(*it1);
 		double wy = wx * r2;
-		if(wy < 1.0)
+		if(wy < min_guaranteed_edge_weight)
 		{
-			m2 += 1.0 - wy;
-			wy = 1.0;
+			// m2 += 1.0 - wy;
+			// wy = 1.0;
+			m2 += min_guaranteed_edge_weight - wy;
+			wy = min_guaranteed_edge_weight;
 		}
 		gr.set_edge_weight(*it1, wy);
 	}
@@ -1315,8 +1377,8 @@ int scallop::split_vertex(int x, const vector<int> &xe, const vector<int> &ye)
 	// vertex-x => splitted vertex for xe2 and ye2
 
 	gr.add_vertex();
-	assert(nonzeroset.find(n - 1) == nonzeroset.end());
-	nonzeroset.insert(n - 1);
+	assert(nsnonzeroset.find(n - 1) == nsnonzeroset.end());
+	nsnonzeroset.insert(n - 1);
 	gr.set_vertex_info(n, gr.get_vertex_info(n - 1));
 	gr.set_vertex_info(n - 1, gr.get_vertex_info(x));
 	gr.set_vertex_weight(n, gr.get_vertex_weight(n - 1));
@@ -1382,6 +1444,7 @@ int scallop::collect_existing_st_paths()
 	return 0;
 }
 
+// will remove edge e (by index)
 int scallop::collect_path(int e)
 {
 	assert(mev.find(i2e[e]) != mev.end());
@@ -1397,22 +1460,48 @@ int scallop::collect_path(int e)
 	sort(v.begin(), v.end());
 
 	int n = v2v[gr.num_vertices() - 1];
-	assert(v[0] == 0);
+	// assert(v[0] == 0);
+	assert(v[0] > 0);
 	assert(v[v.size() - 1] < n);
+	v.insert(v.begin(), 0);
 	v.push_back(n);
 
-	path p;
-	p.abd = gr.get_edge_weight(i2e[e]);
-	p.v = v;
-	paths.push_back(p);
+	// filter empty-vertex
+	bool empty = false;
+	for(int i = 0; i < v.size(); i++)
+	{
+		if(gr.get_vertex_info(v[i]).type == EMPTY_VERTEX) empty = true;
+		//if(empty == true) break;
+		if(empty == true)
+		{
+			path p;
+			p.abd = gr.get_edge_weight(i2e[e]);
+			p.v = v;
+			p.nf = 1;
+			paths.push_back(p);
+			break;
+		}
+	}
 
+	if(empty == false)
+	{
+		path p;
+		p.abd = gr.get_edge_weight(i2e[e]);
+		p.v = v;
+		p.nf = 0;
+		paths.push_back(p);
+	}
+
+	hs.remove(e);
 	gr.remove_edge(i2e[e]);
+	mev.erase(i2e[e]);
 	e2i.erase(i2e[e]);
 	i2e[e] = null_edge;
 
 	return 0;
 }
 
+// will remove some edges. don't use until last round of scallop
 int scallop::greedy_decompose()
 {
 	if(gr.num_edges() == 0) return 0;
@@ -1491,16 +1580,8 @@ int scallop::print()
 	assert(nonzeroset.size() == n1);
 	*/
 
-	printf("statistics: %lu edges, %lu vertices, %lu nonzero vertices\n", gr.num_edges(), gr.num_vertices(), nonzeroset.size());
-
-	//int p1 = gr.compute_num_paths();
-	//int p2 = gr.compute_decomp_paths();
-	//printf("statistics: %lu edges, %d vertices, total %d paths, %d required\n", gr.num_edges(), n, p1, p2);
-
-	//hs.print();
-
-	//printf("finish round %d\n\n", round);
-	//round++;
+	printf("statistics: %lu edges, %lu vertices, %lu nonzero NS vertices, %lu nonzero AS-related vertices\n", 
+			gr.num_edges(), gr.num_vertices(), nsnonzeroset.size(), asnonzeroset.size());
 
 	return 0;
 }
@@ -1514,8 +1595,6 @@ int scallop::draw_splice_graph(const string &file)
 		vertex_info vi = gr.get_vertex_info(i);
 		double w = gr.get_vertex_weight(i);
 		int l = vi.length;
-		//string s = gr.get_vertex_string(i);
-		//sprintf(buf, "%d:%.0lf:%s", i, w, s.c_str());
 		sprintf(buf, "%d:%.0lf:%d", i, w, l);
 		mis.insert(PIS(i, buf));
 	}
@@ -1534,4 +1613,65 @@ int scallop::draw_splice_graph(const string &file)
 	vector<int> tp = topological_sort();
 	gr.draw(file, mis, mes, 4.5, tp);
 	return 0;
+}
+
+
+bool scallop::assert_mev_gr_edge_descriptor_bijection()
+{
+	size_t i = mev.size();
+	size_t j = gr.num_edges();
+	
+	set<edge_descriptor> mev_edges;
+	set<edge_descriptor> gr_edges;
+	
+	PEEI gr_peei = gr.edges();
+	for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+	for (pair<edge_descriptor, vector<int> > ev: mev) mev_edges.insert(ev.first);
+
+	if(i != j || gr_edges != mev_edges)
+	{
+		cerr << "scallop mev edges != gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cerr << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cerr << "gr edge " << e << endl;
+	}
+
+	return (gr_edges == mev_edges && i == j);
+}
+
+bool scallop::assert_mev_super_set_gr_edge_descriptor()
+{
+	size_t i = mev.size();
+	size_t j = gr.num_edges();
+	
+	set<edge_descriptor> mev_edges;
+	set<edge_descriptor> gr_edges;
+	
+	PEEI gr_peei = gr.edges();
+	for (auto j = gr_peei.first; j != gr_peei.second; ++j) gr_edges.insert(*j);
+	for (pair<edge_descriptor, vector<int> > ev: mev) mev_edges.insert(ev.first);
+
+	bool b = false;
+	for(edge_descriptor e: gr_edges)
+	{
+		if (mev_edges.find(e) == mev_edges.end()) b = true;
+	}
+
+	if(i < j || b)
+	{
+		cerr << "scallop mev edges is not superset of gr edges" << endl;
+		for (edge_descriptor e: mev_edges) cerr << "mev edge " << e << endl;
+		for (edge_descriptor e: gr_edges) cerr << "gr edge " << e << endl;
+	}
+
+	return (!b && (i >= j));
+}
+
+bool scallop::assert_debug()
+{
+	if (! DEBUG_MODE_ON) return true;
+
+	if (keep_as_nodes) 
+		return assert_mev_gr_edge_descriptor_bijection();
+	else 
+		return assert_mev_super_set_gr_edge_descriptor();
 }

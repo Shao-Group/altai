@@ -1,15 +1,19 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
 */
 
 #include "splice_graph.h"
+#include "undirected_graph.h"
 #include "util.h"
 #include "config.h"
 #include "interval_map.h"
+#include "draw.h"
 #include <sstream>
 #include <fstream>
 #include <cfloat>
@@ -33,9 +37,66 @@ splice_graph::splice_graph(const splice_graph &gr)
 	copy(gr, x2y, y2x);
 }
 
+/* 
+*	assert edges(), ewrt, einf all have exactly the same edge_descriptors
+* 	&& ewrt is non-negative
+*/
+int splice_graph::edge_integrity_examine() const
+{
+	if(!DEBUG_MODE_ON) return 0;
+
+	assert(se.size() == ewrt.size());
+	assert(se.size() == einf.size());
+	PEEI ei = edges();
+	for (edge_iterator i = ei.first; i != ei.second; ++i)
+	{
+		edge_descriptor e = *i;
+		auto ew = ewrt.find(e);
+		assert(ew != ewrt.end());
+		assert(ew->second >= 0);
+		assert(einf.find(e) != einf.end());
+	}
+	return 0;
+}
+
+
+/* 
+*	make edges(), ewrt, einf all have exactly the same edge_descriptors
+* 	remove e from ewrt and einf if gr.edge(e).second is false
+*/
+int splice_graph::edge_integrity_enforce()
+{
+	for(auto it = ewrt.begin(); it != ewrt.end();  )	// note: it++ NOT in for header
+	{
+		edge_descriptor e = it->first;
+		if (edge(e).second) ++it;
+		else  it = ewrt.erase(it);
+	}
+	for(auto it = einf.begin(); it != einf.end();  )	// note: it++ NOT in for header
+	{
+		edge_descriptor e = it->first;
+		if (edge(e).second) ++it;
+		else it = einf.erase(it);
+	}
+
+	edge_integrity_examine();
+	return 0;
+}
+
+
+/*
+*	x2y: original to new
+*	y2x: new to original
+*	warning: This 3-argument copy() hides overloaded virtual function graph_base::copy(graph_base&)
+*	when copy(1 argument) is needed, graph_base::copy will be called and may cause undesired behavior
+*/
 int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 {
 	clear();
+	chrm = gr.chrm;
+	gid = gr.gid;
+	strand = gr.strand;
+
 	for(int i = 0; i < gr.num_vertices(); i++)
 	{
 		add_vertex();
@@ -63,9 +124,94 @@ int splice_graph::copy(const splice_graph &gr, MEE &x2y, MEE &y2x)
 	return 0;
 }
 
+/*
+*	x2y: original to new
+*	y2x: new to original
+* 	gt:  allelic copy of graph for ALLELE1|ALLELE2
+*	populate this graph a copy by removing opposite allele, and graph refined
+*/
+int splice_graph::allelic_copy(const splice_graph &gr, MEE &x2y, MEE &y2x, genotype gt)
+{
+	clear();
+	assert(gt == ALLELE1 || gt == ALLELE2);
+
+	copy(gr, x2y, y2x);
+	assert(gr.num_vertices() == num_vertices());
+	assert(gr.num_edges() == num_edges());
+	assert(num_vertices() >= 2);
+
+	bool b = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		const vertex_info& vi = get_vertex_info(i);
+		if(gt_conflict(vi.gt, gt)) 
+		{
+			clear_vertex(i);
+			b = true;
+		}
+	}
+	if(b) refine_splice_graph();
+
+	if(DEBUG_MODE_ON)
+	{
+		for(int i = 1; i < num_vertices() - 1; i++)
+		{
+			if(degree(i) == 0) continue;
+			const vertex_info& vi = get_vertex_info(i);
+			assert(!gt_conflict(vi.gt, gt));
+		}
+	}
+
+	return 0;	
+}
+
+int splice_graph::remove_edge(edge_descriptor e)
+{
+	if(se.find(e) == se.end()) return -1;
+	vv[e->source()]->remove_out_edge(e);
+	vv[e->target()]->remove_in_edge(e);
+	delete e;
+	se.erase(e);
+	ewrt.erase(e);
+	einf.erase(e); 
+	
+	if(DEBUG_MODE_ON)
+	{
+		assert (se.size() == ewrt.size());
+		assert (se.size() == einf.size());
+	}
+	return 0;
+}
+
+int splice_graph::remove_edge(int s, int t)
+{
+	vector<edge_base*> v;
+	PEEI p = vv[s]->out_edges();
+	for(edge_iterator it = p.first; it != p.second; it++)
+	{
+		if((*it)->target() != t) continue;
+		v.push_back(*it);
+	}
+	for(int i = 0; i < v.size(); i++)
+	{
+		remove_edge(v[i]);
+	}
+
+	if(DEBUG_MODE_ON)
+	{
+		assert (se.size() == ewrt.size());
+		assert (se.size() == einf.size());
+	}
+	return 0;
+}
+
+
 int splice_graph::clear()
 {
 	directed_graph::clear();
+	chrm = '.';
+	gid = '.';
+	strand = '.';
 	vwrt.clear();
 	vinf.clear();
 	ewrt.clear();
@@ -91,8 +237,10 @@ vertex_info splice_graph::get_vertex_info(int v) const
 double splice_graph::get_edge_weight(edge_base *e) const
 {
 	MED::const_iterator it = ewrt.find(e);
-	assert(it != ewrt.end());
-	return it->second;
+	if (it != ewrt.end()) return it->second;		
+	
+	throw runtime_error("Attempting to retrieve weight of non-existant edge.");
+	return -1;
 }
 
 edge_info splice_graph::get_edge_info(edge_base *e) const
@@ -134,6 +282,7 @@ int splice_graph::set_edge_info(edge_base* e, const edge_info &ei)
 
 MED splice_graph::get_edge_weights() const
 {
+	assert(0); // should not be called
 	return ewrt;
 }
 
@@ -275,6 +424,694 @@ edge_descriptor splice_graph::compute_maximum_edge_w()
 		max_edge = *it1;
 	}
 	return max_edge;
+}
+
+int splice_graph::revise_splice_graph()
+{
+	bool b = false;
+	while(true)
+	{
+		// b = tackle_false_boundaries();
+		// if(b == true) continue;
+
+		// b = remove_false_boundaries();
+		// if(b == true) continue;
+
+		b = remove_inner_boundaries();
+		if(b == true) continue;
+
+		b = remove_small_exons();
+		if(b == true) continue;
+
+		b = remove_intron_contamination();
+		if(b == true) continue;
+
+		b = remove_small_junctions();
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		b = extend_start_boundaries();
+		if(b == true) continue;
+
+		b = extend_end_boundaries();
+		if(b == true) continue;
+
+		b = extend_boundaries();
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		b = keep_surviving_edges();
+		if(b == true) refine_splice_graph();
+		if(b == true) continue;
+
+		break;
+	}
+
+	edge_integrity_examine();
+	refine_splice_graph();
+	edge_integrity_examine();
+
+	return 0;
+}
+
+bool splice_graph::refine_splice_graph()
+{
+	bool flag = false;
+	while(true)
+	{
+		bool b = false;
+		for(int i = 1; i < num_vertices() - 1; i++)
+		{
+			if(degree(i) == 0) continue;
+			if(in_degree(i) >= 1 && out_degree(i) >= 1) continue;
+			clear_vertex(i);
+			b = true;
+			flag = true;
+		}
+		if(b == false) break;
+	}
+	return flag;
+}
+
+// return maximal edge in each subgraph, EXCLUDING allelic edges
+VE splice_graph::compute_maximal_edges()
+{
+	typedef pair<double, edge_descriptor> PDE;
+	vector<PDE> ve;
+
+	undirected_graph ug;
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(int i = 0; i < num_vertices(); i++) ug.add_vertex();
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		edge_descriptor e = (*it1);
+		double w = get_edge_weight(e);
+		int s = e->source();
+		int t = e->target();
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		ug.add_edge(s, t);
+		bool is_as_edge = (get_vertex_info(s).is_allelic()) || (get_vertex_info(t).is_allelic());
+		if(! is_as_edge) 
+		{
+			ve.push_back(PDE(w, e));
+		}
+	}
+
+	vector<int> vv = ug.assign_connected_components();
+
+	sort(ve.begin(), ve.end());
+
+	for(int i = 1; i < ve.size(); i++) assert(ve[i - 1].first <= ve[i].first);
+
+	VE x;
+	set<int> sc;
+	for(int i = ve.size() - 1; i >= 0; i--)
+	{
+		edge_descriptor e = ve[i].second;
+		double w = get_edge_weight(e);
+		if(w < 1.5) break;
+		int s = e->source();
+		int t = e->target();
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		int c1 = vv[s];
+		int c2 = vv[t];
+		assert(c1 == c2);
+		if(sc.find(c1) != sc.end()) continue;
+		x.push_back(e);
+		sc.insert(c1);
+	}
+	return x;
+}
+
+/*
+*	@return survived edges for genotype[gt] in respective allelic subsgraphs
+*/
+int splice_graph::survivived_edges_for_allele(genotype gt, SE& rse0, set<int>& rsv1, set<int>& rsv2)
+{
+	if(num_vertices() <= 2)	return 0;
+	assert(gt == ALLELE1 || gt == ALLELE2);
+
+	// make graph copy
+	MEE x2y;             				// original to new
+	MEE y2x;             				// new to original
+	splice_graph gr_copy;
+	gr_copy.allelic_copy(*this, x2y, y2x, gt);
+	assert(gr_copy.num_vertices() == num_vertices());
+	if(gr_copy.num_vertices() <= 2)	return 0;
+	if(gr_copy.num_edges() <= 2)		
+	{
+		if(DEBUG_MODE_ON) cerr << "splice_graph " << "does not have allele " << gt << "edges to survive" << endl;
+		return 0;
+	}
+	
+	// survive [gt] allelic edges in gr_copy, EXCLD pseudo as edges
+	set<int> sv1;
+	set<int> sv2;
+	SE se0;
+
+	for(int i = 1; i < gr_copy.num_vertices() - 1; i++)
+	{
+		if(gr_copy.degree(i) == 0) continue;
+	
+		const vertex_info& vi = gr_copy.get_vertex_info(i);
+		if (vi.gt != gt) continue;
+		
+		PEEI ins = gr_copy.in_edges(i);
+		PEEI outs = gr_copy.out_edges(i);
+
+		if (vi.type == PSEUDO_AS_VERTEX) 
+		{
+			if(DEBUG_MODE_ON)
+			{
+				for(auto j = ins.first; j != ins.second; ++j) assert(gr_copy.get_edge_weight(*j) < min_guaranteed_edge_weight * 1.1);
+				for(auto j = outs.first; j != outs.second; ++j) assert(gr_copy.get_edge_weight(*j) < min_guaranteed_edge_weight * 1.1);
+			}
+			continue;
+		}
+
+		for(auto it = ins.first; it != ins.second; ++it)
+		{
+			int s = (*it)->source();
+			se0.insert(*it);
+			sv2.insert(s);
+			if(DEBUG_MODE_ON) assert(i == (*it)->target());
+		}
+		for(auto it = outs.first; it != outs.second; ++it)
+		{
+			int t = (*it)->target();
+			se0.insert(*it);
+			sv1.insert(t);
+			if(DEBUG_MODE_ON) assert(i == (*it)->source());
+		}
+	}
+
+	if(se.size() == 0) 
+	{
+		if(DEBUG_MODE_ON) cerr << "splice_graph " << gid << "does not have allele " << gt << "edges to survive" ;
+		return 0;
+	}
+
+	// survive edges in s-t path
+	while(true)
+	{
+		bool b = false;
+		for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+		{
+			edge_descriptor e = (*it);
+			int s = e->source(); 
+			int t = e->target();
+			if(sv1.find(s) == sv1.end() && s != 0)
+			{
+				edge_descriptor ee = gr_copy.max_in_edge(s);
+				assert(ee != null_edge);
+				if(se0.find(ee) == se0.end())
+				{
+					se0.insert(ee);
+					sv1.insert(s);
+					sv2.insert(ee->source());
+					b = true;
+				}
+			}
+			if(sv2.find(t) == sv2.end() && t != gr_copy.num_vertices() - 1)
+			{
+				edge_descriptor ee = gr_copy.max_out_edge(t);
+				assert(ee != null_edge);
+				if(se0.find(ee) == se0.end())
+				{
+					se0.insert(ee);
+					sv1.insert(ee->target());
+					sv2.insert(t);
+					b = true;
+				}
+			}
+			if(b == true) break;
+		}
+		if(b == false) break;
+	}
+
+	// populate rse0, rsv1, rsv2 for return
+	int c = 0;
+	for(edge_descriptor e: se0)
+	{
+		if(DEBUG_MODE_ON) assert(edge(e).second == false);
+
+		auto it = y2x.find(e);
+		if(DEBUG_MODE_ON) assert(it != y2x.end());
+		
+		edge_descriptor r = it->second;
+		if(DEBUG_MODE_ON) assert(edge(r).second == true);			
+		
+		c++;
+		rse0.insert(r);
+		rsv1.insert(r->target());
+		rsv2.insert(r->source());
+	}
+
+	return c;
+}
+
+// survive real allelic edges, max edges in each subgraph, edges weight > min surviving weight
+bool splice_graph::keep_surviving_edges() 
+{
+	set<int> sv1;
+	set<int> sv2;
+	SE se0;
+	edge_iterator it1, it2;
+	PEEI pei;
+
+	// survive allelic edges
+	{
+		//CLEAN:
+		int _c = se0.size();
+		int _d = survivived_edges_for_allele(ALLELE1, se0, sv1, sv2);
+		if(DEBUG_MODE_ON) assert(_c + _d == se0.size());
+		int _e = survivived_edges_for_allele(ALLELE2, se0, sv1, sv2);
+		if(DEBUG_MODE_ON && _e > 0)
+		{
+			assert(_c + _d < se0.size());
+		}
+	} 
+
+	// pseudo as edges wont be added to se0
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		if(se0.find(*it1) != se0.end()) continue;
+
+		int s = (*it1)->source();
+		int t = (*it1)->target();
+		double w = get_edge_weight(*it1);
+		if(w < min_surviving_edge_weight) continue;
+		se0.insert(*it1);
+		sv1.insert(t);
+		sv2.insert(s);
+	}
+
+	VE me = compute_maximal_edges();
+	for(int i = 0; i < me.size(); i++)
+	{
+		edge_descriptor ee = me[i];
+		se0.insert(ee);
+		sv1.insert(ee->target());
+		sv2.insert(ee->source());
+	}
+
+	while(true)
+	{
+		bool b = false;
+		for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+		{
+			edge_descriptor e = (*it);
+			int s = e->source(); 
+			int t = e->target();
+			if(sv1.find(s) == sv1.end() && s != 0)
+			{
+				edge_descriptor ee = max_in_edge(s);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(s);
+				sv2.insert(ee->source());
+				b = true;
+			}
+			if(sv2.find(t) == sv2.end() && t != num_vertices() - 1)
+			{
+				edge_descriptor ee = max_out_edge(t);
+				assert(ee != null_edge);
+				assert(se0.find(ee) == se0.end());
+				se0.insert(ee);
+				sv1.insert(ee->target());
+				sv2.insert(t);
+				b = true;
+			}
+			if(b == true) break;
+		}
+		if(b == false) break;
+	}
+
+	VE ve;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		if(se0.find(*it1) != se0.end()) continue;
+		ve.push_back(*it1);
+	}
+
+	for(int i = 0; i < ve.size(); i++)
+	{
+		if(verbose >= 2) printf("remove edge (%d, %d), weight = %.2lf\n", ve[i]->source(), ve[i]->target(), get_edge_weight(ve[i]));
+		remove_edge(ve[i]);
+	}
+
+	if(ve.size() >= 1) return true;
+	else return false;
+
+}
+
+bool splice_graph::extend_boundaries()
+{
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		edge_descriptor e = (*it1);
+		int s = e->source();
+		int t = e->target();
+		int32_t p = get_vertex_info(t).lpos - get_vertex_info(s).rpos;
+		double we = get_edge_weight(e);
+		double ws = get_vertex_weight(s);
+		double wt = get_vertex_weight(t);
+
+		if(p <= 0) continue;	//safe for allelic-pseudo junctions
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+
+		bool b = false;
+		if(out_degree(s) == 1 && ws >= 10.0 * we * we + 10.0) b = true;
+		if(in_degree(t) == 1 && wt >= 10.0 * we * we + 10.0) b = true;
+
+		if(b == false) continue;
+
+		if(out_degree(s) == 1)
+		{
+			edge_descriptor ee = add_edge(s, num_vertices() - 1);
+			set_edge_weight(ee, ws);
+			set_edge_info(ee, edge_info());
+		}
+		if(in_degree(t) == 1)
+		{
+			edge_descriptor ee = add_edge(0, t);
+			set_edge_weight(ee, wt);
+			set_edge_info(ee, edge_info());
+		}
+
+		remove_edge(e);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool splice_graph::extend_start_boundaries()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		PEB p = edge(0, i);
+		if(p.second == true) continue;
+		if(degree(i) == 0) continue;
+		if(get_vertex_info(i).lpos.ale != "$") continue;
+
+		double wv = get_vertex_weight(i);
+		double we = 0;
+		PEEI pei = in_edges(i);
+		for(edge_iterator it = pei.first; it != pei.second; it++)
+		{
+			we += get_edge_weight(*it);
+		}
+
+		if(wv < we || wv < 10 * we * we + 10) continue;
+
+		edge_descriptor ee = add_edge(0, i);
+		set_edge_weight(ee, wv - we);
+		set_edge_info(ee, edge_info());
+
+		vertex_info vi = get_vertex_info(i);
+		if(verbose >= 2) printf("extend start boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.lpos.p32, vi.lpos.ale.c_str());
+
+		flag = true;
+	}
+	return flag;
+
+}
+
+bool splice_graph::extend_end_boundaries()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		PEB p = edge(i, num_vertices() - 1);
+		if(p.second == true) continue;
+		if(degree(i) == 0) continue;
+		if(get_vertex_info(i).lpos.ale != "$") continue;
+
+		double wv = get_vertex_weight(i);
+		double we = 0;
+		PEEI pei = out_edges(i);
+		for(edge_iterator it = pei.first; it != pei.second; it++)
+		{
+			we += get_edge_weight(*it);
+		}
+
+		if(wv < we || wv < 10 * we * we + 10) continue;
+
+		edge_descriptor ee = add_edge(i, num_vertices() - 1);
+		set_edge_weight(ee, wv - we);
+		set_edge_info(ee, edge_info());
+
+		vertex_info vi = get_vertex_info(i);
+		if(verbose >= 2) printf("extend end boundary: vertex = %d, wv = %.2lf, we = %.2lf, pos = %d%s\n", i, wv, we, vi.rpos.p32, vi.rpos.ale.c_str());
+
+		flag = true;
+	}
+	return flag;
+}
+
+bool splice_graph::remove_small_junctions()
+{
+	SE se0;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		if(degree(i) <= 0) continue;
+
+		edge_iterator it1, it2;
+		PEEI pei;
+		int32_t p1 = get_vertex_info(i).lpos.p32;
+		int32_t p2 = get_vertex_info(i).rpos.p32;
+		double wi = get_vertex_weight(i);
+
+		// compute max in-adjacent edge
+		if(to_revise_splice_graph) // limit life span of ws
+		{
+			double ws = 0;
+			for(pei = in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int s = e->source();
+				double w = get_vertex_weight(s);
+				if(s == 0) continue;
+				if(get_vertex_info(s).rpos.ale != "$") continue;
+				if(get_vertex_info(s).rpos.p32 != p1) continue;
+				if(w < ws) continue;
+				ws = w;
+			}
+
+			// remove small in-junction
+			for(pei = in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int s = e->source();
+				double w = get_edge_weight(e);
+				if(s == 0) continue;
+				if(get_vertex_info(s).rpos == p1) continue;
+				if(ws < 2.0 * w * w + 18.0) continue;
+				if(wi < 2.0 * w * w + 18.0) continue;
+
+				se0.insert(e);
+			}
+		}
+
+		// compute max out-adjacent edge
+		if(to_revise_splice_graph) // limit life span of wt
+		{
+			double wt = 0;
+			for(pei = out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				int t = e->target();
+				double w = get_vertex_weight(t);
+				if(t == num_vertices() - 1) continue;
+				if(get_vertex_info(t).lpos.ale != "$") continue;
+				if(get_vertex_info(t).lpos.p32 != p2) continue;
+				if(w < wt) continue;
+				wt = w;
+			}
+
+			// remove small in-junction
+			for(pei = out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+			{
+				edge_descriptor e = (*it1);
+				double w = get_edge_weight(e);
+				int t = e->target();
+				if(t == num_vertices() - 1) continue;
+				if(get_vertex_info(t).lpos == p2) continue;
+				if(wt < 2.0 * w * w + 18.0) continue;
+				if(wi < 2.0 * w * w + 18.0) continue;
+
+				se0.insert(e);
+			}
+		}
+
+	}
+
+	if(se0.size() <= 0) return false;
+
+	for(SE::iterator it = se0.begin(); it != se0.end(); it++)
+	{
+		edge_descriptor e = (*it);
+		if(verbose >= 2) 
+		{
+			vertex_info v1 = get_vertex_info(e->source());
+			vertex_info v2 = get_vertex_info(e->target());
+			printf("remove small junction: length = %d, pos = %d%s-%d%s\n", v2.lpos - v1.rpos, v2.lpos.p32, v2.lpos.ale.c_str(), v1.rpos.p32, v1.rpos.ale.c_str());
+		}
+		remove_edge(e);
+	}
+
+	return true;
+}
+
+// TODO: not able to remove small single exon w. variants inside
+bool splice_graph::remove_small_exons()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		vertex_info vi = get_vertex_info(i);
+		if(vi.type == EMPTY_VERTEX) continue;
+
+		bool b = true;
+		edge_iterator it1, it2;
+		PEEI pei;
+		int32_t p1 = get_vertex_info(i).lpos;
+		int32_t p2 = get_vertex_info(i).rpos;
+
+		if(p2 - p1 >= min_exon_length) continue;
+		if(degree(i) <= 0) continue;
+
+		// consecutive exons are kept
+		for(pei = in_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+		{
+			edge_descriptor e = (*it1);
+			int s = e->source();
+			//if(out_degree(s) <= 1) b = false;
+			if(s != 0 && get_vertex_info(s).rpos.p32 == p1) b = false;
+			if(b == false) break;
+		}
+		for(pei = out_edges(i), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+		{
+			edge_descriptor e = (*it1);
+			int t = e->target();
+			//if(in_degree(t) <= 1) b = false;
+			if(t != num_vertices() - 1 && get_vertex_info(t).lpos.p32 == p2) b = false;
+			if(b == false) break;
+		}
+
+		if(b == false) continue;
+
+		// only consider boundary small exons (single exon transcript is kept)
+		if(edge(0, i).second == false && edge(i, num_vertices() - 1).second == false) continue;
+
+		//clear_vertex(i);
+		if(verbose >= 2) printf("remove small exon: length = %d, pos = %d-%d\n", p2 - p1, p1, p2);
+		vi.type = EMPTY_VERTEX;
+		set_vertex_info(i, vi);
+
+		flag = true;
+	}
+	return flag;
+}
+
+bool splice_graph::remove_inner_boundaries()
+{
+	bool flag = false;
+	int n = num_vertices() - 1;
+	for(int i = 1; i < num_vertices() - 1; i++)
+	{
+		vertex_info vi = get_vertex_info(i);
+		if(vi.type == EMPTY_VERTEX) continue;
+		if(vi.lpos.ale != "$" || vi.rpos.ale != "$" ) continue;
+
+		if(in_degree(i) != 1) continue;
+		if(out_degree(i) != 1) continue;
+
+		PEEI pei = in_edges(i);
+		edge_iterator it1 = pei.first, it2 = pei.second;
+		edge_descriptor e1 = (*it1);
+
+		pei = out_edges(i);
+		it1 = pei.first;
+		it2 = pei.second;
+		edge_descriptor e2 = (*it1);
+
+		int s = e1->source();
+		int t = e2->target();
+
+		if(s != 0 && t != n) continue;
+		if(s != 0 && out_degree(s) == 1) continue;
+		if(t != n && in_degree(t) == 1) continue;
+
+		if(vi.stddev >= 0.01) continue;
+
+		if(verbose >= 2) printf("remove inner boundary: vertex = %d, weight = %.2lf, length = %d, pos = %s-%s\n",
+				i, get_vertex_weight(i), vi.length, vi.lpos.aspos32string().c_str(), vi.rpos.aspos32string().c_str());
+
+		// clear_vertex(i);
+		vi.type = EMPTY_VERTEX;
+		set_vertex_info(i, vi);
+		flag = true;
+	}
+	return flag;
+}
+
+// FIXME: won't be removed if retained intron has variants
+bool splice_graph::remove_intron_contamination()
+{
+	bool flag = false;
+	for(int i = 1; i < num_vertices(); i++)
+	{
+		vertex_info vi = get_vertex_info(i);
+		if(vi.type == EMPTY_VERTEX) continue;
+		
+		if(in_degree(i) != 1) continue;
+		if(out_degree(i) != 1) continue;
+
+		edge_iterator it1, it2;
+		PEEI pei = in_edges(i);
+		it1 = pei.first;
+		edge_descriptor e1 = (*it1);
+		pei = out_edges(i);
+		it1 = pei.first;
+		edge_descriptor e2 = (*it1);
+		int s = e1->source();
+		int t = e2->target();
+		double wv = get_vertex_weight(i);
+
+		if(s == 0) continue;
+		if(t == num_vertices() - 1) continue;
+		if(get_vertex_info(s).rpos != vi.lpos) continue;
+		if(get_vertex_info(t).lpos != vi.rpos) continue;
+
+		PEB p = edge(s, t);
+		if(p.second == false) continue;
+
+		edge_descriptor ee = p.first;
+		double we = get_edge_weight(ee);
+
+		if(wv > we) continue;
+		if(wv > max_intron_contamination_coverage) continue;
+
+		if(verbose >= 2) printf("clear intron contamination %d, weight = %.2lf, length = %d, edge weight = %.2lf\n", i, wv, vi.length, we);
+
+		// clear_vertex(i);
+		vi.type = EMPTY_VERTEX;
+		set_vertex_info(i, vi);
+
+		flag = true;
+	}
+	return flag;
 }
 
 int splice_graph::build(const string &file)
@@ -875,6 +1712,22 @@ int splice_graph::locate(int v)
 	return 0;
 }
 
+int splice_graph::locate_vertex(int32_t p)
+{
+	return locate_vertex(p, 0, num_vertices());
+}
+
+int splice_graph::locate_vertex(int32_t p, int a, int b)
+{
+	if(a >= b) return -1;
+	int m = (a + b) / 2;
+	assert(m >= 0 && m < num_vertices());
+	const vertex_info &v = get_vertex_info(m);
+	if(p >= v.lpos && p < v.rpos) return m;
+	if(p < v.lpos) return locate_vertex(p, a, m);
+	return locate_vertex(p, m + 1, b);
+}
+
 int splice_graph::round_weights()
 {
 	MED m = ewrt;
@@ -970,19 +1823,20 @@ double splice_graph::compute_average_vertex_weight()
 	return sum;
 }
 
-int splice_graph::draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp)
+int splice_graph::draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp, string label)
 {
-	return directed_graph::draw(file, mis, mes, len, tp);
+	return directed_graph::draw(file, mis, mes, len, tp, label);
 }
 
-int splice_graph::draw(const string &file, const MIS &mis, const MES &mes, double len)
+int splice_graph::draw(const string &file, const MIS &mis, const MES &mes, double len, string label)
 {
-	return directed_graph::draw(file, mis, mes, len);
+	return directed_graph::draw(file, mis, mes, len, label);
 }
 
-int splice_graph::draw(const string &file)
+int splice_graph::draw(const string &file, string label)
 {
 	MIS mis;
+	// map<int, int> mii;
 	char buf[10240];
 
 	for(int i = 0; i < num_vertices(); i++)
@@ -991,8 +1845,9 @@ int splice_graph::draw(const string &file)
 		vertex_info vi = get_vertex_info(i);
 		int ll = vi.lpos % 100000;
 		int rr = vi.rpos % 100000;
-		sprintf(buf, "%.1lf:%d-%d", w, ll, rr);
+		sprintf(buf, "%.1lf:%d%s-%d%s", w, ll, vi.lpos.ale.c_str(), rr, vi.rpos.ale.c_str());
 		mis.insert(PIS(i, buf));
+		// mii.insert({i, vi.gt});
 	}
 
 	MES mes;
@@ -1004,7 +1859,50 @@ int splice_graph::draw(const string &file)
 		sprintf(buf, "%.1lf", w);
 		mes.insert(PES(*it1, buf));
 	}
-	draw(file, mis, mes, 4.5);
+	draw(file, mis, mes, 4.5, label);
+	return 0;
+}
+
+int splice_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, const vector<int> &tp, string label)
+{
+	return directed_graph::graphviz(file, mis, mii, mes, len, tp, label);
+}
+
+int splice_graph::graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label)
+{
+	return directed_graph::graphviz(file, mis, mii, mes, len, label);
+}
+
+int splice_graph::graphviz(const string &file, string label)
+{
+	MIS mis;
+	MIS mii;
+	char buf[10240];
+
+	string gene_start_end = chrm + ":"  + to_string(get_vertex_info(0).lpos) + "-" + to_string(get_vertex_info(num_vertices() - 1).rpos);
+	if (label == "") label = gene_start_end;
+
+	for(int i = 0; i < num_vertices(); i++)
+	{
+		double w = get_vertex_weight(i);
+		vertex_info vi = get_vertex_info(i);
+		int ll = vi.lpos % 100000;
+		int rr = vi.rpos % 100000;
+		sprintf(buf, "%.1lf:%d%s-%d%s", w, ll, vi.lpos.ale.c_str(), rr, vi.rpos.ale.c_str());
+		mis.insert(PIS(i, buf));
+		mii.insert({i, vcf_data::graphviz_gt_color_shape(vi.gt, vi.type)});
+	}
+
+	MES mes;
+	edge_iterator it1, it2;
+	PEEI pei;
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		double w = get_edge_weight(*it1);
+		sprintf(buf, "%.1lf", w);
+		mes.insert(PES(*it1, buf));
+	}
+	graphviz(file, mis, mii, mes, 4.5, label);
 	return 0;
 }
 
@@ -1046,6 +1944,15 @@ int splice_graph::print()
 
 int splice_graph::print_weights()
 {
+	for(int i = 0; i < num_vertices(); i++)
+	{
+		//if(degree(i) <= 1) continue;
+		vertex_info vi = get_vertex_info(i);
+		edge_iterator it1, it2;
+		PEEI pei;
+		printf("vertex %d, range = [%d%s, %d%s), length = %d\n", i, vi.lpos.p32, vi.lpos.ale.c_str(), vi.rpos.p32, vi.rpos.ale.c_str(), vi.rpos - vi.lpos);
+	}
+
 	edge_iterator it1, it2;
 	PEEI pei;
 	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
@@ -1053,78 +1960,11 @@ int splice_graph::print_weights()
 		edge_descriptor e = (*it1);
 		int s = e->source();
 		int t = e->target();
-		int32_t p1 = get_vertex_info(s).rpos;
-		int32_t p2 = get_vertex_info(t).lpos;
+		as_pos32 p1 = get_vertex_info(s).rpos;
+		as_pos32 p2 = get_vertex_info(t).lpos;
 		double w1 = get_edge_weight(e);
 		double w2 = get_edge_info(e).weight;
-		printf("edge (%d, %d) pos = %d-%d length = %d weight = (%.2lf, %.2lf)\n", s, t, p1, p2, p2 - p1 + 1, w1, w2);
-	}
-	return 0;
-}
-
-int splice_graph::output_transcripts(ofstream &fout, const vector<path> &p) const
-{
-	for(int i = 0; i < p.size(); i++)
-	{
-		string tid = gid + "." + tostring(i);
-		output_transcript(fout, p[i], tid);
-	}
-	return 0;
-}
-
-int splice_graph::output_transcript(ofstream &fout, const path &p, const string &tid) const
-{
-	fout.precision(2);
-	fout<<fixed;
-
-	const vector<int> &v = p.v;
-	double coverage = p.abd;		// number of molecular
-
-	assert(v[0] == 0);
-	assert(v[v.size() - 1] == num_vertices() - 1);
-	if(v.size() < 2) return 0;
-
-	int ss = v[1];
-	int tt = v[v.size() - 2];
-	int32_t ll = get_vertex_info(ss).lpos.p32;									// TODO: make AS
-	int32_t rr = get_vertex_info(tt).rpos.p32;									// TODO: make AS
-
-	fout<<chrm.c_str()<<"\t";		// chromosome name
-	fout<<"altai"<<"\t";			// source
-	fout<<"transcript\t";			// feature
-	fout<<ll + 1<<"\t";				// left position
-	fout<<rr<<"\t";					// right position
-	fout<<1000<<"\t";				// score, now as abundance
-	fout<<strand<<"\t";				// strand
-	fout<<".\t";					// frame
-	fout<<"gene_id \""<<gid.c_str()<<"\"; ";
-	fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
-	fout<<"coverage \""<<coverage<<"\";"<<endl;
-
-	
-	join_interval_map_int jmap;
-	for(int k = 1; k < v.size() - 1; k++)
-	{
-		int32_t p1 = get_vertex_info(v[k]).lpos.p32;
-		int32_t p2 = get_vertex_info(v[k]).rpos.p32;
-		jmap += make_pair(ROI(p1, p2), 1);
-	}
-
-	int cnt = 0;
-	for(JIMI_int it = jmap.begin(); it != jmap.end(); it++)
-	{
-		fout<<chrm.c_str()<<"\t";			// chromosome name
-		fout<<"altai"<<"\t";				// source
-		fout<<"exon\t";						// feature
-		fout<<lower(it->first) + 1<<"\t";	// left position
-		fout<<upper(it->first)<<"\t";		// right position
-		fout<<1000<<"\t";					// score
-		fout<<strand<<"\t";					// strand
-		fout<<".\t";						// frame
-		fout<<"gene_id \""<<gid.c_str()<<"\"; ";
-		fout<<"transcript_id \""<<tid.c_str()<<"\"; ";
-		fout<<"exon_number \""<<++cnt<<"\"; ";
-		fout<<"coverage \""<<coverage<<"\";"<<endl;
+		printf("edge (%d, %d) pos = %s-%s length = %d weight = (%.2lf, %.2lf)\n", s, t, p1.aspos32string().c_str(), p2.aspos32string().c_str(), p2 - p1 + 1, w1, w2);
 	}
 	return 0;
 }
@@ -1141,6 +1981,20 @@ int splice_graph::output_transcripts(vector<transcript> &v, const vector<path> &
 	return 0;
 }
 
+int splice_graph::output_transcripts1(vector<transcript> &v, vector<transcript> &v1, const vector<path> &p) const
+{
+	for(int i = 0; i < p.size(); i++)
+	{
+		string tid = gid + "." + tostring(i);
+		transcript trst;
+		output_transcript(trst, p[i], tid);
+		if(p[i].nf == 1) v1.push_back(trst);
+		else if(p[i].nf == 0) v.push_back(trst);
+	}
+	return 0;
+}
+
+
 int splice_graph::output_transcript(transcript &trst, const path &p, const string &tid) const
 {
 	trst.seqname = chrm;
@@ -1149,16 +2003,31 @@ int splice_graph::output_transcript(transcript &trst, const path &p, const strin
 	trst.transcript_id = tid;
 	trst.coverage = p.abd;
 	trst.strand = strand;
+	trst.gt = UNPHASED;
 
 	const vector<int> &v = p.v;
-	join_interval_map_int jmap;
-	for(int k = 1; k < v.size() - 1; k++)
+	join_interval_map jmap;
+	for(int k = 1; k < v.size() - 1; k++) // first and last vertices are source/sink
 	{
-		as_pos32 p1 = get_vertex_info(v[k]).lpos;
-		as_pos32 p2 = get_vertex_info(v[k]).rpos;
+		genotype g = get_vertex_info(v[k]).gt;
+		as_pos32 p1 (get_vertex_info(v[k]).lpos.p32, "$");
+		as_pos32 p2 (get_vertex_info(v[k]).rpos.p32, "$");
 		jmap += make_pair(ROI(p1, p2), 1);
-		trst.add_exon(p1, p2);
+		if (g == ALLELE1 || g == ALLELE2)
+		{
+			trst.add_as_exons(get_vertex_info(v[k]).lpos, get_vertex_info(v[k]).rpos);
+			if (trst.gt == UNPHASED || trst.gt == NONSPECIFIC) trst.gt = g;
+			// else assert(trst.gt == g);
+		}
+		else if (g == NONSPECIFIC && trst.gt == UNPHASED)
+		{
+			trst.gt = NONSPECIFIC;
+		}
 	}
 
+	for(JIMI it = jmap.begin(); it != jmap.end(); it++)
+	{
+		trst.add_exon(lower(it->first), upper(it->first));
+	}
 	return 0;
 }

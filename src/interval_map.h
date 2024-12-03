@@ -20,12 +20,13 @@ using namespace boost;
 using namespace std;
 
 typedef icl::right_open_interval<as_pos32> ROI;
+typedef icl::right_open_interval<int32_t> ROI_int;
 
 // join interval map
 typedef icl::interval_map<as_pos32, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI> join_interval_map;
 typedef join_interval_map::const_iterator JIMI;
 typedef pair<JIMI, JIMI> PJIMI;
-typedef icl::interval_map<int32_t, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI> join_interval_map_int;
+typedef icl::interval_map<int32_t, int, icl::partial_absorber, less, icl::inplace_plus, icl::inter_section, ROI_int> join_interval_map_int;
 typedef join_interval_map_int::const_iterator JIMI_int;
 
 // split interval map
@@ -47,7 +48,7 @@ SIMI locate_left_iterator(const split_interval_map &imap, as_pos32 x);
 PSIMI locate_boundary_iterators(const split_interval_map &imap, as_pos32 x, as_pos32 y);
 
 // return the sum of the lengths of intervals from p to q (include q)
-int compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q);
+// int compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q);
 
 // return the maximum overlap of the intervals from p to q (include q)
 int compute_max_overlap(const split_interval_map &imap, SIMI &p, SIMI &q);
@@ -56,8 +57,10 @@ int compute_max_overlap(const split_interval_map &imap, SIMI &p, SIMI &q);
 int compute_sum_overlap(const split_interval_map &imap, SIMI &p, SIMI &q);
 
 // evaluate a region
-int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
-int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+// int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev, double &max);
+// int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev);
+
 
 // testing
 int test_split_interval_map();

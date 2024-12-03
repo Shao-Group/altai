@@ -1,6 +1,8 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by  Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
 */
 
@@ -20,6 +22,7 @@ See LICENSE for licensing.
 
 using namespace std;
 
+typedef map<int, genotype> MII;
 typedef map<edge_descriptor, edge_info> MEIF;
 typedef pair<edge_descriptor, edge_info> PEIF;
 
@@ -27,6 +30,7 @@ class splice_graph : public directed_graph
 {
 public:
 	splice_graph();
+	// splice_graph(splice_graph && gr) = default; // move constructor is not used
 	splice_graph(const splice_graph &gr);
 	virtual ~splice_graph();
 
@@ -41,6 +45,9 @@ public:
 	MEIF einf;
 
 public:
+	int edge_integrity_examine() const;
+	int edge_integrity_enforce();
+
 	// get and set properties
 	double get_vertex_weight(int v) const;
 	double get_edge_weight(edge_base *e) const;
@@ -69,6 +76,23 @@ public:
 	// modify the splice_graph
 	int clear();
 	int copy(const splice_graph &gr, MEE &x2y, MEE &y2x);
+	int allelic_copy(const splice_graph &gr, MEE &x2y, MEE &y2x, genotype gt);
+	int remove_edge(edge_descriptor e);
+	int remove_edge(int s, int t);
+
+	// revise splice graph
+	VE compute_maximal_edges();
+	int survivived_edges_for_allele(genotype gt, SE& se0, set<int>& sv1, set<int>& sv2);
+	int revise_splice_graph();
+	bool refine_splice_graph();
+	bool keep_surviving_edges();
+	bool extend_boundaries();
+	bool extend_start_boundaries();
+	bool extend_end_boundaries();
+	bool remove_small_junctions();
+	bool remove_small_exons();
+	bool remove_inner_boundaries();
+	bool remove_intron_contamination();
 
 	// read, write, and simulate splice graph
 	int build(const string &file);
@@ -103,19 +127,23 @@ public:
 	// rounding all weights to integers
 	int round_weights();
 	int locate(int v);
+	int locate_vertex(int32_t p);
+	int locate_vertex(int32_t p, int a, int b);
 
 	// draw and print
-	int draw(const string &file);
-	int draw(const string &file, const MIS &mis, const MES &mes, double len);
-	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp);
+	int draw(const string &file, string label = "");
+	int draw(const string &file, const MIS &mis, const MES &mes, double len, string label = "");
+	int draw(const string &file, const MIS &mis, const MES &mes, double len, const vector<int> &tp, string label = "");
+	int graphviz(const string &file, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, string label = "");
+	int graphviz(const string &file, const MIS &mis, const MIS &mii, const MES &mes, double len, const vector<int> &tp, string label = "");
 	int print_nontrivial_vertices();
 	int print_weights();
 	int print();
 
 	// output transcripts
-	int output_transcripts(ofstream &fout, const vector<path> &p) const;
 	int output_transcripts(vector<transcript> &v, const vector<path> &p) const;
-	int output_transcript(ofstream &fout, const path &p, const string &tid) const;
+	int output_transcripts1(vector<transcript> &v, vector<transcript> &v1, const vector<path> &p) const;
 	int output_transcript(transcript &trst, const path &p, const string &tid) const;
 };
 

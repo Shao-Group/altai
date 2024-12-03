@@ -1,0 +1,8 @@
+# Notes of releases, features, changes, bug fixes ...
+
+# Altai 0.0.1
+Allele-specific (AS) transcript assembly instrument
+Integrate features from Scallop and Scallop2, performs phase-preserving decomposition
+bridges AS and non-AS multi-end phasing paths, phases variants in each decuced 
+haplotypes
+

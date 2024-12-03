@@ -1,6 +1,10 @@
 /*
 Part of Scallop Transcript Assembler
 (c) 2017 by Mingfu Shao, Carl Kingsford, and Carnegie Mellon University.
+Part of Coral
+(c) 2019 by Mingfu Shao, The Pennsylvania State University.
+Part of Scallop2
+(c) 2021 by  Qimin Zhang, Mingfu Shao, and The Pennsylvania State University.
 Part of Altai
 (c) 2021 by Xiaofei Carl Zang, Mingfu Shao, and The Pennsylvania State University.
 See LICENSE for licensing.
@@ -8,22 +12,25 @@ See LICENSE for licensing.
 
 #include "config.h"
 #include "vcf_data.h"
+#include "util.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <string>
 
 using namespace std;
 
 // parameters
 // for bam file and reads
 int min_flank_length = 3;
-int max_num_cigar = 7;
+int max_num_cigar = 100;
 int max_edit_distance = 10;
-int32_t min_bundle_gap = 50;
-int min_num_hits_in_bundle = 20;
+int32_t min_bundle_gap = 100;		
+int min_num_hits_in_bundle = 5;	
+int min_num_splices_in_bundle = 15;	// not used; accept bundle if #hits with splices is at least this number
 uint32_t min_mapping_quality = 1;
 int32_t min_splice_boundary_hits = 1;
 bool use_second_alignment = false;
@@ -34,25 +41,53 @@ int library_type = EMPTY;
 int max_preview_reads = 2000000;
 int max_preview_spliced_reads = 50000;
 int min_preview_spliced_reads = 10000;
-double preview_infer_ratio = 0.95;
+double preview_infer_ratio = 0.85;
 bool preview_only = false;
+double insertsize_ave = 300;
+double insertsize_std = 50;
+int insertsize_median = -1;
+int insertsize_low = -1;
+int insertsize_high = -1;
+double insertsize_low_percentile = 0.005;
+double insertsize_high_percentile = 0.998;
+
+
+// for bridging
+double min_bridging_score = 0.5;
+int max_num_path_nodes = 10000;
+int dp_solution_size = 10;
+int dp_stack_size = 5;
+bool use_overlap_scoring = false;
+int32_t max_clustering_flank = 30;
+int32_t flank_tiny_length = 10;
+double flank_tiny_ratio = 0.4;
+int remove_tiny_boundary_mode = 1; 
+double bridger_suppl_coefficient1 = 0.5;
+double bridger_suppl_coefficient2 = 0.5;
+
+
 
 // for identifying subgraphs
 int32_t min_subregion_gap = 3;
-double min_subregion_overlap = 1.5;
-int32_t min_subregion_length = 15;
+// double min_subregion_overlap = 1.5;
+// int32_t min_subregion_length = 15;
+int32_t min_subregion_len = 15;
+int32_t min_subregion_max = 3;
+double min_subregion_ave = 1.5;
 double min_allele_overlap = 1.0;
 
 // for revising/decomposing splice graph
-double max_intron_contamination_coverage = 2.0;
+double min_guaranteed_edge_weight = 0.01;
 double min_surviving_edge_weight = 1.5;
-double max_decompose_error_ratio[7] = {0.33, 0.05, 0.33, 0.50, 0.50, 0.3, 1.1};
+double max_intron_contamination_coverage = 2.0;
+double max_decompose_error_ratio[7] = {0.33, 0.05, 0.33, 0.50, 0.50, 0.3, 1.1}; // para for allelic decomop
+// double max_decompose_error_ratio[7] = {0.33, 0.05, 0.0, 0.25, 0.30, 0.0, 1.1}; // para for non-allelic decomp
 
 // for selecting paths
-double min_transcript_coverage = 1.01;
+double min_transcript_coverage = 1.5;
 double min_transcript_coverage_ratio = 0.005;
 double min_single_exon_coverage = 20;
-double min_transcript_numreads = 20;
+double min_transcript_numreads = 10;
 int min_transcript_length_base = 150;
 int min_transcript_length_increase = 50;
 int min_exon_length = 20;
@@ -78,26 +113,54 @@ string ref_file1;
 string ref_file2;
 string vcf_file;
 string output_file;
+string output_file1 = "";
+string chr_exclude;
+set<string> chrex;
 
 // AS info
+bool mask_WASP = false;
 int min_num_reads_support_variant = 3;
 vcf_data asp;
 string vmap_chrm = "";
-map < std::string, map <int, vector <std::string> > > vcf_map;
-map < std::string, map <int, int > > vcf_map_len;
-map <int, vector <std::string> >::iterator vcf_map_it;
-map <int, int>::iterator vcf_map_len_it;
-map <int, vector <std::string> >::iterator vcf_map_end;
-map <int, int >::iterator vcf_map_len_end;
+map < string, map <int, map <string, genotype> > >     vcf_map;
+map < std::string, map <int, int > >                   vcf_map_len;
+map <int, map <string, genotype> >::iterator           vcf_map_it;
+map <int, int >::iterator                              vcf_map_len_it;
+map <int, map <string, genotype> >::iterator           vcf_map_end;
+map <int, int >::iterator                              vcf_map_len_end;
+double major_gt_threshold = 0.75;
+bool use_opposite_phasing = false;
+bool break_unphased_allelic_phasing = true;
 
 // for controling
+int bundle_mode = 2;
+bool phaser_smooth = false;
 bool output_tex_files = false;
+bool output_graphviz_files = false;
 string fixed_gene_name = "";
-int batch_bundle_size = 100;
+int batch_bundle_size = 10;
 int verbose = 1;
+int assemble_duplicates = 10;
 string version = "v0.0.1";
+bool decompose_as_neighor = false;
+bool to_revise_splice_graph = true;
+bool skip_resolve_hyper_edge = true;
+bool skip_resolve_smallest = true;
+bool use_filter = true;
+double min_allele_transcript_cov = 0.1;
+double recover_partial_tx_min_overlap_with_full_tx = -1;
+
+// for debugging
 bool DEBUG_MODE_ON = false;
-bool FILTER_BY_COV = false;
+bool debug_bundle_only = false;
+bool print_vcf = false;
+bool print_hit = false;
+bool print_region_detail = false;
+bool print_bundle_bridge = false;
+bool print_bridger_detail = false;
+bool print_bundle_detail = false;
+bool print_phaser_detail = false;
+bool print_scallop_detail = false;
 
 int parse_arguments(int argc, const char ** argv)
 {
@@ -117,10 +180,6 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "-j")
 		{
 			vcf_file = string(argv[i + 1]);
-			asp = vcf_data(vcf_file);
-			vcf_map = asp.vcf_pos_map;
-			vcf_map_len = asp.vcf_ale_len;
-			if(DEBUG_MODE_ON) asp.print(10000);
 			i++;
 		}
 		else if (string(argv[i]) == "-G")
@@ -129,11 +188,9 @@ int parse_arguments(int argc, const char ** argv)
 			fai = fai_load(fasta_input.c_str());
 			i++;
 		}
-
-		// internal use
-		else if(string(argv[i]) == "-a")
+		else if(string(argv[i]) == "-f" || string(argv[i]) == "--transcript_fragments")
 		{
-			algo = string(argv[i + 1]);
+			output_file1 = string(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "-r")
@@ -159,6 +216,10 @@ int parse_arguments(int argc, const char ** argv)
 		else if(string(argv[i]) == "-t")
 		{
 			output_tex_files = true;
+		}
+		else if(string(argv[i]) == "-z")
+		{
+			output_graphviz_files = true;
 		}
 
 		// user specified
@@ -200,6 +261,11 @@ int parse_arguments(int argc, const char ** argv)
 			min_num_hits_in_bundle = atoi(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--min_num_splices_in_bundle")
+		{
+			min_num_splices_in_bundle = atoi(argv[i + 1]);
+			i++;
+		}
 		else if(string(argv[i]) == "--min_mapping_quality")
 		{
 			min_mapping_quality = atoi(argv[i + 1]);
@@ -239,14 +305,19 @@ int parse_arguments(int argc, const char ** argv)
 			min_subregion_gap = atoi(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--min_subregion_length")
+		else if(string(argv[i]) == "--min_subregion_len")
 		{
-			min_subregion_length = atoi(argv[i + 1]);
+			min_subregion_len = atoi(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--min_subregion_overlap")
+		else if(string(argv[i]) == "--min_subregion_ave")
 		{
-			min_subregion_overlap = atof(argv[i + 1]);
+			min_subregion_ave = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--min_subregion_max")
+		{
+			min_subregion_max = atoi(argv[i + 1]);
 			i++;
 		}
 		else if(string(argv[i]) == "--min_allele_overlap")
@@ -378,36 +449,243 @@ int parse_arguments(int argc, const char ** argv)
 			verbose = atoi(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--assemble_duplicates")
+		{
+			assemble_duplicates = atoi(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--bundle_mode")
+		{
+			bundle_mode = atoi(argv[i + 1]);
+			assert(bundle_mode == 1 || bundle_mode == 2 || bundle_mode == 3);
+			i++;
+		}
+		else if(string(argv[i]) == "--phaser_smooth")
+		{
+			phaser_smooth = true;
+		}
 		else if(string(argv[i]) == "--batch_bundle_size")
 		{
 			batch_bundle_size = atoi(argv[i + 1]);
 			i++;
 		}
-		else if(string(argv[i]) == "--DEBUG_MODE")
+		else if(string(argv[i]) == "--min_bridging_score")
 		{
-			DEBUG_MODE_ON = true;			
+			min_bridging_score = atof(argv[i + 1]);
+			i++;
 		}
-		else if(string(argv[i]) == "--filter_AS_transcript_by_coverage")
+		else if(string(argv[i]) == "--dp_solution_size")
 		{
-			FILTER_BY_COV = true;			
+			dp_solution_size = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--dp_stack_size")
+		{
+			dp_stack_size = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--max_clustering_flank")
+		{
+			max_clustering_flank = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--flank_tiny_length")
+		{
+			flank_tiny_length = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--flank_tiny_ratio")
+		{
+			flank_tiny_ratio = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--remove_tiny_boundary_mode")
+		{
+			int _x_ = atoi(argv[i + 1]);
+			assert(_x_ == 0 || _x_ == 1 || _x_ == 2);
+			remove_tiny_boundary_mode = _x_;
+			i++;
+		}
+		else if(string(argv[i]) == "--bridger_suppl_coefficient1")
+		{
+			bridger_suppl_coefficient1 = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--bridger_suppl_coefficient2")
+		{
+			bridger_suppl_coefficient2 = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_median")
+		{
+			insertsize_median = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_low")
+		{
+			insertsize_low = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_high")
+		{
+			insertsize_high = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_std")
+		{
+			insertsize_std = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--insertsize_ave")
+		{
+			insertsize_ave = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--mask_WASP")
+		{
+			mask_WASP = true;
 		}
 		else if(string(argv[i]) == "--min_num_reads_support_variant")
 		{
 			min_num_reads_support_variant  = atoi(argv[i + 1]);
 			i++;
 		}
+		else if(string(argv[i]) == "--use_opposite_phasing")
+		{
+			use_opposite_phasing  = true;
+		}
+		else if(string(argv[i]) == "--not_break_unphased_allelic_phasing")
+		{
+			break_unphased_allelic_phasing  = false;
+		}
+		else if(string(argv[i]) == "--chr_exclude")
+		{
+			chr_exclude = string(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--decompose_as_neighor")
+		{
+			decompose_as_neighor = true;
+		}
+		else if(string(argv[i]) == "--not_revise_splice_graph")
+		{
+			to_revise_splice_graph = false;	
+		}
+		// else if(string(argv[i]) == "--not_skip_resolve_hyper_edge") //TODO: unsafe to use
+		// {
+		// 	skip_resolve_hyper_edge = false;
+		// }
+		else if(string(argv[i]) == "--not_skip_resolve_smallest")
+		{
+			skip_resolve_smallest = false;
+		}
+		else if(string(argv[i]) == "--not_use_filter")
+		{
+			use_filter = false;
+		}
+		else if(string(argv[i]) == "--min_allele_transcript_cov")
+		{
+			min_allele_transcript_cov = atof(argv[i + 1]);
+			i++;
+		}
+		else if(string(argv[i]) == "--recover_partial_tx_min_overlap_with_full_tx")
+		{
+			recover_partial_tx_min_overlap_with_full_tx = atof(argv[i + 1]);
+			i++;
+		}
+		// for debug
+		else if(string(argv[i]) == "--DEBUG")
+		{
+			DEBUG_MODE_ON = true;			
+		}
+		else if(string(argv[i]) == "--debug_bundle_only")
+		{
+			debug_bundle_only = true;
+		}
+		else if(string(argv[i]) == "--print_vcf")
+		{
+			print_vcf = true;			
+		}
+		else if(string(argv[i]) == "--print_hit")
+		{
+			print_hit = true;			
+		}
+		else if(string(argv[i]) == "--print_region_detail")
+		{
+			print_region_detail = true;			
+		}
+		else if(string(argv[i]) == "--print_bundle_bridge")
+		{
+			print_bundle_bridge = true;			
+		}
+		else if(string(argv[i]) == "--print_bridger_detail")
+		{
+			print_bridger_detail = true;		
+		}
+		else if(string(argv[i]) == "--print_bundle_detail")
+		{
+			print_bundle_detail = true;			
+		}
+		else if(string(argv[i]) == "--print_phaser_detail")
+		{
+			print_phaser_detail = true;			
+		}
+		else if(string(argv[i]) == "--print_scallop_detail")
+		{
+			print_scallop_detail = true;			
+		}
+		else
+		{
+			cerr << "Unkown arugment received: " << string(argv[i]) << endl;
+			print_help();
+			abort();
+		}
 	}
 
+	// process arguments
 	if(min_surviving_edge_weight < 0.1 + min_transcript_coverage) 
 	{
 		min_surviving_edge_weight = 0.1 + min_transcript_coverage;
+		if(min_surviving_edge_weight > 10.0) min_surviving_edge_weight = 10.0;
+	}
+	
+	if(chr_exclude != "")
+	{
+		// split --chr_exclude by ','
+		assert(chrex.size() == 0);
+		size_t delim_pos = 0;
+		while((delim_pos = chr_exclude.find(",")) != string::npos) 
+		{
+			chrex.insert(chr_exclude.substr(0, delim_pos));
+			chr_exclude.erase(0, delim_pos + 1);
+		}
+		chrex.insert(chr_exclude);			
 	}
 
-	// verify arguments
+	// verify + process arguments
 	if(input_file == "")
 	{
 		printf("error: input-file is missing.\n");
 		exit(0);
+	}
+
+	if(vcf_file == "" && preview_only == false)
+	{
+		printf("error: vcf-file is missing.\n");
+		printf("Are you performing allele-specific transcriptome assembly or allele-specific alternative splicing analysis?");
+		exit(0);
+	}
+	else
+	{
+		asp = vcf_data(vcf_file);
+		vcf_map = asp.vcf_pos_map;
+		vcf_map_len = asp.vcf_ale_len;
+		if(DEBUG_MODE_ON && print_vcf) 
+		{
+			asp.print();
+			cout << "print vcf only, exit program" << endl;
+			exit(0);
+		}
 	}
 
 	if(output_file == "" && preview_only == false)
@@ -441,8 +719,11 @@ int print_parameters()
 
 	// for identifying subgraphs
 	printf("min_subregion_gap = %d\n", min_subregion_gap);
-	printf("min_subregion_length = %d\n", min_subregion_length);
-	printf("min_subregion_overlap = %.2lf\n", min_subregion_overlap);
+	// printf("min_subregion_length = %d\n", min_subregion_length);
+	// printf("min_subregion_overlap = %.2lf\n", min_subregion_overlap);
+	printf("min_subregion_len = %d\n", min_subregion_len);
+	printf("min_subregion_max = %d\n", min_subregion_max);
+	printf("min_subregion_ave = %.2lf\n", min_subregion_ave);
 	printf("min_allele_overlap = %.2lf\n", min_allele_overlap);
 
 	// for splice graph
@@ -472,10 +753,12 @@ int print_parameters()
 	printf("ref_file1 = %s\n", ref_file1.c_str());
 	printf("ref_file2 = %s\n", ref_file2.c_str());
 	printf("output_file = %s\n", output_file.c_str());
+	printf("output_file1 = %s\n", output_file1.c_str());
 
 	// for controling
 	printf("library_type = %d\n", library_type);
 	printf("output_tex_files = %c\n", output_tex_files ? 'T' : 'F');
+	printf("output_graphviz_files = %c\n", output_graphviz_files ? 'T' : 'F');
 	printf("fixed_gene_name = %s\n", fixed_gene_name.c_str());
 	printf("use_second_alignment = %c\n", use_second_alignment ? 'T' : 'F');
 	printf("uniquely_mapped_only = %c\n", uniquely_mapped_only ? 'T' : 'F');
@@ -514,24 +797,40 @@ int print_logo()
 int print_help()
 {
 	printf("\n");
-	printf("Usage: altai -i <bam-file> -j <vcf-file> [-G <genome-fasta-file>] -o <output-name-base> [options]\n");
+	printf("Usage: altai -i <bam-file> -j <vcf-file> [--chr_exclude <comma,seperated,list,chr>] [-G <genome-fasta-file>] -o <output-prefix> [options]\n");
+	
+	printf("\n");
+	printf("Required: \n");
+	printf(" %-42s  %s\n", "-i <bam-file>",  "sorted bam alignment");
+	printf(" %-42s  %s\n", "-j <vcf-file>",  "sorted vcf file of personalized and phased variants");
+	printf(" %-42s  %s\n", "-o <output-prefix>",  "");
+	printf(" \n");
+	
+	printf("\n");
+	printf("Recommended:\n");
+	printf(" %-42s  %s\n", "--chr_exclude <comma,seperated,list,chr>",  "a list of chromosomes (comma seperated w/o space) excluded from assembly, e.g. --chr_exclude X,Y");
+	printf(" %-42s  %s\n", "-G <genome-fasta-file>",  "if want to output allele transcript sequences");
+	
 	printf("\n");
 	printf("Options:\n");
 	printf(" %-42s  %s\n", "--help",  "print usage of Altai and exit");
 	printf(" %-42s  %s\n", "--version",  "print current version of Altai and exit");
+	printf(" %-42s  %s\n", "--preview",  "determine fragment-length-range and library-type and exit");
 	printf(" %-42s  %s\n", "--verbose <0, 1, 2>",  "0: quiet; 1: one line for each graph; 2: with details, default: 1");
+	printf(" %-42s  %s\n", "-f/--transcript_fragments <filename>",  "file to which the assembled non-full-length transcripts will be written to");
 	printf(" %-42s  %s\n", "--library_type <first, second, unstranded>",  "library type of the sample, default: unstranded");
-	printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
+	printf(" %-42s  %s\n", "--assemble_duplicates <integer>",  "the number of consensus runs of the decomposition, default: 10");
+	printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.5");
+//  printf(" %-42s  %s\n", "--min_transcript_coverage <float>",  "minimum coverage required for a multi-exon transcript, default: 1.01");
 	printf(" %-42s  %s\n", "--min_single_exon_coverage <float>",  "minimum coverage required for a single-exon transcript, default: 20");
 	printf(" %-42s  %s\n", "--min_transcript_length_increase <integer>",  "default: 50");
 	printf(" %-42s  %s\n", "--min_transcript_length_base <integer>",  "default: 150, minimum length of a transcript would be");
 	printf(" %-42s  %s\n", "",  "--min_transcript_length_base + --min_transcript_length_increase * num-of-exons");
 	printf(" %-42s  %s\n", "--min_mapping_quality <integer>",  "ignore reads with mapping quality less than this value, default: 1");
-	printf(" %-42s  %s\n", "--max_num_cigar <integer>",  "ignore reads with CIGAR size larger than this value, default: 7");
-	printf(" %-42s  %s\n", "--min_bundle_gap <integer>",  "minimum distances required to start a new bundle, default: 50");
-	printf(" %-42s  %s\n", "--min_num_hits_in_bundle <integer>",  "minimum number of reads required in a bundle, default: 20");
+	printf(" %-42s  %s\n", "--max_num_cigar <integer>",  "ignore reads with CIGAR size larger than this value, default: 1000");
+	printf(" %-42s  %s\n", "--min_bundle_gap <integer>",  "minimum distances required to start a new bundle, default: 100");
+	printf(" %-42s  %s\n", "--min_num_hits_in_bundle <integer>",  "minimum number of reads required in a gene locus, default: 5");
 	printf(" %-42s  %s\n", "--min_flank_length <integer>",  "minimum match length in each side for a spliced read, default: 3");
-	printf(" %-42s  %s\n", "--min_splice_boundary_hits <integer>",  "minimum number of spliced reads required for a junction, default: 1");
 	printf(" %-42s  %s\n", "--min_num_reads_support_variant <integer>",  "minimum number of reads required to keep a SNP, default: 3");
 	return 0;
 }
@@ -545,12 +844,7 @@ int print_copyright()
 
 int print_caution_message()
 {
-	printf("\033[1;31m\n");
-	printf("Altai-%s ONLY outputs allele-specific transcripts.\n", version.c_str());	
-	printf("If you want to have a complete allele-specific transcriptome ");
-	printf("with both allele-specific transcripts (two alleles different) and ");
-	printf("non-allele-specific transcripts (both alleles same), ");
-	printf("read README for detailed instruction.\n");
-	printf("\033[0m\n");
+	// printf("\033[1;31m\n");
+	// printf("\033[0m\n");
 	return 0;
 }

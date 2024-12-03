@@ -13,5 +13,7 @@ using namespace std;
 
 int draw_header(ofstream & fout);
 int draw_footer(ofstream & fout);
+int graphviz_header(ofstream & fout);
+int graphviz_footer(ofstream & fout);
 
 #endif

@@ -27,15 +27,15 @@ public:
 
 public:
 	bool is_allelic;				// if contains allelic sites
+	map<as_pos, int> apos_count;  	// count of AS pos
 	int32_t tid;					// chromosome ID
 	string chrm;					// chromosome name
 	int32_t lpos;					// the leftmost boundary on reference
 	int32_t rpos;					// the rightmost boundary on reference
 	char strand;					// strandness
 	vector<hit> hits;				// hits
-	split_interval_map mmap;		// matched interval map
+	split_interval_map mmap;		// matched interval map, built from hit.itv_align
 	split_interval_map imap;		// indel interval map
-	split_interval_map nammap;		// non-allelic matched interval map
 
 public:
 	int buildbase();

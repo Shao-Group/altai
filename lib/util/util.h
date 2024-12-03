@@ -11,6 +11,7 @@ See LICENSE for licensing.
 
 #include <stdint.h>
 #include <map>
+#include <set>
 #include <sstream>
 #include <cassert>
 #include <vector>
@@ -18,7 +19,7 @@ See LICENSE for licensing.
 #include <cmath>
 #include <cstdlib>
 #include <exception>
-#include "../../src/as_pos32.hpp"
+#include "src/as_pos32.hpp"
 
 using namespace std;
 
@@ -101,6 +102,16 @@ int min_element(const vector<T> &x)
 }
 
 template<typename T>
+int prints(const set<T> &x)
+{
+	for(typename set<T>::const_iterator it = x.begin(); it != x.end(); it++)
+	{
+		cout<< *it <<" ";
+	}
+	return 0;
+}
+
+template<typename T>
 int printv(const vector<T> &x)
 {
 	for(int i = 0; i < x.size(); i++)
@@ -173,7 +184,12 @@ vector<K> get_keys(const map<K, V> &m)
 	return v;
 }
 
-vector<int> get_random_permutation(int n);
+string toupperstring(const string s);
+vector<string> split(const string s, const string sep);
+size_t string_hash(const std::string& str);
+// size_t vector_hash(const vector<int32_t> &str);
+size_t vector_hash(const vector<as_pos32> &str);
+int reverse_complement_DNA(string &rc, const string s);
 
 class BundleError					// TODO: tmp DEBUG helper
 {

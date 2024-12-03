@@ -17,11 +17,17 @@ int32_t compute_overlap(const split_interval_map &imap, as_pos32 p)
 	return it->second;
 }
 
+// locate iterator to the right of x - 1. If x is a left boundary, returned ROI's lower = x  
+// if (x-1, x) is in the middle of an interval, should return this interval (one left upper_bound)
+// lower(it->first) <= x < upper(it->first)
 SIMI locate_right_iterator(const split_interval_map &imap, as_pos32 x)
 {
-	return imap.upper_bound(ROI(as_pos32(x - 1), as_pos32(x))); 
+	SIMI it = imap.upper_bound(ROI(as_pos32(x - 1), as_pos32(x))); 
+	return it;
 }
 
+// locate iterator to the left of x - 1, aka contains x in right-CLOSED-interval
+// lower(it->first) <= x <= upper(it->first)
 SIMI locate_left_iterator(const split_interval_map &imap, as_pos32 x)
 {
 	SIMI it = imap.lower_bound(ROI(as_pos32(x - 1), as_pos32(x)));
@@ -98,22 +104,7 @@ int32_t compute_sum_overlap(const split_interval_map &imap, SIMI &p, SIMI &q)
 	return s;
 }
 
-int32_t compute_coverage(const split_interval_map &imap, SIMI &p, SIMI &q)
-{
-	if(p == imap.end()) return 0;
-
-	int32_t s = 0;
-	for(SIMI it = p; it != q; it++)
-	{
-		s += upper(it->first) - lower(it->first);
-	}
-
-	if(q != imap.end()) s += upper(q->first) - lower(q->first);
-
-	return s;
-}
-
-int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev)
+int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev, double &max)
 {
 	ave = 0;
 	dev = 1.0;
@@ -138,141 +129,115 @@ int evaluate_rectangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr,
 
 	dev = sqrt(var / (rr - ll));
 	//if(dev < 1.0) dev = 1.0;
-
+	
+	max = 1.0 * compute_max_overlap(imap, lit, rit);
 	return 0;
 }
 
-int evaluate_triangle(const split_interval_map &imap, as_pos32 ll, as_pos32 rr, double &ave, double &dev)
-{
-	ave = 0;
-	dev = 1.0;
-
-	PSIMI pei = locate_boundary_iterators(imap, ll, rr);
-	SIMI lit = pei.first, rit = pei.second;
-
-	if(lit == imap.end()) return 0;
-	if(rit == imap.end()) return 0;
-
-	vector<double> xv;
-	vector<double> yv;
-	double xm = 0;
-	double ym = 0;
-	for(SIMI it = lit; ; it++)
-	{
-		assert(upper(it->first) > lower(it->first));
-		double xi = (lower(it->first) + upper(it->first)) / 2.0;
-		double yi = it->second;
-		xv.push_back(xi);
-		yv.push_back(yi);
-		xm += xi;
-		ym += yi;
-		if(it == rit) break;
-	}
-
-	xm /= xv.size();
-	ym /= yv.size();
-
-	double f1 = 0;
-	double f2 = 0;
-	for(int i = 0; i < xv.size(); i++)
-	{
-		f1 += (xv[i] - xm) * (yv[i] - ym);
-		f2 += (xv[i] - xm) * (xv[i] - xm);
-	}
-
-	double b1 = f1 / f2;
-	double b0 = ym - b1 * xm;
-
-	double a1 = b1 * rr + b0;
-	double a0 = b1 * ll + b0;
-	ave = (a1 > a0) ? a1 : a0;
-
-	double var = 0;
-	for(SIMI it = lit; ; it++)
-	{
-		assert(upper(it->first) > lower(it->first));
-		double xi = (upper(it->first) + lower(it->first)) / 2.0;
-		double yi = b1 * xi + b0;
-		var += (it->second - yi) * (it->second - yi) * (upper(it->first) - lower(it->first));
-		if(it == rit) break;
-	}
-
-	dev = sqrt(var / (rr - ll));
-	if(dev < 1.0) dev = 1.0;
-
-	return 0;
-}
-
+/**
+ * find (x, y): returns first ROI with any overlapping, or end()
+ * lowerbound(ROI(x, y)): returns first ROI strictly not less (ROI's upper > x) maybe with overlapping or end()
+ * upperbound(ROI(x, y)): returns first ROI strictly larger (ROI's lower >= y) without overlapping or end()
+ */
 int test_split_interval_map()
 {
-	// split_interval_map imap;
+	split_interval_map imap;
 
-	// imap += make_pair(ROI(6, 7), 3);
-	// imap += make_pair(ROI(1, 3), 3);
-	// imap += make_pair(ROI(1, 2), 1);
-	// imap += make_pair(ROI(2, 5), 2);
+	imap += make_pair(ROI(7, 10), 3);
+	imap += make_pair(ROI(6, 7), 3);
+	imap += make_pair(ROI(1, 3), 3);
+	imap += make_pair(ROI(1, 2), 1);
+	imap += make_pair(ROI(2, 5), 2);
 
-	// create_split(imap, 4);
-
-	// SIMI it;
+	SIMI it;
 	
-	// for(it = imap.begin(); it != imap.end(); it++)
-	// {
-	// 	printf("interval: [%d,%d) -> %d\n", int32_t(lower(it->first)), int32_t(upper(it->first)), int32_t(it->second));
-	// }
+	for(it = imap.begin(); it != imap.end(); it++)
+	{
+		printf("interval: [%s,%s) -> %d\n", lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), int32_t(it->second));
+	}
 
-	// for(int i = 1; i <= 7; i++)
-	// {
-	// 	it = imap.find(i);
-	// 	if(it == imap.end())
-	// 	{
-	// 		printf("find %d: does not exist\n", i);
-	// 	}
-	// 	else
-	// 	{
-	// 		printf("find %d: [%d,%d) -> %d\n", i, int32_t(lower(it->first)), int32_t(upper(it->first)), it->second);
-	// 	}
-	// }
+	for(int i = 1; i <= 7; i++)
+	{
+		it = imap.find(ROI(i, i+1));
+		if(it == imap.end())
+		{
+			printf("find %d-%d: does not exist\n", i,  i+1);
+		}
+		else
+		{
+			printf("find %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
 
-	// for(int i = 1; i <= 7; i++)
-	// {
-	// 	it = imap.lower_bound(ROI(i, i + 1));
+	for(int i = 1; i <= 7; i++)
+	{
+		it = imap.find(ROI(i, (i+2)));
+		if(it == imap.end())
+		{
+			printf("find %d: does not exist\n", i);
+		}
+		else
+		{
+			printf("find %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
 
-	// 	if(it == imap.end())
-	// 	{
-	// 		printf("lower bound %d: does not exist\n", i);
-	// 	}
-	// 	else
-	// 	{
-	// 		printf("lower bound %d: [%d,%d) -> %d\n", i, int32_t(lower(it->first)), int32_t(upper(it->first)), it->second);
-	// 	}
-	// }
+	for(int i = 1; i <= 8; i++)
+	{
+		it = imap.lower_bound(ROI(i, i + 1));
 
-	// for(int i = 1; i <= 7; i++)
-	// {
-	// 	it = imap.upper_bound(ROI(i, i + 1));
+		if(it == imap.end())
+		{
+			printf("lower bound %d: does not exist\n", i);
+		}
+		else
+		{
+			printf("lower bound %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
+	
+	for(int i = 1; i <= 8; i++)
+	{
+		it = imap.lower_bound(ROI(i, i+2));
 
-	// 	if(it == imap.end())
-	// 	{
-	// 		printf("upper bound %d: does not exist\n", i);
-	// 	}
-	// 	else
-	// 	{
-	// 		printf("upper bound %d: [%d,%d) -> %d\n", i, int32_t(lower(it->first)), int32_t(upper(it->first)), it->second);
-	// 	}
-	// }
+		if(it == imap.end())
+		{
+			printf("lower bound %d: does not exist\n", i);
+		}
+		else
+		{
+			printf("lower bound %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
 
-	// for(int i = 0; i <= 8; i++)
-	// {
-	// 	for(int j = i; j <= 8; j++)
-	// 	{
-	// 		pair<SIMI, SIMI> p = locate_boundary_iterators(imap, i, j);
-	// 		int s = compute_coverage(imap, p.first, p.second);
-	// 		printf("coverage [%d,%d) = %d\n", i, j, s);
-	// 	}
-	// }
+	for(int i = 1; i <= 8; i++)
+	{
+		it = imap.upper_bound(ROI(i, i + 1));
+
+		if(it == imap.end())
+		{
+			printf("upper bound %d: does not exist\n", i);
+		}
+		else
+		{
+			printf("upper bound %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
+
+	for(int i = 1; i <= 8; i++)
+	{
+		it = imap.upper_bound(ROI(i, i+2));
+
+		if(it == imap.end())
+		{
+			printf("upper bound %d: does not exist\n", i);
+		}
+		else
+		{
+			printf("upper bound %d: [%s,%s) -> %d\n", i, lower(it->first).aspos32string().c_str(), upper(it->first).aspos32string().c_str(), it->second);
+		}
+	}
 
 	return 0;
 }
-
 

@@ -70,14 +70,14 @@ int gene::add_exon(const item&e)
 	return 0;
 }
 
-int gene::set_gene_id(const string &id) 
-{
-	for(int i = 0; i < transcripts.size(); i++)
-	{
-		transcripts[i].gene_id = id;
-	}
-	return 0;
-}
+// int gene::set_gene_id(const string &id) 
+// {
+// 	for(int i = 0; i < transcripts.size(); i++)
+// 	{
+// 		transcripts[i].gene_id = id;
+// 	}
+// 	return 0;
+// }
 
 int gene::filter_single_exon_transcripts()
 {
@@ -134,22 +134,22 @@ int gene::assign_RPKM(double factor)
 	return 0;
 }
 
-set<as_pos32> gene::get_exon_boundaries() const
-{
-	set<as_pos32> s;
-	for(int k = 0; k < transcripts.size(); k++)
-	{
-		const vector<PI32> &v = transcripts[k].exons;
-		for(int i = 0; i < v.size(); i++)
-		{
-			as_pos32 l = v[i].first;
-			as_pos32 r = v[i].second;
-			s.insert(l);
-			s.insert(r);
-		}
-	}
-	return s;
-}
+// set<as_pos32> gene::get_exon_boundaries() const
+// {
+// 	set<as_pos32> s;
+// 	for(int k = 0; k < transcripts.size(); k++)
+// 	{
+// 		const vector<PI32> &v = transcripts[k].exons;
+// 		for(int i = 0; i < v.size(); i++)
+// 		{
+// 			as_pos32 l = v[i].first;
+// 			as_pos32 r = v[i].second;
+// 			s.insert(l);
+// 			s.insert(r);
+// 		}
+// 	}
+// 	return s;
+// }
 
 PI32 gene::get_bounds() const
 {
@@ -163,17 +163,23 @@ PI32 gene::get_bounds() const
 	return pp;
 }
 
-string gene::get_seqname() const
-{
-	if(transcripts.size() == 0) return "";
-	else return transcripts[0].seqname;
-}
+// char gene::get_strand() const
+// {
+// 	if(transcripts.size() == 0) return '.';
+// 	else return transcripts[0].strand;
+// }
 
-string gene::get_gene_id() const
-{
-	if(transcripts.size() == 0) return "";
-	else return transcripts[0].gene_id;
-}
+// string gene::get_seqname() const
+// {
+// 	if(transcripts.size() == 0) return "";
+// 	else return transcripts[0].seqname;
+// }
+
+// string gene::get_gene_id() const
+// {
+// 	if(transcripts.size() == 0) return "";
+// 	else return transcripts[0].gene_id;
+// }
 
 int gene::write(ofstream &fout) const
 {

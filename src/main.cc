@@ -20,6 +20,7 @@ See LICENSE for licensing.
 #include "previewer.h"
 #include "assembler.h"
 
+using namespace std;
 
 int main(int argc, const char **argv)
 {
@@ -38,12 +39,8 @@ int main(int argc, const char **argv)
 
 	parse_arguments(argc, argv);
 
-	if(library_type == EMPTY || preview_only == true)			// determine strandness
-	{
-		previewer pv;
-		pv.preview();
-	}
 	
+		
 	if(verbose >= 1)
 	{
 		print_copyright();
@@ -53,11 +50,16 @@ int main(int argc, const char **argv)
 		printf("\n");
 		if (verbose >= 3) print_parameters();
 	}
+	
+	previewer pv;
+	pv.preview();
 
 	if(preview_only == true) return 0;
 
 	assembler asmb;
 	asmb.assemble();
+
+	printf("Altai is completed.\n");
 
 	return 0;
 }
