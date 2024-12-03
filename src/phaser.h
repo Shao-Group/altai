@@ -14,7 +14,8 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include "bundle.h"
 #include "scallop.h"
-#define MEPD map<edge_descriptor, pair<double, double> >
+typedef map<edge_descriptor, pair<double, double> > MEPD;
+typedef map<pair<int, int>, map<int, genotype> > MPIIMIG;
 
 /*
 *   phaser takes scallop object as an input and does:
