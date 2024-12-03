@@ -706,6 +706,41 @@ int phaser::split_hs()
 	return 0;
 }
 
+
+
+/*
+** input: an alias of edge of hyper edge
+** output (return): bool whether keep this edge or not
+** output (by ref): bottleneck weight of hyper edge
+** output (by ref): increase MVII edges_w_count
+** helper funciton for phaser::split_hs
+** examines each edge of hyper edge, if all edges' weight >= 1, return true
+*/
+bool phaser::split_hs_indiv_edge(edge_descriptor& e, double& bottleneck, MVII& edges_w_count, MPIIMIG& pos2vertices_gt, int allele_index)
+{
+	assert (allele_index == 0 || allele_index == 1); // only two potential alleles 
+	
+	if(e == null_edge) return false;
+
+	if(use_opposite_phasing) 
+	{
+		// change e to opposite phasing if needed
+		split_hs_indiv_edge_use_oppo_phasing(e, bottleneck, edges_w_count, pos2vertices_gt, allele_index);
+	}
+
+	if(e == null_edge) return false;
+
+	MED& ewrt = (allele_index == 0)? ewrt1 : ewrt2;
+	if(ewrt.find(e) == ewrt.end()) return false;
+	
+	double w = ewrt[e];
+	assert(w >= 0);
+	if(w < bottleneck) bottleneck = w;
+	if(bottleneck < 0.999) return false;
+
+	return true;
+}
+
 // return true if need to opposite phasing (regardless of finding or not)
 // return false if no need to opposite phasing 
 // return by ref e, bottleneck
