@@ -572,21 +572,18 @@ int phaser::split_hs()
 	}
 
 	// make vertex pos map
-	map<pair<int, int> map<int, genotype> > pos2vertices_gt;
+	// map<pair<int, int>, map<int, genotype> > pos2vertices_gt
+	MPIIMIG pos2vertices_gt;  // <lpos.p32, rpos.p32> -> {vertex_index, gt}
 	for (int i = 0; i < gr.num_vertices(); i++)
 	{
 		const vertex_info& vi = gr.get_vertex_info(i);
 		if(vi.gt != ALLELE1 && vi.gt != ALLELE2) continue;
 		
 		pair<int, int> pp {vi.lpos.p32, vi.rpos.p32};
-		if(pos2vertices_gt.find(pp) == pos2vertices_gt.end())
-		{
-			pos2vertices_gt.insert({pp, {i, vi.gt} });
-		}
-		else
-		{
-			pos2vertices_gt.find(pp)->insert({i, vi.gt};
-		}
+		if(pos2vertices_gt.find(pp) == pos2vertices_gt.end()) assert(pos2vertices_gt[pp].size() == 0);
+		else assert(pos2vertices_gt[pp].size() >= 1);
+		
+		pos2vertices_gt[pp].insert({i, vi.gt});
 	}
 
 	for (int allele_index = 0; allele_index < 2; allele_index++)
@@ -594,96 +591,42 @@ int phaser::split_hs()
 		// only two potential alleles 
 		assert (allele_index == 0 || allele_index == 1); 
 		hyper_set*    phs      = (allele_index == 0)? phs1  : phs2;
-		MED&          ewrt_cur = (allele_index == 0)? ewrt1 : ewrt2;
+		MED&          ewrt = (allele_index == 0)? ewrt1 : ewrt2;
 		genotype	  gt 	   = (allele_index == 0)? ALLELE1 : ALLELE2;
+		
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
-			const  vector<int>& edge_idx_list = sc.hs.edges[j];
+			vector<int> edge_idx_list = sc.hs.edges[j];
 			int    c                          = sc.hs.ecnts[j];
 			double bottleneck                 = c;
 			bool   use_this                   = true;
-			for(int edge_idx : edge_idx_list)
+			for(int _i_ = 0; _i_ < edge_idx_list.size() && use_this; _i_ ++)
 			{
+				int edge_idx = edge_idx_list[_i_];
 				if(edge_idx == -1) continue;
 
 				assert(edge_idx >= 0 && edge_idx < sc.i2e.size());
 				edge_descriptor e = sc.i2e[edge_idx];
 
-				const vertex_info& vis = gr.get_vertex_info(e->source());
-				int ss = -1; // alternative s or t
-				bool b = false;
-				if(gt_conflict(vis.gt, gt))
-				{
-					b = true;
-					auto it1 = pos2vertices_gt.find({vis.lpos.p32, vis.rpos.p32});
-					if(it1 != pos2vertices_gt.end())
-					{
-						for(auto it2: it1->second)
-						{
-							genotype gg = it2.second;
-							if(gg == gt) ss = it2.first;
-						}
-					}
-				}
-
-				int tt = -1;
-				const vertex_info& vit = gr.get_vertex_info(e->target());
-				if(gt_conflict(vit.gt, gt))
-				{
-					b = true;
-					auto it1 = pos2vertices_gt.find({vit.lpos.p32, vit.rpos.p32});
-					if(it1 != pos2vertices_gt.end())
-					{
-						for(auto it2: it1->second)
-						{
-							genotype gg = it2.second;
-							if(gg == gt) tt = it2.first;
-						}
-					}
-				}
-				//FIXME: assert tt to ss has only one edge
-				if(b == true && (ss < 0 || tt < 0)) continue;
-				if(b == true)
-				{
-					PED ped = gr.edge(ss, tt);
-					assert(ped.second == true);
-					assert(ped.first != null_edge);
-					e = ped.first;
-				}
-
-				if(e == null_edge) continue;
-				
-				if(ewrt_cur.find(e) == ewrt_cur.end())
-				{
-					use_this = false;
-					break;
-				}
-				double w = ewrt_cur[e];
-				assert(w >= 0);
-				if(w < bottleneck) bottleneck = w;
-				
-				if(int(bottleneck < 0.999)) 
-				{
-					use_this = false;
-					break;
-				}
+				use_this = split_hs_indiv_edge(e, bottleneck, edges_w_count, pos2vertices_gt, allele_index);
+				if (use_this && e != null_edge) edge_idx_list[_i_] = sc.e2i.at(e);
+				if (e == null_edge) use_this = false;
 			}
-			//TODO: edit edge_idx_list
-			// add hyper_edge if all edges have AS weight > 1 (hs will be transformed)
-			if (use_this && int(bottleneck) >= 1)
+
+			if (!use_this) continue;
+			if (bottleneck < 1) continue;
+
+			int allelic_c = int(bottleneck);
+			auto it = edges_w_count.find(edge_idx_list);
+			if (it == edges_w_count.end())
 			{
-				int allelic_c = int(bottleneck);
-				auto it = edges_w_count.find(edge_idx_list);
-				if (it == edges_w_count.end())
-				{
-					edges_w_count.insert({edge_idx_list, allelic_c});
-				}
-				else		// it may happen if one edge is a subset of another 
-				{
-					it->second = (it->second > allelic_c)? it->second: allelic_c;
-				}
+				edges_w_count.insert({edge_idx_list, allelic_c});
+			}
+			else		// it may happen if one edge is a subset of another 
+			{
+				it->second = (it->second > allelic_c)? it->second: allelic_c;
 			}
 		}
 		phs->clear();
