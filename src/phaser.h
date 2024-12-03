@@ -14,7 +14,8 @@ See LICENSE for licensing.
 #include "as_pos32.hpp"
 #include "bundle.h"
 #include "scallop.h"
-#define MEPD map<edge_descriptor, pair<double, double> >
+typedef map<edge_descriptor, pair<double, double> > MEPD;
+typedef map<pair<int, int>, map<int, genotype> > MPIIMIG;
 
 /*
 *   phaser takes scallop object as an input and does:
@@ -74,6 +75,8 @@ private:
     int refine_allelic_graphs();
     int smooth_allelic_graphs();
     int split_hs();
+    bool split_hs_indiv_edge(edge_descriptor& e, double& b, MVII& ewc, MPIIMIG& p, int a);
+    bool split_hs_indiv_edge_use_oppo_phasing(edge_descriptor& e, double& b, MVII& ewc, MPIIMIG& p, int a);
     int assemble_allelic_scallop();     
     int allelic_transform(scallop& sc, splice_graph* pgr, MEE& x2y);
     int assign_allele_spec_transcripts();

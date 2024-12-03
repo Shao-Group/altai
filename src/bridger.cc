@@ -51,17 +51,15 @@ int bridger::bridge()
 	update_length();
 	int n = bd->fragments.size();
 
-	// first round of briding hard fragments
 	if(remove_tiny_boundary_mode == 1) remove_tiny_boundary();
 	else if (remove_tiny_boundary_mode == 2) remove_tiny_boundary_without_var();
 	else assert (remove_tiny_boundary_mode == 0);
 
+	// first round of briding hard fragments
 	bridge_overlapped_fragments();
 	filter_paths();
 	int n1 = get_paired_fragments();
-
 	int n2 = get_paired_fragments();
-
 
 	bridge_hard_fragments();
 	filter_paths();
@@ -443,6 +441,7 @@ int bridger::remove_tiny_boundary_without_var()
 		fragment &fr = bd->fragments[i];
 		if (!gt_implicit_same(fr.gt, gt)) continue;  // bridging only corresponding gt fragments
 
+
 		if(fr.paths.size() == 1 && fr.paths[0].type == 1) continue;
 		vector<int> v1 = decode_vlist(fr.h1->vlist);
 		int n1 = v1.size();
@@ -481,7 +480,6 @@ int bridger::remove_tiny_boundary_without_var()
 			{
 				int32_t total = bd->regions[k].rpos - bd->regions[k].lpos;
 				int32_t flank = bd->regions[k].rpos.p32 - int(fr.h2->pos);
-
 				if(flank <= flank_tiny_length && 1.0 * flank / total < flank_tiny_ratio)
 				{
 					vector<int> v(v2.begin() + 1, v2.end());

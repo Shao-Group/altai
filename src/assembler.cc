@@ -322,7 +322,6 @@ int assembler::assemble(const splice_graph &gr0, const hyper_set &hs0, bool is_a
 			// partial decomp of non-AS nodes
 			scallop sc(gr, hs, r == 0 ? false : true, true);
 			sc.assemble(is_allelic);
-		
 			if(verbose >= 2)
 			{
 				printf("assembly with r = %d; %lu transcripts in partial decomposition of merged splice graph\n", r, sc.trsts.size());

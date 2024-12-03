@@ -22,6 +22,11 @@ See LICENSE for licensing.
 #define AJ_NONVAR 6
 #define START_OR_SINK 7
 
+#define REVIVAL_HEALTHY 	0	
+#define REVIVAL_AS_SURVIVED 1	// psuedo var survived sc0
+#define REVIVAL_AS_UNDERSEQ	2	// psuedo var cannot connect to source/sink in allelic splice graph
+
+
 class vertex_info
 {
 public:
@@ -38,6 +43,7 @@ public:
 	int sdist;			// shortest distance to s
 	int tdist;			// shortest distance to t
 	int type;			// for various usage
+	int revival;		// for reviving fragmented or less reliable transcripts
 	char lstrand;		// left side strand
 	char rstrand;		// right side strand	
 	bool regional;		// if a vertex is regional

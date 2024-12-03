@@ -526,9 +526,12 @@ int phaser::remove_low_depth_var_vertex()
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
+// keep surviving edges, mark unsurvived vertices nf_allelic
 int phaser::refine_allelic_graphs() // FIXME:
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
+	//TODO: it is better to copy, remove edges, mark vertices, then retrive marked indices
+	// keep surviving edges, mark unsurvived vertices nf_allelic
 	for (splice_graph* pgr: gr_pointers)
 	{
 		PEEI pei;
@@ -540,7 +543,7 @@ int phaser::refine_allelic_graphs() // FIXME:
 		for (edge_descriptor e: edges_1)
 		{
 			if(e == null_edge) pgr->remove_edge(e);
-			if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
+			// if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
 
 		// recursively remove edges incident to nodes in/out-degree == 0
@@ -552,7 +555,11 @@ int phaser::refine_allelic_graphs() // FIXME:
 			{
 				if(pgr->degree(i) == 0) continue;
 				if(pgr->in_degree(i) >= 1 && pgr->out_degree(i) >= 1) continue;
-				pgr->clear_vertex(i);
+				// pgr->clear_vertex(i);
+				vertex_info vi = pgr->get_vertex_info(i);
+				vi.type = REVIVAL_AS_UNDERSEQ;
+				pgr->set_vertex_info(i, vi);
+				pgr->add_edge(i, pgr->num_vertices() -1);
 				b = true;
 			}
 			if(b == false) break;
@@ -678,57 +685,62 @@ int phaser::split_hs()
 		}
 	}
 
-	for (int i = 0; i < 2; i++)
+	// make vertex pos map
+	// map<pair<int, int>, map<int, genotype> > pos2vertices_gt
+	MPIIMIG pos2vertices_gt;  // <lpos.p32, rpos.p32> -> {vertex_index, gt}
+	for (int i = 0; i < gr.num_vertices(); i++)
+	{
+		const vertex_info& vi = gr.get_vertex_info(i);
+		if(vi.gt != ALLELE1 && vi.gt != ALLELE2) continue;
+		
+		pair<int, int> pp {vi.lpos.p32, vi.rpos.p32};
+		if(pos2vertices_gt.find(pp) == pos2vertices_gt.end()) assert(pos2vertices_gt[pp].size() == 0);
+		else assert(pos2vertices_gt[pp].size() >= 1);
+		
+		pos2vertices_gt[pp].insert({i, vi.gt});
+	}
+
+	for (int allele_index = 0; allele_index < 2; allele_index++)
 	{
 		// only two potential alleles 
-		assert (i == 0 || i == 1); 
-		hyper_set*    phs      = (i == 0)? phs1  : phs2;
-		MED&          ewrt_cur = (i == 0)? ewrt1 : ewrt2;
+		assert (allele_index == 0 || allele_index == 1); 
+		hyper_set*    phs      = (allele_index == 0)? phs1  : phs2;
+		MED&          ewrt = (allele_index == 0)? ewrt1 : ewrt2;
+		genotype	  gt 	   = (allele_index == 0)? ALLELE1 : ALLELE2;
 		
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
 		for (int j = 0; j < sc.hs.edges.size(); j++)
 		{
-			const  vector<int>& edge_idx_list = sc.hs.edges[j];
+			vector<int> edge_idx_list = sc.hs.edges[j];
 			int    c                          = sc.hs.ecnts[j];
 			double bottleneck                 = c;
 			bool   use_this                   = true;
-			for(int edge_idx : edge_idx_list)
+			for(int _i_ = 0; _i_ < edge_idx_list.size() && use_this; _i_ ++)
 			{
+				int edge_idx = edge_idx_list[_i_];
 				if(edge_idx == -1) continue;
 
 				assert(edge_idx >= 0 && edge_idx < sc.i2e.size());
 				edge_descriptor e = sc.i2e[edge_idx];
-				if (e == null_edge) continue;
-				
-				if(ewrt_cur.find(e) == ewrt_cur.end())
-				{
-					use_this = false;
-					break;
-				}
-				double w = ewrt_cur[e];
-				assert(w >= 0);
-				if(w < bottleneck) bottleneck = w;
-				
-				if(int(bottleneck < 0.999)) 
-				{
-					use_this = false;
-					break;
-				}
+
+				use_this = split_hs_indiv_edge(e, bottleneck, edges_w_count, pos2vertices_gt, allele_index);
+				if (use_this && e != null_edge) edge_idx_list[_i_] = sc.e2i.at(e);
+				if (e == null_edge) use_this = false;
 			}
-			// add hyper_edge if all edges have AS weight > 1 (hs will be transformed)
-			if (use_this && int(bottleneck) >= 1)
+
+			if (!use_this) continue;
+			if (bottleneck < 1) continue;
+
+			int allelic_c = int(bottleneck);
+			auto it = edges_w_count.find(edge_idx_list);
+			if (it == edges_w_count.end())
 			{
-				int allelic_c = int(bottleneck);
-				auto it = edges_w_count.find(edge_idx_list);
-				if (it == edges_w_count.end())
-				{
-					edges_w_count.insert({edge_idx_list, allelic_c});
-				}
-				else		// it may happen if one edge is a subset of another 
-				{
-					it->second = (it->second > allelic_c)? it->second: allelic_c;
-				}
+				edges_w_count.insert({edge_idx_list, allelic_c});
+			}
+			else		// it may happen if one edge is a subset of another 
+			{
+				it->second = (it->second > allelic_c)? it->second: allelic_c;
 			}
 		}
 		phs->clear();
@@ -749,6 +761,102 @@ int phaser::split_hs()
 		}
 	}
 	return 0;
+}
+
+
+
+/*
+** input: an alias of edge of hyper edge
+** output (return): bool whether keep this edge or not
+** output (by ref): bottleneck weight of hyper edge
+** output (by ref): increase MVII edges_w_count
+** helper funciton for phaser::split_hs
+** examines each edge of hyper edge, if all edges' weight >= 1, return true
+*/
+bool phaser::split_hs_indiv_edge(edge_descriptor& e, double& bottleneck, MVII& edges_w_count, MPIIMIG& pos2vertices_gt, int allele_index)
+{
+	assert (allele_index == 0 || allele_index == 1); // only two potential alleles 
+	
+	if(e == null_edge) return false;
+
+	if(use_opposite_phasing) 
+	{
+		// change e to opposite phasing if needed
+		split_hs_indiv_edge_use_oppo_phasing(e, bottleneck, edges_w_count, pos2vertices_gt, allele_index);
+	}
+
+	if(e == null_edge) return false;
+
+	MED& ewrt = (allele_index == 0)? ewrt1 : ewrt2;
+	if(ewrt.find(e) == ewrt.end()) return false;
+	
+	double w = ewrt[e];
+	assert(w >= 0);
+	if(w < bottleneck) bottleneck = w;
+	if(bottleneck < 0.999) return false;
+
+	return true;
+}
+
+// return true if need to opposite phasing (regardless of finding or not)
+// return false if no need to opposite phasing 
+// return by ref e, bottleneck
+bool phaser::split_hs_indiv_edge_use_oppo_phasing(edge_descriptor& e, double& bottleneck, MVII& edges_w_count, MPIIMIG& pos2vertices_gt, int allele_index)
+{
+	genotype gt = (allele_index == 0)? ALLELE1 : ALLELE2;
+	bool     b  = false; // flag whether need to opposite phasing
+
+	// alternative s in opposite phasing
+	int ss = -1;
+	const vertex_info& vis = gr.get_vertex_info(e->source());
+	
+	if(gt_conflict(vis.gt, gt))
+	{
+		b = true;
+		auto pos32 = make_pair(vis.lpos.p32, vis.rpos.p32);
+		auto it1 = pos2vertices_gt.find(pos32);
+		if(it1 != pos2vertices_gt.end())
+		{
+			for(auto it2: it1->second)	// map<int, genotype> 
+			{
+				if(it2.second == gt) ss = it2.first;
+			}
+		}
+	}
+
+	// alternative t in opposite phasing 
+	int tt = -1;
+	const vertex_info& vit = gr.get_vertex_info(e->target());
+	if(gt_conflict(vit.gt, gt))
+	{
+		b = true;
+		auto pos32 = make_pair(vit.lpos.p32, vit.rpos.p32);
+		auto it1 = pos2vertices_gt.find(pos32);
+		if(it1 != pos2vertices_gt.end())
+		{
+			for(auto it2: it1->second)
+			{
+				if(it2.second == gt) tt = it2.first;
+			}
+		}
+	}
+
+	if (b == true && (ss < 0 || tt < 0))
+	{
+		e = null_edge;
+		return true;
+	}
+
+	if(b == true)
+	{
+		auto ve = gr.edges(ss, tt);  // vector<edge_descriptor> from ss to tt
+		if (ve.size() == 0) e = null_edge;
+		if (ve.size() == 1) e = ve[0];
+		if (ve.size() >= 2) assert(0);  //assert tt to ss has only one edge
+		return true;
+	}
+
+	return false;
 }
 
 /*

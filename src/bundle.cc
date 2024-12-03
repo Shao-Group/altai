@@ -242,7 +242,7 @@ int bundle::build_partial_exons()
 	{
 		for(const region& r: regions)
 			for(const partial_exon& pe: r.pexons)
-				assert(pe.pid >= 0 && pe.pid <= pexons.size());
+				assert(pe.pid >= 0 && pe.pid < pexons.size());
 	}
 
 	return 0;
@@ -469,6 +469,7 @@ int bundle::pexon_jset(map<pair<int, int>, int >& pexon_jset)
 	return 0;
 }
 
+// return hit-aligned pids (from 0)
 vector<int> bundle::align_hit(hit &h)
 {
 	bool b = true;
@@ -503,6 +504,7 @@ vector<int> bundle::align_hit(hit &h)
 	else return sp2;
 }
 
+// return fragment-aligned pids (from 0)
 vector<int> bundle::align_fragment(fragment &fr)
 {
 	bool b = true;
@@ -1234,7 +1236,8 @@ int bundle::print(int index)
 
 int bundle::build_hyper_set()
 {
-	map<vector<int>, int> m;
+	int s1 = 0, s2 = 0, s3 = 0, s4 = 0;		// stats of fragment/hs genotype, allele1, allele2, nonspecific, single hit
+	map<vector<int>, int> m;		// map<vector of pexons, count>
 
 	for(int k = 0; k < br.fragments.size(); k++)
 	{
@@ -1251,14 +1254,38 @@ int bundle::build_hyper_set()
 
 		//if(fr.h1->bridged == false) continue;
 		//if(fr.h2->bridged == false) continue;
-
-		vector<int> v = align_fragment(fr);
+		if(fr.gt == ALLELE1) s1 ++;
+		else if(fr.gt == ALLELE2) s2 ++;
+		else s3++;
 		
-		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
-		else m[v] += fr.cnt;
+		vector<int> v = align_fragment(fr);
+
+		if(fr.gt == ALLELE1 || fr.gt == ALLELE2)
+		{
+			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+			else m[v] += fr.cnt;
+		}
+		else if (! break_unphased_allelic_phasing)
+		{
+			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+			else m[v] += fr.cnt;
+		}
+		else
+		{
+			assert(break_unphased_allelic_phasing);
+			assert(fr.gt == NONSPECIFIC || fr.gt == UNPHASED);
+			const vector<vector<int>>& bpp = break_as_phasing_path(v);
+			for(const vector<int>& v: bpp)
+			{
+				if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, fr.cnt));
+				else m[v] += fr.cnt;
+			}
+		}
 	}
 	
-	// note by Qimin, bridge umi-linked fragments into one single long path  //TODO:
+	// bridge umi-linked fragments into one single long path
+	// TODO: umi not supported yet
+	/*
 	for(int k = 0; k < br.umiLink.size(); k++)
 	{
 		vector<int> v;
@@ -1334,19 +1361,20 @@ int bundle::build_hyper_set()
 
 		if(v.size() > 0)
 		{
-			/*
-			printf("v = ");
-			for(int ii = 0; ii < v.size(); ii++)
-			{
-				printf("%d ", v[ii]);
-			}
-			printf("\n");
-			*/
+			
+			// printf("v = ");
+			// for(int ii = 0; ii < v.size(); ii++)
+			// {
+			// 	printf("%d ", v[ii]);
+			// }
+			// printf("\n");
+			
 
 			if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, cnt));
 			else m[v] += cnt;
 		}
 	}
+	*/
 	
 	for(int k = 0; k < bb.hits.size(); k++)
 	{
@@ -1354,30 +1382,29 @@ int bundle::build_hyper_set()
 
 		// bridged used here, but maybe okay
 		if(h.bridged == true) continue;
-
+		s4 ++;
 		vector<int> v = align_hit(h);
 		
 		if(m.find(v) == m.end()) m.insert(pair<vector<int>, int>(v, 1));
 		else m[v] += 1;
 	}
 
-	/*
-	if(DEBUG_MODE_ON && print_bundle_detail) 
+	if(DEBUG_MODE_ON) 
 	{
-		cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		if(print_bundle_detail) cout << "bundle::build_hyper_set() get path from br.fragments; stage 2; size = " << m.size() << endl;
+		if(print_bundle_detail) cout << "s1 = "<< s1 << ", s2 = " << s2 << ", s3 = " << s3 << ", s4 = " << s4 << endl;
 		for(const auto & mvii:m)
 		{
 			const vector<int>& vi = mvii.first;
-			int i = mvii.second;
-			cout << "\t";
-			for(int j: vi)
+			for(int j: vi) assert(j >= 0 && j < pexons.size());
+			if(print_bundle_detail)
 			{
-				cout << j << ", ";
+				cout << "\t";
+				for(int j: vi) cout << j << ", ";
+				cout << ": " << mvii.second << ";" <<  endl;
 			}
-			cout << ": " << i << ";" <<  endl;
 		}
 	}
-	*/
 
 	hs.clear();
 	for(map<vector<int>, int>::iterator it = m.begin(); it != m.end(); it++)
@@ -1386,9 +1413,50 @@ int bundle::build_hyper_set()
 		int c = it->second;
 		if(v.size() >= 2) hs.add_node_list(v, c);
 	}
-
+	
 	if(DEBUG_MODE_ON && print_bundle_detail) {cout << "build_hyper_set completed. print hs." << endl; hs.print();}
 	if(DEBUG_MODE_ON && hs.nodes.size() == 0) {cerr << "hyper_set size is 0." << endl;}
 
 	return 0;
+}
+
+vector<vector<int>> bundle::break_as_phasing_path(vector<int>& pids)
+{
+	vector<vector<int> > nonspec_pp;
+	
+	int s = 0;
+	for(int v = 0; v < pids.size(); v++)
+	{
+		int i = pids[v];
+		assert(i >= 0);
+		assert(i < pexons.size());
+		if(!gt_as(pexons[i].gt)) continue;
+
+		if(s <= v - 2) nonspec_pp.push_back(vector<int>(pids.begin() + s, pids.begin() + v));
+		s = v + 1;
+	}
+	if(s <= pids.size() - 2) nonspec_pp.push_back(vector<int>(pids.begin() + s, pids.end()));
+	
+	if(DEBUG_MODE_ON)
+	{
+		if(print_bundle_detail)
+		{
+			cout << "original pp: ";
+			printv(pids);
+			cout << "broken   pp: ";
+			for(const auto& v: nonspec_pp) {printv(v); cout << "~~";}
+			cout << endl;
+		}
+		
+		int original_size = pids.size();
+		int bt = 0;
+		for(const auto& v: nonspec_pp)
+		{
+			bt += v.size();
+			for(int i: v)  assert(pexons[i].gt != ALLELE1 && pexons[i].gt != ALLELE2);
+		}
+		assert(bt <= original_size);
+	}
+
+	return nonspec_pp;
 }
