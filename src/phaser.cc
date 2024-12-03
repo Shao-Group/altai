@@ -485,9 +485,12 @@ int phaser::split_gr()
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
+// keep surviving edges, mark unsurvived vertices nf_allelic
 int phaser::refine_allelic_graphs()
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
+	//TODO: it is better to copy, remove edges, mark vertices, then retrive marked indices
+	// keep surviving edges, mark unsurvived vertices nf_allelic
 	for (splice_graph* pgr: gr_pointers)
 	{
 		PEEI pei;
@@ -499,7 +502,7 @@ int phaser::refine_allelic_graphs()
 		for (edge_descriptor e: edges_1)
 		{
 			if(e == null_edge) pgr->remove_edge(e);
-			if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
+			// if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
 
 		// recursively remove edges incident to nodes in/out-degree == 0
@@ -758,8 +761,6 @@ int phaser::assemble_scallop0(scallop& sc)
 	sc.trsts.clear();
 	sc.non_full_trsts.clear();
 	sc.assemble_continue(is_allelic);
-
-	//FIXME: for specific transcripts, use a probabilistic model to judge whether it is true
 
 	trsts1 = sc.trsts;
 	trsts2 = sc.trsts;
