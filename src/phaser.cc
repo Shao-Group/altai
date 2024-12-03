@@ -706,6 +706,67 @@ int phaser::split_hs()
 	return 0;
 }
 
+// return true if need to opposite phasing (regardless of finding or not)
+// return false if no need to opposite phasing 
+// return by ref e, bottleneck
+bool phaser::split_hs_indiv_edge_use_oppo_phasing(edge_descriptor& e, double& bottleneck, MVII& edges_w_count, MPIIMIG& pos2vertices_gt, int allele_index)
+{
+	genotype gt = (allele_index == 0)? ALLELE1 : ALLELE2;
+	bool     b  = false; // flag whether need to opposite phasing
+
+	// alternative s in opposite phasing
+	int ss = -1;
+	const vertex_info& vis = gr.get_vertex_info(e->source());
+	
+	if(gt_conflict(vis.gt, gt))
+	{
+		b = true;
+		auto pos32 = make_pair(vis.lpos.p32, vis.rpos.p32);
+		auto it1 = pos2vertices_gt.find(pos32);
+		if(it1 != pos2vertices_gt.end())
+		{
+			for(auto it2: it1->second)	// map<int, genotype> 
+			{
+				if(it2.second == gt) ss = it2.first;
+			}
+		}
+	}
+
+	// alternative t in opposite phasing 
+	int tt = -1;
+	const vertex_info& vit = gr.get_vertex_info(e->target());
+	if(gt_conflict(vit.gt, gt))
+	{
+		b = true;
+		auto pos32 = make_pair(vit.lpos.p32, vit.rpos.p32);
+		auto it1 = pos2vertices_gt.find(pos32);
+		if(it1 != pos2vertices_gt.end())
+		{
+			for(auto it2: it1->second)
+			{
+				if(it2.second == gt) tt = it2.first;
+			}
+		}
+	}
+
+	if (b == true && (ss < 0 || tt < 0))
+	{
+		e = null_edge;
+		return true;
+	}
+
+	if(b == true)
+	{
+		auto ve = gr.edges(ss, tt);  // vector<edge_descriptor> from ss to tt
+		if (ve.size() == 0) e = null_edge;
+		if (ve.size() == 1) e = ve[0];
+		if (ve.size() >= 2) assert(0);  //assert tt to ss has only one edge
+		return true;
+	}
+
+	return false;
+}
+
 /*
 ** when there is no variants phased in sc0
 ** 1. do not split
