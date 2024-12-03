@@ -1,7 +1,5 @@
 # Overview
 
-## **This project is in progress. It's not guaranteed to function properly.**
-
 Altai (**Al**lele-specific **T**ranscript **A**ssembly **I**nstrument) is a reference-based allele-specific transcript assembler. It incorporates variations, e.g. SNPs in a vcf file, in the transcript assembly to assemble the full-length transcript sequences by assigning those variations to their correct phases, i.e. alleles. Its output transcript sequences are expected to be the actual allele-specific sequences rather than subsequences of the reference genome.
 
 Part of Altai is developed based on [Scallop](https://github.com/Kingsford-Group/scallop) ([license](https://github.com/Kingsford-Group/scallop/blob/master/LICENSE)).
