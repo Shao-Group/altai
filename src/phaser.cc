@@ -158,7 +158,6 @@ int phaser::init()
 
 /*
 	assign edges to different gt
- 	TODO: did not consider hs
 */ 
 int phaser::assign_gt()
 {
@@ -502,7 +501,7 @@ int phaser::refine_allelic_graphs()
 		for (edge_descriptor e: edges_1)
 		{
 			if(e == null_edge) pgr->remove_edge(e);
-			// if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
+			if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
 
 		// recursively remove edges incident to nodes in/out-degree == 0
