@@ -264,9 +264,9 @@ int hit::build_features(bam1_t *b)
 				int32_t alerpos = alelpos + it_len->second;						// 0-based query pos, excluded
 				
 				if (alelpos < s)  continue;
-				if (alerpos > p)
-					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar)
-						continue;
+				// if (alerpos > p)
+				// 	if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar)
+				// 		continue;
 				apos.push_back(as_pos(pack(alelpos, alerpos), ale));
 			}
 		}
