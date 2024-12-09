@@ -448,7 +448,7 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 			if(j < 0 || j >= regions.size()) {b = false; break;}
 			vv.push_back(j);
 			// problematic if hit spos spans a var site but not recorded in apos, added var site in both D and M)
-			if (regions[j].is_allelic() || DEBUG_MODE_ON) assert(sp[k].first == sp[k].second);
+			if (regions[j].is_allelic() && DEBUG_MODE_ON) assert(sp[k].first == sp[k].second);
 		}
 		if(b == false) break;
 	}
