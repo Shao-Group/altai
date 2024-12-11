@@ -57,7 +57,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			assign_gt();
 			split_gr();
 			refine_allelic_graphs();
-			//FIXME: revise graph
+			//TODO: revise graph
 			split_hs();
 			assemble_allelic_scallop(); 
 			assign_transcripts_gt();
@@ -67,9 +67,9 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 
 
 /*
-*	init ewrt1/2, countbg1/2, normalize ratiobg1/2
-*
-*   NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
+** init ewrt1/2, countbg1/2, normalize ratiobg1/2
+**
+**  NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
 */
 int phaser::init()
 {
@@ -157,8 +157,12 @@ int phaser::init()
 }
 
 /*
-	assign edges to different gt
-*/ 
+** Assign edges to different genotypes (gt)
+** This function iterates through all edges in the splice graph and assigns them to either ewrt1 or ewrt2 based on the vertex genotype.
+** If the vertex genotype is ALLELE1, the edge weight is assigned to ewrt1 and set to 0 in ewrt2.
+** If the vertex genotype is ALLELE2, the edge weight is assigned to ewrt2 and set to 0 in ewrt1.
+** The function also updates the background weights (ewrtbg1, ewrtbg2) and vertex weights (vwrtbg1, vwrtbg2) accordingly.
+*/
 int phaser::assign_gt()
 {
 	// get nsnodes, sort by AS ratio
@@ -423,7 +427,14 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 	return -1;
 }
 
-// split sg into two pairs of sg1/hs1 and sg2/hs2
+
+/**
+ * Splits the splice graph into two allelic splice graphs. (not hyper_set)
+ * - Copies the original splice graph into two new splice graphs (pgr1 and pgr2) with edge weights assigned to each allele.
+ * - Clears and initializes the mapping between original edges and new edges for both allelic graphs.
+ * - Copies the vertex and edge weights from the original graph to the new graphs.
+ * - Ensures the integrity of the new graphs by examining and enforcing edge integrity.
+ */
 int phaser::split_gr()
 {	
 	sc.gr.edge_integrity_examine();
