@@ -445,9 +445,10 @@ int bundle_bridge::align_hit(const map<as_pos32, int> &m1, const map<as_pos32, i
 		if(k > 0) assert(sp[k - 1].second < sp[k].first);
 		for(int j = sp[k].first; j <= sp[k].second; j++) 
 		{
-			if(j < 0) {b = false; break;}
-			vv.push_back(j);//FIXME: buggy when hit spos spans a var site but not recorded in apos, or returned -1?
-			if (regions[j].is_allelic() || DEBUG_MODE_ON) assert(sp[k].first == sp[k].second);
+			if(j < 0 || j >= regions.size()) {b = false; break;}
+			vv.push_back(j);
+			// problematic if hit spos spans a var site but not recorded in apos, added var site in both D and M)
+			if (regions[j].is_allelic() && DEBUG_MODE_ON) assert(sp[k].first == sp[k].second);
 		}
 		if(b == false) break;
 	}

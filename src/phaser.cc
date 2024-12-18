@@ -59,8 +59,8 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			split_gr();
 			remove_low_depth_var_vertex();
 			refine_allelic_graphs();
+
 			if(phaser_smooth) smooth_allelic_graphs();
-			//FIXME: revise graph
 			split_hs();
 			assemble_allelic_scallop(); 
 			assign_allele_spec_transcripts();
@@ -70,7 +70,7 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 
 
 /*
-**	init ewrt1/2, countbg1/2, normalize ratiobg1/2
+**  init ewrt1/2, countbg1/2, normalize ratiobg1/2
 **  NOTE: assemble anyway regardless of having only one allele or two. The unexpressed allele will be filtered by filter class.
 */
 int phaser::init()
@@ -164,9 +164,12 @@ int phaser::init()
 }
 
 /*
-**	assign edges to different gt
-** 	TODO: did not consider hs
-*/ 
+** Assign edges to different genotypes (gt)
+** This function iterates through all edges in the splice graph and assigns them to either ewrt1 or ewrt2 based on the vertex genotype.
+** If the vertex genotype is ALLELE1, the edge weight is assigned to ewrt1 and set to 0 in ewrt2.
+** If the vertex genotype is ALLELE2, the edge weight is assigned to ewrt2 and set to 0 in ewrt1.
+** The function also updates the background weights (ewrtbg1, ewrtbg2) and vertex weights (vwrtbg1, vwrtbg2) accordingly.
+*/
 int phaser::assign_gt()
 {
 	// get nsnodes, sort by AS ratio
@@ -431,17 +434,21 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 	return -1;
 }
 
-// split sg into two pairs of sg1/hs1 and sg2/hs2
+
+/**
+ * Splits the splice graph into two allelic splice graphs. (not hyper_set)
+ * - Copies the original splice graph into two new splice graphs (pgr1 and pgr2) with edge weights assigned to each allele.
+ * - Clears and initializes the mapping between original edges and new edges for both allelic graphs.
+ * - Copies the vertex and edge weights from the original graph to the new graphs.
+ * - Ensures the integrity of the new graphs by examining and enforcing edge integrity.
+ */
 int phaser::split_gr()
 {	
 	sc.gr.edge_integrity_examine();
-	MED gr0_ewrt_copy;
 	if(DEBUG_MODE_ON) 
 	{	
-		gr0_ewrt_copy = gr.ewrt;
-		for (auto && ei0: gr0_ewrt_copy) assert(ei0.second >= 0);
-		for (auto && ei1: ewrt1) assert(ei1.second >= 0);
-		for (auto && ei2: ewrt2) assert(ei2.second >= 0);
+		for (auto && ei1: ewrt1) assert(ei1.second > SMIN || ei1.second == 0);
+		for (auto && ei2: ewrt2) assert(ei2.second > SMIN || ei2.second == 0);
 	}
 
 	x2y_1.clear();// use x2y to map original edge to new edge
@@ -458,23 +465,20 @@ int phaser::split_gr()
 	gr.ewrt = ewrt2;	
 	pgr2->copy(gr, x2y_2, y2x_2);
 
-	if(DEBUG_MODE_ON && print_phaser_detail) 
+	if(DEBUG_MODE_ON || print_phaser_detail) 
 	{
 		cout << "DEBUG phaser::split_gr()" << endl;
-		cout << "ewrt size:" << ewrt1.size() << endl;
-		cout << "edge\tgr0.ewrt\tewrt1\tewrt2" << endl;
-		assert (ewrt1.size() == gr0_ewrt_copy.size());
+		cout << "ewrt1 size:" << ewrt1.size() << endl;
+		cout << "ewrt2 size:" << ewrt1.size() << endl;
+		cout << "gr.ewrt size:" << gr.ewrt.size() << endl;
 		assert (ewrt1.size() == ewrt2.size());
 
 		for (int j = 0; j < ewrt1.size(); j ++)
 		{
 			auto i = next(ewrt1.begin(), j);
 			auto k = next(ewrt2.begin(), j);
-			auto l = next(gr0_ewrt_copy.begin(), j);
 			assert (i->first == k->first);  // all edge_descriptors are the same before transform
-			assert (l->first == i->first);
 			cout << "edge " << i->first->source() << "->" << i->first->target();
-			cout << "\t" << l->first << ": " << l->second;
 			cout << "\t" << i->second << "\t"  << k->second << " " << endl;
 		}	
 
@@ -526,12 +530,9 @@ int phaser::remove_low_depth_var_vertex()
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
-// keep surviving edges, mark unsurvived vertices nf_allelic
-int phaser::refine_allelic_graphs() // FIXME:
+int phaser::refine_allelic_graphs()
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
-	//TODO: it is better to copy, remove edges, mark vertices, then retrive marked indices
-	// keep surviving edges, mark unsurvived vertices nf_allelic
 	for (splice_graph* pgr: gr_pointers)
 	{
 		PEEI pei;
@@ -543,11 +544,16 @@ int phaser::refine_allelic_graphs() // FIXME:
 		for (edge_descriptor e: edges_1)
 		{
 			if(e == null_edge) pgr->remove_edge(e);
-			// if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
+			if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
+		pgr->refine_splice_graph();
+		pgr->edge_integrity_examine();
 
-		// recursively remove edges incident to nodes in/out-degree == 0
-		// nodes will always remain in graph (maybe as isolated)
+
+		/* 
+		// TODO: maybe useful for feature extraction
+		// revival introduced problems
+		//TODO: copy, remove edges, mark vertices, then retrive marked indices
 		while(true)
 		{
 			bool b = false;
@@ -557,14 +563,18 @@ int phaser::refine_allelic_graphs() // FIXME:
 				if(pgr->in_degree(i) >= 1 && pgr->out_degree(i) >= 1) continue;
 				// pgr->clear_vertex(i);
 				vertex_info vi = pgr->get_vertex_info(i);
+				if (vi.type == REVIVAL_AS_UNDERSEQ) continue;
 				vi.type = REVIVAL_AS_UNDERSEQ;
 				pgr->set_vertex_info(i, vi);
-				pgr->add_edge(i, pgr->num_vertices() -1);
+				edge_descriptor e1 = pgr->add_edge(i, pgr->num_vertices() -1); // add edge info too
+				pgr->set_edge_info(e1,  edge_info()); // to set edge info 
+				pgr->set_edge_weight(e1, 0.5);
 				b = true;
 			}
 			if(b == false) break;
 		}
 		pgr->edge_integrity_enforce();
+		*/
 	}
 	
 	if(DEBUG_MODE_ON && print_phaser_detail) 

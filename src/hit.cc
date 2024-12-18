@@ -186,7 +186,7 @@ int hit::build_features(bam1_t *b)
 			int64_t p64 = pack(s, p);
 			spos.push_back(as_pos(p64, "$"));
 		}		
-		//build apos
+		//build apos which only exists in cigar that consumes reference (M, D)
 		else if (bam_cigar_op(cigar[k]) == BAM_CMATCH)
 		{
 			if (!do_apos) continue;
@@ -223,7 +223,8 @@ int hit::build_features(bam1_t *b)
 				if (alelpos < s)  continue;
 				if (alerpos > p)
 					if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar || bam_cigar_op(cigar[k+1]) != BAM_CDEL)
-						continue;												// the later condition checks whether it is DEL
+						continue;												// the later condition checks whether it is DEL, //TODO won't happen if only SNPs 
+				
 				// WASP filter, 0:N/A, 1:passed, 2+:failed
 				if(vw == 0 || vw == 1) 
 				{
@@ -234,6 +235,39 @@ int hit::build_features(bam1_t *b)
 					apos.push_back(as_pos(pack(alelpos, alerpos), "N"));
 					if (verbose >= 2) printf("Read %s failed WASP (vw:%u), its allele is masked as \"N\".", qname.c_str(), vw);
 				}
+			}
+		}
+		//build apos which only exists in cigar that consumes reference (M, D)
+		else if (bam_cigar_op(cigar[k]) == BAM_CDEL)
+		{
+			if (!do_apos) continue;
+			int32_t s = p - bam_cigar_oplen(cigar[k]);
+			int32_t itvm_st = s;
+			int32_t itvm_ed = p;	
+		
+			// AS related
+			// map<genotype, int> gt_count;
+			auto it = vcf_map_it;
+			auto it_len = vcf_map_len_it;
+			for ( ; it != vcf_map_end && it_len!= vcf_map_len_end; vcf_data::increse_it(it, it_len))					// iterate through vcf
+			{	
+				if (it->first >= p)  break;
+				if (it->first <  s)  
+				{
+					if (it->first < pos) { vcf_map_it = it; vcf_map_len_it = it_len;}
+					continue;
+				}
+				if(it_len->second != 1) continue;
+
+				int32_t alelpos = it->first; 									// 0-based ref pos, included
+				string ale = "n";
+				int32_t alerpos = alelpos + it_len->second;						// 0-based query pos, excluded
+				
+				if (alelpos < s)  continue;
+				// if (alerpos > p)
+				// 	if (alerpos - p != it_len->second - 1 || k+1 >= n_cigar)
+				// 		continue;
+				apos.push_back(as_pos(pack(alelpos, alerpos), ale));
 			}
 		}
 	}
