@@ -438,13 +438,10 @@ int phaser::split_by_min_parsimony(int v, const PEEI& itr_in_edges, const PEEI& 
 int phaser::split_gr()
 {	
 	sc.gr.edge_integrity_examine();
-	MED gr0_ewrt_copy;
 	if(DEBUG_MODE_ON) 
 	{	
-		gr0_ewrt_copy = gr.ewrt;
-		for (auto && ei0: gr0_ewrt_copy) assert(ei0.second >= 0);
-		for (auto && ei1: ewrt1) assert(ei1.second >= 0);
-		for (auto && ei2: ewrt2) assert(ei2.second >= 0);
+		for (auto && ei1: ewrt1) assert(ei1.second > SMIN || ei1.second == 0);
+		for (auto && ei2: ewrt2) assert(ei2.second > SMIN || ei2.second == 0);
 	}
 
 	x2y_1.clear();// use x2y to map original edge to new edge
@@ -461,23 +458,20 @@ int phaser::split_gr()
 	gr.ewrt = ewrt2;	
 	pgr2->copy(gr, x2y_2, y2x_2);
 
-	if(DEBUG_MODE_ON && print_phaser_detail) 
+	if(DEBUG_MODE_ON || print_phaser_detail) 
 	{
 		cout << "DEBUG phaser::split_gr()" << endl;
-		cout << "ewrt size:" << ewrt1.size() << endl;
-		cout << "edge\tgr0.ewrt\tewrt1\tewrt2" << endl;
-		assert (ewrt1.size() == gr0_ewrt_copy.size());
+		cout << "ewrt1 size:" << ewrt1.size() << endl;
+		cout << "ewrt2 size:" << ewrt1.size() << endl;
+		cout << "gr.ewrt size:" << gr.ewrt.size() << endl;
 		assert (ewrt1.size() == ewrt2.size());
 
 		for (int j = 0; j < ewrt1.size(); j ++)
 		{
 			auto i = next(ewrt1.begin(), j);
 			auto k = next(ewrt2.begin(), j);
-			auto l = next(gr0_ewrt_copy.begin(), j);
 			assert (i->first == k->first);  // all edge_descriptors are the same before transform
-			assert (l->first == i->first);
 			cout << "edge " << i->first->source() << "->" << i->first->target();
-			cout << "\t" << l->first << ": " << l->second;
 			cout << "\t" << i->second << "\t"  << k->second << " " << endl;
 		}	
 
