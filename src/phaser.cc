@@ -489,12 +489,9 @@ int phaser::split_gr()
 
 // remove edges < min_guaranteed_edge_weight, 
 // remove edges incident to nodes in/out-degree == 0
-// keep surviving edges, mark unsurvived vertices nf_allelic
 int phaser::refine_allelic_graphs()
 {
 	vector<splice_graph*> gr_pointers{pgr1, pgr2};
-	//TODO: it is better to copy, remove edges, mark vertices, then retrive marked indices
-	// keep surviving edges, mark unsurvived vertices nf_allelic
 	for (splice_graph* pgr: gr_pointers)
 	{
 		PEEI pei;
@@ -508,9 +505,14 @@ int phaser::refine_allelic_graphs()
 			if(e == null_edge) pgr->remove_edge(e);
 			if(pgr->get_edge_weight(e) < min_guaranteed_edge_weight) pgr->remove_edge(e);
 		}
+		pgr->refine_splice_graph();
+		pgr->edge_integrity_examine();
 
-		// recursively remove edges incident to nodes in/out-degree == 0
-		// nodes will always remain in graph (maybe as isolated)
+
+		/* 
+		// TODO: maybe useful for feature extraction
+		// revival introduced problems
+		//TODO: copy, remove edges, mark vertices, then retrive marked indices
 		while(true)
 		{
 			bool b = false;
@@ -520,14 +522,18 @@ int phaser::refine_allelic_graphs()
 				if(pgr->in_degree(i) >= 1 && pgr->out_degree(i) >= 1) continue;
 				// pgr->clear_vertex(i);
 				vertex_info vi = pgr->get_vertex_info(i);
+				if (vi.type == REVIVAL_AS_UNDERSEQ) continue;
 				vi.type = REVIVAL_AS_UNDERSEQ;
 				pgr->set_vertex_info(i, vi);
-				pgr->add_edge(i, pgr->num_vertices() -1);
+				edge_descriptor e1 = pgr->add_edge(i, pgr->num_vertices() -1); // add edge info too
+				pgr->set_edge_info(e1,  edge_info()); // to set edge info 
+				pgr->set_edge_weight(e1, 0.5);
 				b = true;
 			}
 			if(b == false) break;
 		}
 		pgr->edge_integrity_enforce();
+		*/
 	}
 	
 	if(DEBUG_MODE_ON && print_phaser_detail) 
