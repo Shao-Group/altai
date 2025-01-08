@@ -32,23 +32,42 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 	else if(sc.asnonzeroset.size() == 0) 
 	{
 		if(verbose >= 1)  printf("splice graph no longer has allelic vertices, assembly of which is resumed\n");
-		assemble_scallop0(_sc);			// non-const sc0
+		assemble_scallop0(_sc, true, true);			// non-const sc0
 	}
 	else
 	{
 		init();	
-		
+		// case 1: no allelic edges, count of ewrt1/2 is 0
 		if (ewrtbg1 >= -0.01 && ewrtbg1 <= 0.01 && ewrtbg2 >= -0.01 && ewrtbg2 <= 0.01 && ewrtbg1 + ewrtbg2 < 0.01 && ewrtbg1 + ewrtbg2 > -0.01)
 		{
 			if(verbose >= 1)  printf("splice graph no longer has allelic edges, assembly of which is resumed\n");
-			assemble_scallop0(_sc); 	 // non-const sc0
+			assemble_scallop0(_sc, true, true); 	 // non-const sc0
+		}
+		// case 2: absolute dominance of allele 1 (ratio > 0.999 or count of 2 is negligible)
+		else if (ewrtratiobg1 >= 0.999 || ewrtbg2 <= 0.001)
+		{
+			if(verbose >= 1)  printf("splice graph is allele 1 only. Assembling allele 1.\n");
+			assemble_scallop0(_sc, true, false); 	
+		}
+		// case 3: absolute dominance of allele 2 (ratio < 0.001 or count of 1 is negligible)
+		else if (ewrtbg1 <= 0.001 && ewrtratiobg2 >= 0.999)
+		{
+			if(verbose >= 1)  printf("splice graph is allele 2 only. Assembling allele 2.\n");
+			assemble_scallop0(_sc, false, true); 	
 		}
 		else
 		{
+			assert (ewrtratiobg1 > 0.000001 && ewrtratiobg2 < 0.999999);
+			assert (ewrtratiobg1 > 0.000001 && ewrtratiobg2 < 0.999999);
 			if(verbose >= 1)  
 			{
 				printf("partition graph %s to two allelic splice graphs, AS-vertices = %lu, overall allele frequency (%.2lf, %.2lf)\n", 
 						gr.gid.c_str(), sc.asnonzeroset.size(), ewrtratiobg1, ewrtratiobg2);
+				if (print_phaser_detail)
+				{
+					cout << "phaser bg" << ewrtbg1 << "--" << ewrtbg2 << "--";
+					cout << "phaser ratiobg" << ewrtratiobg1 << "--" << ewrtratiobg2 << endl;
+				}
 			}
 			assert(ewrtratiobg1 + ewrtratiobg2 < 1.001);
 			assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
@@ -874,23 +893,24 @@ bool phaser::split_hs_indiv_edge_use_oppo_phasing(edge_descriptor& e, double& bo
 /*
 ** when there is no variants phased in sc0
 ** 1. do not split
-** 2. assemble sc0 and collect transcripts to both container
+** 2. assemble sc0 and collect transcripts to both/either container
 */
-int phaser::assemble_scallop0(scallop& sc)
+int phaser::assemble_scallop0(scallop& sc, bool allele1, bool allele2)
 {
 	if (DEBUG_MODE_ON) sc.gr.edge_integrity_examine();
+	assert(allele1 || allele2); // at least one allele is true
 
 	sc.paths.clear();
 	sc.trsts.clear();
 	sc.non_full_trsts.clear();
 	sc.assemble_continue(is_allelic);
 
-	trsts1 = sc.trsts;
-	trsts2 = sc.trsts;
-	non_full_trsts1 = sc.non_full_trsts;
-	non_full_trsts2 = sc.non_full_trsts;
+	if(allele1) trsts1 = sc.trsts;
+	if(allele2) trsts2 = sc.trsts;
+	if(allele1) non_full_trsts1 = sc.non_full_trsts;
+	if(allele2) non_full_trsts2 = sc.non_full_trsts;
 
-	if (DEBUG_MODE_ON)
+	if (DEBUG_MODE_ON && allele1 && allele2)
 	{
 		for(const transcript& t: trsts1) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);
 		for(const transcript& t: trsts2) assert(t.gt == UNPHASED || t.gt == NONSPECIFIC);

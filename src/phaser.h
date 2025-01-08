@@ -68,7 +68,7 @@ private:
 
 private:
     int init();
-    int assemble_scallop0(scallop& sc);
+    int assemble_scallop0(scallop& sc, bool allele1 = false, bool allele2 = false);
     int assign_gt();
     int remove_low_depth_var_vertex();
     int split_gr();
