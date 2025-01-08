@@ -447,6 +447,8 @@ int phaser::split_gr()
 	sc.gr.edge_integrity_examine();
 	if(DEBUG_MODE_ON) 
 	{	
+		for (auto && ei1: ewrt1) if( ei1.second <= SMIN && ei1.second != 0) printf("ei1.second %f", ei1.second);
+		for (auto && ei2: ewrt2) if( ei2.second <= SMIN && ei2.second != 0) printf("ei2.second %f", ei2.second);
 		for (auto && ei1: ewrt1) assert(ei1.second > SMIN || ei1.second == 0);
 		for (auto && ei2: ewrt2) assert(ei2.second > SMIN || ei2.second == 0);
 	}
