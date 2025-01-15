@@ -19,39 +19,44 @@ def process_gtf_file(file_path):
     a1_label = True if file_path == args.a1 else False
     a2_label = True if file_path == args.a2 else False
 
-    with open(file_path, 'r') as f:
-        for line in f:
-            if line.startswith('#'):
-                continue
-                
-            fields = line.strip().split('\t')
-            if len(fields) != 9:
-                print(f"Warning: Line does not have 9 columns: {line}", file=sys.stderr)
-                continue
-                
-            feature_type = fields[2]
-            if feature_type != 'exon':
-                continue
-                
-            attributes = parse_gtf_attributes(fields[8])
-            if 'transcript_id' not in attributes:
-                print(f"Warning: lines does not have transcript_id: {line}", file=sys.stderr)
-                continue
-            # remove undesired attributes
-            attributes['a1_label'] = a1_label
-            attributes['a2_label'] = a2_label
-            attributes.pop('exon', None)        
-
-            transcript_id = attributes['transcript_id']
+    f = open(file_path, 'r')
+    for line in f:
+        if line.startswith('#'):
+            continue
+            
+        fields = line.strip().split('\t')
+        if len(fields) != 9:
+            print(f"Warning: Line does not have 9 columns: {line}", file=sys.stderr)
+            continue
+            
+        feature_type = fields[2]
+        if feature_type != 'exon' and feature_type != 'transcript':
+            continue
+            
+        attributes = parse_gtf_attributes(fields[8])
+        if 'transcript_id' not in attributes:
+            print(f"Warning: lines does not have transcript_id: {line}", file=sys.stderr)
+            continue     
+        transcript_id = attributes['transcript_id']
+        
+        # store coordinates if exon
+        if feature_type == 'exon':
             start = int(fields[3])
             end = int(fields[4])
             transcript_exon_coordinates[transcript_id].append((start, end))
             
             # Store attributes
-            if transcript_id not in transcript_attributes:
-                transcript_attributes[transcript_id] = attributes
-            if transcript_id not in transcript_chr:
-                transcript_chr[transcript_id] = str(fields[0])
+        # Store attributes if transcript
+        elif feature_type == 'transcript':
+            attributes.pop('exon', None)        
+            attributes.pop('gene_id', None)   
+            attributes['a1_label'] = a1_label
+            attributes['a2_label'] = a2_label
+            assert transcript_id not in transcript_attributes
+            assert transcript_id not in transcript_chr
+            transcript_attributes[transcript_id] = attributes
+            transcript_chr[transcript_id] = str(fields[0])
+    f.close()
     
     # Sort exon coordinates by start position
     for id in transcript_exon_coordinates:
