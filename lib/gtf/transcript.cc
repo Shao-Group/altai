@@ -509,6 +509,7 @@ int transcript::write_gvf(ostream &fout, double cov2, int count) const
 	//fout<<"RPKM \""<<RPKM<<"\"; ";
 	fout << "cov \"" << coverage << "\"; ";
 	// model needed info
+	fout << "SNP_num \"" << get_snp_site_count() << "\"; ";
 	fout << "dist_snp_ss_upsteam \"" << stringv(get_distances_snp_to_upstream_splice_site()) << "\"; ";
 	fout << "dist_snp_ss_downstream \"" << stringv(get_distances_snp_to_downstream_splice_site()) << "\"; ";
 
