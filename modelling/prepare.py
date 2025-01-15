@@ -152,7 +152,8 @@ def save_results(combined_data, output_file):
 
 def main(listOfFiles):
     combined_data = process_multiple_gtf_files(listOfFiles)
-    save_results(combined_data, 'combined_results.tsv')
+    save_results(combined_data, 'combined_results.tsv' if args.o is None else args.o)
+    df = get_df(combined_data)
     # print example
     first_chain = next(iter(combined_data))
     print(f"Total unique intron chains found: {len(combined_data)}")
@@ -161,11 +162,16 @@ def main(listOfFiles):
     print("Attributes from each file:")
     for file_num, attrs in combined_data[first_chain].items():
         print(f"{file_num}:", attrs)
+    
+    print("df columns", df.columns)
+    return df
+
 
 def parse(argv):
     parser = argparse.ArgumentParser(description='Process GTF files and compare intron chains.')
     parser.add_argument('-a1', metavar='FILE', help='Allele1 GTF file (ground truth)')
     parser.add_argument('-a2', metavar='FILE', help='Allele2 GTF file (ground truth)')
+    parser.add_argument('-o', metavar='FILE', help='output file', default=None)
     parser.add_argument('otherFiles', nargs='*', help='Additional GTF files')
     args = parser.parse_args(argv)
 
@@ -188,5 +194,8 @@ def parse(argv):
     return args
 
 if __name__ == "__main__":
+    '''
+    Usage: python prepare.py -o output.tsv -a1 allele1.true.gtf -a2 allele2.true.gtf file1.gtf file2.gtf ...
+    '''
     args = parse(sys.argv[1:])
     main(args.files)
