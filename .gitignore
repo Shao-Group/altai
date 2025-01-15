@@ -49,3 +49,5 @@ gene.*.tex
 *.tmp
 DevLog
 DevLog.md
+*.bam
+*.gtf
