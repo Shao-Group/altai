@@ -149,6 +149,30 @@ def save_results(combined_data, output_file):
                 for key in sorted(all_keys):
                     row.append(attrs.get(key, ''))
             f.write('\t'.join(str(x) for x in row) + '\n')
+            
+
+def get_df(combined_data):
+    all_keys = set()
+    for intron_chain, file_attributes in combined_data.items():
+        for file_attrs in file_attributes.values():
+            all_keys.update(file_attrs.keys())
+
+    # Create data rows
+    data = []
+    for intron_chain, file_attributes in combined_data.items():
+        row = {'chr_intron_chain': intron_chain}
+        for file_idx in range(len(file_attributes)):
+            file_key = f'attr{file_idx}'
+            attrs = file_attributes[file_key]
+            for key in sorted(all_keys):
+                row[f'attr{file_idx}_{key}'] = attrs.get(key, '')
+        data.append(row)
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    print("\nGenerated DataFrame:")
+    print(df)
+    return df
 
 def main(listOfFiles):
     combined_data = process_multiple_gtf_files(listOfFiles)
