@@ -18,6 +18,22 @@ string toupperstring(const string s)
 	return s2;
 }
 
+
+string stringv(const vector<double> &x)
+{
+	string v = "[";
+	bool first = true;
+	for (const auto& elem : x) {
+		if (!first) v += ", ";
+		std::stringstream ss;
+		ss << std::fixed << std::setprecision(2) << elem;
+		v += ss.str();
+		first = false;
+	}
+	v += "]";
+	return v;
+}
+
 // mimic python string.split() 
 vector<string> split(const string s, const string sep)
 {

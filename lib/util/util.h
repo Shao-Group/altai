@@ -19,6 +19,7 @@ See LICENSE for licensing.
 #include <cmath>
 #include <cstdlib>
 #include <exception>
+#include <iomanip>
 #include "src/as_pos32.hpp"
 
 using namespace std;
@@ -119,6 +120,23 @@ int printv(const vector<T> &x)
 		cout<< x[i] <<" ";
 	}
 	return 0;
+}
+
+string stringv(const vector<double> &x);
+
+// turn vector to string "[a, b, c, ...]"
+template<typename T>
+string stringv(const vector<T> &x)
+{
+	string v = "[";
+	bool first = true;
+	for (const auto& elem : x) {
+		if (!first) v += ", ";
+		v += tostring(elem);
+		first = false;
+	}
+	v += "]";
+	return v;
 }
 
 template<typename T>
