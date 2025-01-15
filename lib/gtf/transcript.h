@@ -56,11 +56,16 @@ public:
 	double TPM;
 
 	vector<PI32> exons;
+	vector<double> exons_weights; 	// exons may be sorted but weights are not, this partial exon weight
+
 	vector<PI32> as_exons;
+	vector<double> as_exons_weights;
 
 public:
 	int add_exon(as_pos32 s, as_pos32 t);
 	int add_as_exons(as_pos32 s, as_pos32 t);
+	double add_exon_weight(double w);
+	double add_as_exon_weight(double w);
 	int add_exon(const item &e);
 	int assign_RPKM(double factor);
 	int sort();

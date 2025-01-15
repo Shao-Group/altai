@@ -26,7 +26,9 @@ transcript::transcript(const item &e)
 	throw "transcript::transcript should not be constructed with an item object";
 	assign(e);
 	exons.clear();
+	exons_weights.clear();
 	as_exons.clear();
+	as_exons_weights.clear();
 }
 
 transcript::~transcript()
@@ -70,7 +72,9 @@ bool transcript::operator< (const transcript &t) const
 int transcript::clear()
 {
 	exons.clear();
+	exons_weights.clear();
 	as_exons.clear();
+	as_exons_weights.clear();
 	seqname = "";
 	source = "";
 	feature = "";
@@ -110,6 +114,18 @@ int transcript::add_as_exons(as_pos32 s, as_pos32 t)
 	assert(t.ale != "$");
 	as_exons.push_back(PI32(s, t));
 	return 0;
+}
+
+double transcript::add_exon_weight(double w)
+{
+	exons_weights.push_back(w);
+	return w;
+}
+
+double transcript::add_as_exon_weight(double w)
+{
+	as_exons_weights.push_back(w); 
+	return w;
 }
 
 int transcript::sort()
@@ -508,10 +524,13 @@ int transcript::write_gvf(ostream &fout, double cov2, int count) const
 	if(transcript_type != "") fout << "transcript_type \"" << transcript_type.c_str() << "\"; ";
 	//fout<<"RPKM \""<<RPKM<<"\"; ";
 	fout << "cov \"" << coverage << "\"; ";
+
 	// model needed info
 	fout << "SNP_num \"" << get_snp_site_count() << "\"; ";
 	fout << "dist_snp_ss_upsteam \"" << stringv(get_distances_snp_to_upstream_splice_site()) << "\"; ";
 	fout << "dist_snp_ss_downstream \"" << stringv(get_distances_snp_to_downstream_splice_site()) << "\"; ";
+	fout << "as_exon_weight \"" << stringv(as_exons_weights) << "\"; ";
+	fout << "exon_weight \"" << stringv(exons_weights) << "\"; ";
 
 	if(cov2 >= -0.5) fout<<"cov2 \""<<cov2<<"\"; ";
 	if(count >= -0.5) fout<<"count \""<<count<<"\"; ";
