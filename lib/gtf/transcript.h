@@ -85,7 +85,10 @@ public:
 	int write_gvf(ostream &fout, double cov2 = -1, int count = -1) const;
 	int write_fasta(ostream &fout, int line_len, faidx_t *fai) const;
 
-	
+	// get attributes for model
+	int get_snp_site_count() const;							 				// get number of SNP site
+	vector<int> get_distances_snp_to_upstream_splice_site() const;			// distance between SNP and Splice sites (upstream)
+	vector<int> get_distances_snp_to_downstream_splice_site() const;		// distance between SNP and downstream sites (upstream)
 
 	static int reverse_complement_DNA(string &, const string);
 	static vector<transcript>& recover_full_from_partial_transcripts

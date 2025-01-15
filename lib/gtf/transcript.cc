@@ -395,6 +395,92 @@ int transcript::write(ostream &fout, double cov2, int count) const
 	return 0;
 }
 
+// get number of SNP site
+int transcript::get_snp_site_count() const
+{
+	return as_exons.size();
+}
+
+vector<int> transcript::get_distances_snp_to_upstream_splice_site() const
+{
+	vector<int> distances;
+
+	if (as_exons.empty() || exons.empty()) return distances;
+	
+	size_t exon_idx = 0;
+	
+	for (const auto& snp : as_exons) {
+		// Skip exons that are completely before this SNP
+		while (exon_idx < exons.size() && exons[exon_idx].second.p32 < snp.first.p32) {
+			exon_idx++;
+		}
+		
+		// SNP is not in an exon, abnormal
+		if (snp.first.p32 < exons[exon_idx].first.p32 || snp.second.p32 > exons[exon_idx].second.p32) {
+			distances.push_back(-1);
+			continue;
+		}
+
+		int dist = INT_MAX;
+		// Find minimum distance to the closest upstream splice site
+		if (strand == '+') {
+			dist = snp.first.p32 - exons[exon_idx].first.p32;
+		}
+		else if (strand == '-'){
+			dist = exons[exon_idx].second.p32 - snp.second.p32;
+		}
+		else
+		{
+			dist = min(
+					snp.first.p32 - exons[exon_idx].first.p32, 
+					exons[exon_idx].second.p32 - snp.second.p32
+					);	
+		}
+		distances.push_back(dist == INT_MAX ? -1 : dist); // if INT_MAX push -1 as reserved value.
+	}
+	return distances;
+}
+
+vector<int> transcript::get_distances_snp_to_downstream_splice_site() const
+{
+	vector<int> distances;
+
+	if (as_exons.empty() || exons.empty()) return distances;
+	
+	size_t exon_idx = 0;
+	
+	for (const auto& snp : as_exons) {
+		// Skip exons that are completely before this SNP
+		while (exon_idx < exons.size() && exons[exon_idx].second.p32 < snp.first.p32) {
+			exon_idx++;
+		}
+		
+		// SNP is not in an exon, abnormal
+		if (snp.first.p32 < exons[exon_idx].first.p32 || snp.second.p32 > exons[exon_idx].second.p32) {
+			distances.push_back(-1);
+			continue;
+		}
+
+		int dist = INT_MAX;
+		// Find minimum distance to the closest downstream splice site
+		if (strand == '+') {
+			dist = exons[exon_idx].second.p32 - snp.second.p32;
+		}
+		else if (strand == '-'){
+			dist = snp.first.p32 - exons[exon_idx].first.p32;
+		}
+		else {
+			dist = min(
+				exons[exon_idx].second.p32 - snp.second.p32,
+				snp.first.p32 - exons[exon_idx].first.p32
+			);
+		}
+		distances.push_back(dist == INT_MAX ? -1 : dist);
+	}
+	return distances;
+}
+
+
 int transcript::write_gvf(ostream &fout, double cov2, int count) const
 {
 	fout.precision(4);
@@ -422,6 +508,10 @@ int transcript::write_gvf(ostream &fout, double cov2, int count) const
 	if(transcript_type != "") fout<<"transcript_type \""<<transcript_type.c_str()<<"\"; ";
 	//fout<<"RPKM \""<<RPKM<<"\"; ";
 	fout<<"cov \""<<coverage<<"\"; ";
+	// model needed info
+	fout<<"dist_snp_ss_upsteam \""<<stringv(get_distances_snp_to_upstream_splice_site())<<"\"; ";
+	fout<<"dist_snp_ss_downstream \""<<stringv(get_distances_snp_to_downstream_splice_site())<<"\"; ";
+
 	if(cov2 >= -0.5) fout<<"cov2 \""<<cov2<<"\"; ";
 	if(count >= -0.5) fout<<"count \""<<count<<"\"; ";
 	fout << endl;
