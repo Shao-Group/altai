@@ -147,19 +147,40 @@ def save_results(combined_data, output_file):
 def main(listOfFiles):
     combined_data = process_multiple_gtf_files(listOfFiles)
     save_results(combined_data, 'combined_results.tsv')
-
-    print(f"Total unique intron chains found: {len(combined_data)}")
-    
-    print("\nExample of the first intron chain and its attributes:")
+    # print example
     first_chain = next(iter(combined_data))
+    print(f"Total unique intron chains found: {len(combined_data)}")
+    print("\nExample of the first intron chain and its attributes:")
     print(f"Intron chain: {first_chain}")
     print("Attributes from each file:")
     for file_num, attrs in combined_data[first_chain].items():
         print(f"{file_num}:", attrs)
 
-if __name__ == "__main__":
-    listOfFiles = sys.argv[1:]
+def parse(argv):
+    parser = argparse.ArgumentParser(description='Process GTF files and compare intron chains.')
+    parser.add_argument('-a1', metavar='FILE', help='Allele1 GTF file (ground truth)')
+    parser.add_argument('-a2', metavar='FILE', help='Allele2 GTF file (ground truth)')
+    parser.add_argument('otherFiles', nargs='*', help='Additional GTF files')
+    args = parser.parse_args(argv)
+
+    listOfFiles = []
+    if args.a1:
+        listOfFiles.append(args.a1)
+    if args.a2:
+        listOfFiles.append(args.a2)
+    listOfFiles.extend(args.otherFiles)
+
+    if not listOfFiles:
+        parser.error("At least one GTF file must be provided")
+
     for f in listOfFiles:
         if not f.endswith(".gtf"):
             raise ValueError(f"File {f} is not a GTF file!")
-    main(listOfFiles)
+    
+    args.files = listOfFiles
+
+    return args
+
+if __name__ == "__main__":
+    args = parse(sys.argv[1:])
+    main(args.files)
