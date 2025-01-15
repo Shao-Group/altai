@@ -8,6 +8,7 @@ import re
 import sys
 import argparse
 import pandas as pd
+import statistics
 
 # Process a single GTF file and return two dictionaries:
 # 1. transcript_attributes: transcript_id -> attributes
@@ -44,8 +45,6 @@ def process_gtf_file(file_path):
             start = int(fields[3])
             end = int(fields[4])
             transcript_exon_coordinates[transcript_id].append((start, end))
-            
-            # Store attributes
         # Store attributes if transcript
         elif feature_type == 'transcript':
             attributes.pop('exon', None)        
@@ -108,10 +107,8 @@ def process_multiple_gtf_files(file_paths):
         attributes, chromosomes, coordinates = process_gtf_file(file_path)
         all_file_data.append((attributes, chromosomes, coordinates))
     
-    # Create combined data structure
+    # get combined data structure for all files
     combined_data = defaultdict(lambda: {f'attr{i}': {} for i in range(len(file_paths))})
-    
-    # Process each file's data
     for file_idx, (attributes, chromosomes, coordinates) in enumerate(all_file_data):
         # Group transcripts by their intron chain
         chain_to_transcripts = defaultdict(list)
@@ -127,27 +124,59 @@ def process_multiple_gtf_files(file_paths):
                 combined_attrs.update(attributes[transcript_id])
             combined_data[intron_chain_str][f'attr{file_idx}'] = combined_attrs
     
-    return combined_data
+    # get intron chain data 
+    intron_chain_data = defaultdict(lambda: defaultdict(lambda: None))
+    for file_idx, (attributes, chromosomes, coordinates) in enumerate(all_file_data):
+        for transcript_id, coord_list in coordinates.items():
+            intron_chain = get_intron_chain(coord_list)
+            intron_chain_str = chromosomes[transcript_id] + ":" + ','.join(f'{start}-{end}' for start, end in intron_chain)
+            # same for all files , so run only once if exists
+            if intron_chain_str in intron_chain_data:
+                continue 
+            intron_chain_data[intron_chain_str]["NumExons"] = len(coord_list)
+            exon_lengths = [end - start + 1 for start, end in coord_list]
+            intron_chain_data[intron_chain_str]["LengthTotal"]   = sum(exon_lengths)
+            intron_chain_data[intron_chain_str]["LengthMaxExon"] = max(exon_lengths)
+            intron_chain_data[intron_chain_str]["LengthMinExon"] = min(exon_lengths)
+            intron_chain_data[intron_chain_str]["LengthAvgExon"] = statistics.mean(exon_lengths)
+            intron_chain_data[intron_chain_str]["LengthStdExon"] = statistics.stdev(exon_lengths) if len(exon_lengths) > 1 else None
+    return combined_data, intron_chain_data
 
 # Save the combined data to a TSV file
-def save_results(combined_data, output_file):
-    # First, collect all unique attribute keys from all files
+def save_results(combined_data, intron_chain_data, output_file):
+    if len(combined_data) != len(intron_chain_data):
+        # Print any differences in keys between the two dictionaries
+        combined_keys = set(combined_data.keys())
+        intron_chain_keys = set(intron_chain_data.keys())
+        if combined_keys != intron_chain_keys:
+            print("Keys in combined_data but not in intron_chain_data:", combined_keys - intron_chain_keys)
+            print("Keys in intron_chain_data but not in combined_data:", intron_chain_keys - combined_keys)
+    assert len(combined_data) == len(intron_chain_data)
+    
+    # collect all unique attribute keys from all files
     all_keys = set()
     for intron_chain, file_attributes in combined_data.items():
         for file_attrs in file_attributes.values():
             all_keys.update(file_attrs.keys())
-    
+    intron_chain_keys = intron_chain_data[next(iter(intron_chain_data))].keys()
+
     # Create header
     header = ['chr_intron_chain']
+    header.extend(intron_chain_keys)
     for file_idx in range(len(next(iter(combined_data.values())))):
         for key in sorted(all_keys):
             header.append(f'attr{file_idx}_{key}')
+    print("header:", header)
     
     # Write to file
     with open(output_file, 'w') as f:
         f.write('\t'.join(header) + '\n')
         for intron_chain, file_attributes in combined_data.items():
             row = [intron_chain]
+            # intron chain attr
+            for intron_chain_key in intron_chain_keys:
+                row.append(intron_chain_data[intron_chain][intron_chain_key])
+            # file attr
             for file_idx in range(len(file_attributes)):
                 file_key = f'attr{file_idx}'
                 attrs = file_attributes[file_key]
@@ -180,9 +209,8 @@ def get_df(combined_data):
     return df
 
 def main(listOfFiles):
-    combined_data = process_multiple_gtf_files(listOfFiles)
-    save_results(combined_data, 'combined_results.tsv' if args.o is None else args.o)
-    df = get_df(combined_data)
+    combined_data, intron_chain_data = process_multiple_gtf_files(listOfFiles)
+    save_results(combined_data, intron_chain_data, 'combined_results.tsv' if args.o is None else args.o)
     # print example
     first_chain = next(iter(combined_data))
     print(f"Total unique intron chains found: {len(combined_data)}")
@@ -192,8 +220,9 @@ def main(listOfFiles):
     for file_num, attrs in combined_data[first_chain].items():
         print(f"{file_num}:", attrs)
     
-    print("df columns", df.columns)
-    return df
+    # df = get_df(combined_data)
+    # print("df columns", df.columns)
+    # return df
 
 
 def parse(argv):
