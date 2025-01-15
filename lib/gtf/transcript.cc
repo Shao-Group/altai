@@ -493,24 +493,24 @@ int transcript::write_gvf(ostream &fout, double cov2, int count) const
 
 	PI32 p = get_bounds();
 
-	fout<<seqname.c_str()<<"\t";				// chromosome name
-	fout<<source.c_str()<<"\t";					// source
-	fout<<"transcript\t";						// feature
-	fout<<p.first.p32 + 1<<"\t";					// left position
-	fout<<p.second.p32 <<"\t";						// right position
-	fout<<1000<<"\t";							// score, now as expression
-	fout<<strand<<"\t";							// strand
-	fout<<".\t";								// frame
-	fout<<"gene_id \""<<gene_id.c_str()<<"\"; ";
-	fout<<"transcript_id \""<<transcript_id.c_str()<<"\"; ";
-	fout<<"allele \""<< gt_str(gt) <<"\"; ";
-	if(gene_type != "") fout<<"gene_type \""<<gene_type.c_str()<<"\"; ";
-	if(transcript_type != "") fout<<"transcript_type \""<<transcript_type.c_str()<<"\"; ";
+	fout << seqname.c_str() << "\t";                // chromosome name
+	fout << source.c_str() << "\t";                 // source
+	fout << "transcript\t";                         // feature
+	fout << p.first.p32 + 1 << "\t";               // left position
+	fout << p.second.p32 << "\t";                  // right position
+	fout << 1000 << "\t";                          // score, now as expression
+	fout << strand << "\t";                        // strand
+	fout << ".\t";                                 // frame
+	fout << "gene_id \"" << gene_id.c_str() << "\"; ";
+	fout << "transcript_id \"" << transcript_id.c_str() << "\"; ";
+	fout << "allele \"" << gt_str(gt) << "\"; ";
+	if(gene_type != "") fout << "gene_type \"" << gene_type.c_str() << "\"; ";
+	if(transcript_type != "") fout << "transcript_type \"" << transcript_type.c_str() << "\"; ";
 	//fout<<"RPKM \""<<RPKM<<"\"; ";
-	fout<<"cov \""<<coverage<<"\"; ";
+	fout << "cov \"" << coverage << "\"; ";
 	// model needed info
-	fout<<"dist_snp_ss_upsteam \""<<stringv(get_distances_snp_to_upstream_splice_site())<<"\"; ";
-	fout<<"dist_snp_ss_downstream \""<<stringv(get_distances_snp_to_downstream_splice_site())<<"\"; ";
+	fout << "dist_snp_ss_upsteam \"" << stringv(get_distances_snp_to_upstream_splice_site()) << "\"; ";
+	fout << "dist_snp_ss_downstream \"" << stringv(get_distances_snp_to_downstream_splice_site()) << "\"; ";
 
 	if(cov2 >= -0.5) fout<<"cov2 \""<<cov2<<"\"; ";
 	if(count >= -0.5) fout<<"count \""<<count<<"\"; ";
