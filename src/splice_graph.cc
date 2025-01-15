@@ -2013,9 +2013,13 @@ int splice_graph::output_transcript(transcript &trst, const path &p, const strin
 		as_pos32 p1 (get_vertex_info(v[k]).lpos.p32, "$");
 		as_pos32 p2 (get_vertex_info(v[k]).rpos.p32, "$");
 		jmap += make_pair(ROI(p1, p2), 1);
+		trst.add_exon_weight(get_vertex_weight(v[k]));	// weight of pexon, not exactly same as exon weight
+
 		if (g == ALLELE1 || g == ALLELE2)
 		{
 			trst.add_as_exons(get_vertex_info(v[k]).lpos, get_vertex_info(v[k]).rpos);
+			trst.add_as_exon_weight(get_vertex_weight(v[k]));
+
 			if (trst.gt == UNPHASED || trst.gt == NONSPECIFIC) trst.gt = g;
 			// else assert(trst.gt == g);
 		}
