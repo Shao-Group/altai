@@ -6,6 +6,8 @@
 from collections import defaultdict
 import re
 import sys
+import argparse
+import pandas as pd
 
 # Process a single GTF file and return two dictionaries:
 # 1. transcript_attributes: transcript_id -> attributes
@@ -14,7 +16,9 @@ def process_gtf_file(file_path):
     transcript_attributes = {}
     transcript_chr = {}
     transcript_exon_coordinates = defaultdict(list)
-    
+    a1_label = True if file_path == args.a1 else False
+    a2_label = True if file_path == args.a2 else False
+
     with open(file_path, 'r') as f:
         for line in f:
             if line.startswith('#'):
@@ -34,8 +38,10 @@ def process_gtf_file(file_path):
                 print(f"Warning: lines does not have transcript_id: {line}", file=sys.stderr)
                 continue
             # remove undesired attributes
+            attributes['a1_label'] = a1_label
+            attributes['a2_label'] = a2_label
             attributes.pop('exon', None)        
-                
+
             transcript_id = attributes['transcript_id']
             start = int(fields[3])
             end = int(fields[4])
