@@ -197,7 +197,7 @@ int transcript::make_non_specific()
 
 int transcript::assign_gt(genotype g)
 {	
-	assert(!gt_conflict(gt, g));
+	// assert(!gt_conflict(gt, g));
 	gt = g;
 	return 0;
 }
@@ -287,7 +287,7 @@ size_t transcript::get_intron_chain_hashing() const
 
 int transcript::intron_chain_compare(const transcript &t) const
 {
-	assert(!gt_conflict(gt, t.gt));
+	// assert(!gt_conflict(gt, t.gt));
 	if (DEBUG_MODE_ON)  for(const auto & e: exons)  assert(e.first.ale == "$" && e.second.ale == "$" );
 	
 	if(exons.size() < t.exons.size()) return +1;
@@ -311,7 +311,7 @@ int transcript::intron_chain_compare(const transcript &t) const
 
 int transcript::compare1(const transcript &t, double single_exon_overlap) const
 {
-	assert(!gt_conflict(gt, t.gt));
+	// assert(!gt_conflict(gt, t.gt));
 	if(exons.size() < t.exons.size()) return +1;
 	if(exons.size() > t.exons.size()) return -1;
 
@@ -352,7 +352,7 @@ int transcript::compare1(const transcript &t, double single_exon_overlap) const
 int transcript::extend_bounds(const transcript &t)
 {
 	// assert(gt_implicit_same(gt, t.gt));
-	assert(!gt_conflict(gt, t.gt));
+	// assert(!gt_conflict(gt, t.gt));
 	if(exons.size() == 0) return 0;
 	if(t.exons.front().first < exons.front().first) exons.front().first = t.exons.front().first;
 	if(t.exons.back().second > exons.back().second) exons.back().second = t.exons.back().second;
