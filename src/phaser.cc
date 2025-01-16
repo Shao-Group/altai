@@ -736,8 +736,8 @@ int phaser::split_hs()
 		// only two potential alleles 
 		assert (allele_index == 0 || allele_index == 1); 
 		hyper_set*    phs      = (allele_index == 0)? phs1  : phs2;
-		MED&          ewrt = (allele_index == 0)? ewrt1 : ewrt2;
-		genotype	  gt 	   = (allele_index == 0)? ALLELE1 : ALLELE2;
+		// MED&          ewrt = (allele_index == 0)? ewrt1 : ewrt2;
+		// genotype	  gt 	   = (allele_index == 0)? ALLELE1 : ALLELE2;
 		
 		// copy hs0 to hs1/hs2; remove undesired edges
 		MVII edges_w_count;
