@@ -466,8 +466,20 @@ int phaser::split_gr()
 	sc.gr.edge_integrity_examine();
 	if(DEBUG_MODE_ON) 
 	{	
-		for (auto && ei1: ewrt1) if( ei1.second <= SMIN && ei1.second != 0) cerr << "ei1.second " << ei1.second << endl;
-		for (auto && ei2: ewrt2) if( ei2.second <= SMIN && ei2.second != 0) cerr << "ei2.second " << ei2.second << endl;
+		for (auto && ei1: ewrt1) 
+			if( ei1.second <= SMIN && ei1.second != 0) 
+			{
+				cerr << "ei1.second " << ei1.second << endl;
+				cerr << "gid: " << sc.gr.gid << "strand: " << sc.gr.strand << endl;
+				cerr << "pos:" << sc.gr.chrm << ":" << sc.gr.get_vertex_info(0).lpos.aspos32string() << "-" << sc.gr.get_vertex_info(sc.gr.num_vertices() - 1).rpos.aspos32string() << endl;
+			}
+		for (auto && ei2: ewrt2) 
+			if( ei2.second <= SMIN && ei2.second != 0) 
+			{
+				cerr << "ei2.second " << ei2.second << endl;
+				cerr << "gid: " << sc.gr.gid << "strand: " << sc.gr.strand << endl;
+				cerr << "pos:" << sc.gr.chrm << ":" << sc.gr.get_vertex_info(0).lpos.aspos32string() << "-" << sc.gr.get_vertex_info(sc.gr.num_vertices() - 1).rpos.aspos32string() << endl;
+			}
 		for (auto && ei1: ewrt1) assert(ei1.second > SMIN || ei1.second == 0);
 		for (auto && ei2: ewrt2) assert(ei2.second > SMIN || ei2.second == 0);
 	}
