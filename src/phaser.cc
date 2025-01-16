@@ -50,15 +50,15 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			assemble_scallop0(_sc, true, false); 	
 		}
 		// case 3: absolute dominance of allele 2 (ratio < 0.001 or count of 1 is negligible)
-		else if (ewrtbg1 <= 0.001 && ewrtratiobg2 >= 0.999)
+		else if (ewrtbg1 <= 0.001 || ewrtratiobg2 >= 0.999)
 		{
 			if(verbose >= 1)  printf("splice graph is allele 2 only. Assembling allele 2.\n");
 			assemble_scallop0(_sc, false, true); 	
 		}
 		else
 		{
-			assert (ewrtratiobg1 > 0.000001 && ewrtratiobg2 < 0.999999);
-			assert (ewrtratiobg1 > 0.000001 && ewrtratiobg2 < 0.999999);
+			assert (ewrtratiobg1 > 0.000001 && ewrtratiobg1 < 0.999999);
+			assert (ewrtratiobg2 > 0.000001 && ewrtratiobg2 < 0.999999);
 			if(verbose >= 1)  
 			{
 				printf("partition graph %s to two allelic splice graphs, AS-vertices = %lu, overall allele frequency (%.2lf, %.2lf)\n", 
@@ -73,6 +73,8 @@ phaser::phaser(scallop& _sc, bool _is_allelic)
 			assert(ewrtratiobg1 + ewrtratiobg2 > 0.999);
 			assert(ewrtratiobg1 >= 0);
 			assert(ewrtratiobg2 >= 0);
+			assert(ewrtbg1 > 0);
+			assert(ewrtbg2 > 0);
 			
 			assign_gt();
 			split_gr();
