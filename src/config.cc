@@ -79,6 +79,7 @@ double min_allele_overlap = 1.0;
 // for revising/decomposing splice graph
 double min_guaranteed_edge_weight = 0.01;
 double min_surviving_edge_weight = 1.5;
+double min_surviving_edge_solely_weight = 0.1;
 double max_intron_contamination_coverage = 2.0;
 double max_decompose_error_ratio[7] = {0.33, 0.05, 0.33, 0.50, 0.50, 0.3, 1.1}; // para for allelic decomop
 // double max_decompose_error_ratio[7] = {0.33, 0.05, 0.0, 0.25, 0.30, 0.0, 1.1}; // para for non-allelic decomp

@@ -129,6 +129,7 @@ extern int min_router_count;
 // for splice graph
 extern double max_intron_contamination_coverage;
 extern double min_surviving_edge_weight;
+extern double min_surviving_edge_solely_weight;
 extern double max_decompose_error_ratio[7];
 extern double min_transcript_numreads;
 extern double min_transcript_coverage;

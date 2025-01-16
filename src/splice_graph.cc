@@ -474,6 +474,8 @@ int splice_graph::revise_splice_graph()
 	return 0;
 }
 
+// sanity check for splice graph
+// make sure every node can reach source and sink
 bool splice_graph::refine_splice_graph()
 {
 	bool flag = false;
@@ -767,6 +769,45 @@ bool splice_graph::keep_surviving_edges()
 	if(ve.size() >= 1) return true;
 	else return false;
 
+}
+
+// survive allelic edges;
+// pseudo as edges with weight < min_surviving_edge_solely_weight will be purged (default 0.5)
+// if any edge is removed, run refine_splice_graph()
+bool splice_graph::keep_surviving_edges_solely_by_weight() 
+{
+	SE se0; // survived edges
+	edge_iterator it1, it2;
+	PEEI pei;
+
+	// add survived edges to se0, regardless of allele; use weight as sole criterion
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		if(se0.find(*it1) != se0.end()) continue;
+		double w = get_edge_weight(*it1);
+		if(w < min_surviving_edge_solely_weight) continue;
+		se0.insert(*it1);
+	}
+
+	VE ve; // vector of edges to be removed
+	for(pei = edges(), it1 = pei.first, it2 = pei.second; it1 != it2; it1++)
+	{
+		if(se0.find(*it1) != se0.end()) continue;
+		ve.push_back(*it1);
+	}
+
+	for(int i = 0; i < ve.size(); i++)
+	{
+		if(verbose >= 2) printf("remove low-weight edge (%d, %d), weight = %.2lf\n", ve[i]->source(), ve[i]->target(), get_edge_weight(ve[i]));
+		remove_edge(ve[i]);
+	}
+
+	if(ve.size() >= 1) 
+	{
+		refine_splice_graph();
+		return true;
+	}
+	else return false;
 }
 
 bool splice_graph::extend_boundaries()

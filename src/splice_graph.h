@@ -86,6 +86,7 @@ public:
 	int revise_splice_graph();
 	bool refine_splice_graph();
 	bool keep_surviving_edges();
+	bool keep_surviving_edges_solely_by_weight();
 	bool extend_boundaries();
 	bool extend_start_boundaries();
 	bool extend_end_boundaries();
