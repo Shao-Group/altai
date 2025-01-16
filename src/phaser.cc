@@ -482,8 +482,6 @@ int phaser::split_gr()
 				cerr << "gid: " << sc.gr.gid << "strand: " << sc.gr.strand << endl;
 				cerr << "pos:" << sc.gr.chrm << ":" << sc.gr.get_vertex_info(0).lpos.aspos32string() << "-" << sc.gr.get_vertex_info(sc.gr.num_vertices() - 1).rpos.aspos32string() << endl;
 			}
-		for (auto && ei1: ewrt1) assert(ei1.second > SMIN || ei1.second == 0);
-		for (auto && ei2: ewrt2) assert(ei2.second > SMIN || ei2.second == 0);
 	}
 
 	x2y_1.clear();// use x2y to map original edge to new edge
@@ -495,10 +493,12 @@ int phaser::split_gr()
 	gr.vwrt = vwrt1;
 	gr.ewrt = ewrt1;
 	pgr1->copy(gr, x2y_1, y2x_1);
+	pgr1->keep_surviving_edges_solely_by_weight();
 
 	gr.vwrt = vwrt2;
 	gr.ewrt = ewrt2;	
 	pgr2->copy(gr, x2y_2, y2x_2);
+	pgr2->keep_surviving_edges_solely_by_weight();
 
 	if(DEBUG_MODE_ON || print_phaser_detail) 
 	{
@@ -506,23 +506,19 @@ int phaser::split_gr()
 		cout << "ewrt1 size:" << ewrt1.size() << endl;
 		cout << "ewrt2 size:" << ewrt1.size() << endl;
 		cout << "gr.ewrt size:" << gr.ewrt.size() << endl;
-		assert (ewrt1.size() == ewrt2.size());
-
-		for (int j = 0; j < ewrt1.size(); j ++)
-		{
-			auto i = next(ewrt1.begin(), j);
-			auto k = next(ewrt2.begin(), j);
-			assert (i->first == k->first);  // all edge_descriptors are the same before transform
-			cout << "edge " << i->first->source() << "->" << i->first->target();
-			cout << "\t" << i->second << "\t"  << k->second << " " << endl;
-		}	
-
 		cout << "pgr1(order of ewrt may be different)\tsize: " << pgr1->ewrt.size() << "addr-" << pgr1 << endl;
-		for (auto i:pgr1->ewrt) cout << "\t" << i.first << ": " << i.second << " " << endl;
+		for (auto i:pgr1->ewrt) 
+		{
+			cout << "\tedge_descriptor, weight " << i.first << ": " << i.second << " " << endl; // edge_descriptor, weight
+			assert (i.second > SMIN || i.second == 0);
+		}
 		pgr1->edge_integrity_examine();
-
 		cout << "pgr2(order of ewrt may be different)\tsize: " << pgr2->ewrt.size() << "addr-" << pgr2 << endl;
-		for (auto i:pgr2->ewrt) cout << "\t" << i.first << ": " << i.second << " " << endl;
+		for (auto i:pgr2->ewrt) 
+		{
+			cout << "\tedge_descriptor, weight " << i.first << ": " << i.second << " " << endl;
+			assert (i.second > SMIN || i.second == 0);
+		}
 		pgr2->edge_integrity_examine();
 	}
 	return 0;
