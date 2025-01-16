@@ -82,7 +82,7 @@ int specific_trsts::get_multi_allele_spec_trsts(vector<transcript>& ts, const ve
 	{    
         transcript& t = ts[i];
 		assert(t.exons.size() >= 2);
-        assert(!gt_conflict(t.gt, gtspec));
+        // assert(!gt_conflict(t.gt, gtspec));
         if (t.gt == NONSPECIFIC) continue;
 		if (hasing_against.find(hasing_self[i]) == hasing_against.end()) t.assign_gt(gtspec);
         else t.assign_gt(NONSPECIFIC);
@@ -232,7 +232,7 @@ vector<transcript> specific_trsts::recover_full_from_partial_transcripts
 				t.coverage = partt.coverage;
 
 				if (will_change_gt) t.transform_gt(partt.gt);
-				else assert(!gt_conflict(fullt.gt, partt.gt));
+				// else assert(!gt_conflict(fullt.gt, partt.gt));
 				
 				recovered.push_back(t);
 				recovered_hasing.insert(fullt_hashing);

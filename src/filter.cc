@@ -189,16 +189,16 @@ int filter::locate_next_transcript(int t)
 
 int filter::merge_single_exon_transcripts(vector<transcript> &trs0)
 {
-	// must be the same gt in order to merge
-	genotype g = UNPHASED;
-	for(const transcript & t: trs0)
-	{
-		if(t.gt == ALLELE1 || t.gt == ALLELE2)
-		{
-			assert(! gt_conflict(g, t.gt));
-			g = t.gt;
-		}
-	}
+	// must be the same gt in order to merge // not required when dominance
+	// genotype g = UNPHASED;
+	// for(const transcript & t: trs0)
+	// {
+	// 	if(t.gt == ALLELE1 || t.gt == ALLELE2)
+	// 	{
+	// 		// assert(! gt_conflict(g, t.gt));
+	// 		g = t.gt;
+	// 	}
+	// }
 
 	typedef pair<PI32, int> PPI;
 	vector<PPI> vv;

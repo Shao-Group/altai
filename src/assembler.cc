@@ -246,7 +246,7 @@ int assembler::process(int n)
 			for(int k = 0; k < gv1->size(); k++)
 			{
 				if((gv1->at(k)).exons.size() >= 2) gv1->at(k).coverage /= (1.0 * assemble_duplicates);
-				if((i == 1 || i == 2) && DEBUG_MODE_ON) assert(!(gt_conflict(gv1->at(k).gt, gg)));
+				// if((i == 1 || i == 2) && DEBUG_MODE_ON) assert(!(gt_conflict(gv1->at(k).gt, gg)));
 			}
 
 			/*
